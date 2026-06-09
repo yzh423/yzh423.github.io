@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Zhenghao (Daniel) Yu - academic homepage for robotics, AI, autonomous driving, and human-centered embodied systems.">
+    <title>Zhenghao Yu | Robotics, AI, Autonomous Systems</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <aside class="topbar" aria-label="Profile and primary navigation">
+      <a class="brand profile-brand" href="#home" aria-label="Go to home">
+        <img class="sidebar-portrait" src="assets/portrait.jpg" alt="Portrait of Zhenghao Yu">
+        <span>Zhenghao (Daniel) Yu</span>
+      </a>
+      <p class="sidebar-role">Computer Engineering at HKU</p>
+      <p class="sidebar-focus">Robotics / AI / Autonomous Systems / HCI</p>
+      <nav aria-label="Primary navigation">
+        <a href="#home">Home</a>
+        <a href="#about">About</a>
+        <a href="#news">News</a>
+        <a href="#research">Research</a>
+        <a href="#publications">Publications</a>
+        <a href="#experience">Experience</a>
+        <a href="#cv">Education</a>
+        <a class="cv-link" href="assets/Zhenghao_Yu_Resume.pdf" download>Curriculum Vitae</a>
+      </nav>
+      <div class="sidebar-contact">
+        <a href="mailto:Zhenghao@connect.hku.hk">Zhenghao@connect.hku.hk</a>
+        <span>Pokfulam, Hong Kong SAR</span>
+      </div>
+    </aside>
+
+    <main>
+      <section id="home" class="hero">
+        <div class="hero-shade"></div>
+        <div class="hero-content">
+          <p class="hero-kicker reveal">The University of Hong Kong / Computer Engineering</p>
+          <h1 class="animated-name reveal">Zhenghao <span>(Daniel)</span> Yu</h1>
+          <p class="moving-title reveal" aria-label="Research focus">
+            <span>Robotics</span>
+            <span>Autonomous Driving</span>
+            <span>Multi-Agent AI</span>
+            <span>Human-Centered Systems</span>
+          </p>
+          <div class="hero-actions reveal">
+            <a class="button primary" href="#about">About Me</a>
+            <a class="button glass" href="#publications">View Publications</a>
+            <a class="button glass" href="assets/Zhenghao_Yu_Resume.pdf" download>Download CV</a>
+          </div>
+        </div>
+        <a class="scroll-cue" href="#about" aria-label="Scroll to about">Scroll</a>
+      </section>
+
+      <section id="about" class="section about-section">
+        <div class="section-label reveal">About Me</div>
+        <div class="about-essay reveal">
+          <p class="eyebrow">Prospective MS / PhD applicant in CS, robotics, and AI</p>
+          <h2>Building embodied AI for the real world.</h2>
+          <p>
+            I am Zhenghao (Daniel) Yu, a Computer Engineering undergraduate at <strong>The University of Hong Kong</strong>.
+            My work sits between robotics, AI, embedded systems, and human-computer interaction. I enjoy building
+            systems that move from theory into messy environments: autonomous vehicles in dense merging traffic,
+            wheel-leg robots in hospital corridors, and contactless interfaces in noisy, high-vibration cabins.
+          </p>
+          <p>
+            I care about reliable embodied intelligence: algorithms that are measurable, hardware-aware, and useful to
+            people. My recent work includes MARL and diffusion-based safety testing for CAV ramp merging, multi-sensor
+            navigation for a drug-delivery robot, and CAN/BMS/PCB development for humanoid robotic platforms.
+          </p>
+          <p class="art-line">
+            Outside research, I train in the gym, practice boxing, and enjoy photography. These hobbies keep me
+            disciplined, observant, and comfortable with patient iteration.
+          </p>
+        </div>
+      </section>
+
+      <section id="news" class="section tinted">
+        <div class="section-label reveal">News</div>
+        <h2 class="reveal">Recent Updates</h2>
+        <ul class="news-list reveal">
+          <li><time datetime="2026-07">Jul 2026</time><span>Game-Diffusion-based MARL work scheduled for publication in IEEE OJITS.</span></li>
+          <li><time datetime="2026-06">Jun 2026</time><span>Game-Diffusion-based Multi-Agent Learning paper accepted / in press at IEEE Open Journal of Intelligent Transportation Systems.</span></li>
+          <li><time datetime="2026-04">Apr 2026</time><span>Tri-modal contactless in-vehicle HMI paper accepted by Journal of Intelligence and Knowledge Engineering.</span></li>
+          <li><time datetime="2025-07">Jul 2025</time><span>Wheel-leg drug-delivery robot paper published at ICEEGT 2025, pp. 704-720.</span></li>
+        </ul>
+      </section>
+
+      <section id="research" class="section">
+        <div class="section-label reveal">Research</div>
+        <h2 class="reveal">Research Themes</h2>
+        <div class="research-grid">
+          <article class="research-card reveal">
+            <span>01</span>
+            <h3>Trustworthy Autonomous Driving</h3>
+            <p>Safety-critical testing, CAV ramp merging, SOTIF-aligned evaluation, adversarial scenario generation, and failure discovery for planning systems.</p>
+          </article>
+          <article class="research-card reveal">
+            <span>02</span>
+            <h3>Multi-Agent Learning and Generative Control</h3>
+            <p>MARL, diffusion trajectory refinement, game-theoretic reasoning, Nash and Stackelberg policies, and smooth coordination under partial observability.</p>
+          </article>
+          <article class="research-card reveal">
+            <span>03</span>
+            <h3>Robotic Systems and Navigation</h3>
+            <p>Wheel-leg platforms, LiDAR/IMU/ultrasonic/infrared fusion, EKF localization, A*/JPS/DWA planning, and PID balancing control.</p>
+          </article>
+          <article class="research-card reveal">
+            <span>04</span>
+            <h3>Human-Centered Embodied Interaction</h3>
+            <p>Contactless multimodal HCI, gaze-head-voice interaction, Wizard-of-Oz evaluation, usability metrics, and special-purpose vehicle interfaces.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="publications" class="section publication-section">
+        <div class="section-label reveal">Publications</div>
+        <div class="section-heading reveal">
+          <h2>Selected Publications</h2>
+          <p>(* indicates first author)</p>
+        </div>
+
+        <article class="publication reveal">
+          <img src="assets/ramp-merging.png" alt="Ramp merging simulation scenario">
+          <div>
+            <p class="pub-status">Accepted / in press / IEEE OJITS / 2026</p>
+            <h3>Game-Diffusion-based Multi-Agent Learning of Ramp Merging Coordination for Connected and Automated Vehicles</h3>
+            <p class="authors"><strong>Zhenghao Yu*</strong></p>
+            <p>
+              Proposes Game-Diff MARL, combining diffusion-based trajectory refinement, game-theoretic strategy selection,
+              and adaptive gating for robust CAV coordination in HighwayEnv. The framework reduces collision rate from
+              12.3% to 3.7% and improves failure discovery compared with random testing.
+            </p>
+            <div class="pub-links">
+              <a href="papers/game-diff-marl-cav-ramp-merging.pdf" target="_blank" rel="noreferrer">PDF</a>
+              <a href="#experience">Research Context</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="publication reveal">
+          <img src="assets/robot-planning.png" alt="Robot mapping and planning workflow">
+          <div>
+            <p class="pub-status">Published / ICEEGT 2025 / pp. 704-720</p>
+            <h3>Design and Implementation of a Wheeled Robot with Obstacle Avoidance and Navigation Capabilities for Drug Delivery</h3>
+            <p class="authors"><strong>Zhenghao Yu*</strong></p>
+            <p>
+              Designs and validates a wheel-leg hybrid drug-delivery robot for constrained hospital environments,
+              integrating multi-sensor perception, EKF localization, optimized A* global planning, DWA local avoidance,
+              and PID balancing control.
+            </p>
+            <div class="pub-links">
+              <a href="papers/wheel-leg-drug-delivery-robot.pdf" target="_blank" rel="noreferrer">PDF</a>
+            </div>
+          </div>
+        </article>
+
+        <article class="publication reveal">
+          <img src="assets/hmi-results.png" alt="HMI evaluation results chart">
+          <div>
+            <p class="pub-status">Accepted / JIKE / pending publication</p>
+            <h3>Design and Wizard-of-Oz Evaluation of a Tri-Modal Contactless In-Vehicle HMI for High-Noise and High-Vibration Cabins</h3>
+            <p class="authors"><strong>Zhenghao Yu*</strong></p>
+            <p>
+              Develops a gaze, head-confirmation, and voice-refinement interaction protocol for harsh vehicle cabins.
+              A Wizard-of-Oz study with N = 30 participants shows reduced error rate and workload against a pooled
+              single-modality contactless baseline.
+            </p>
+            <div class="pub-links">
+              <a href="papers/tri-modal-contactless-hmi.pdf" target="_blank" rel="noreferrer">PDF</a>
+            </div>
+          </div>
+        </article>
+      </section>
+
+      <section id="experience" class="section tinted">
+        <div class="section-label reveal">Experience</div>
+        <h2 class="reveal">Research and Industry Experience</h2>
+        <div class="timeline">
+          <article class="reveal">
+            <span class="date">Jun 2025 - Present</span>
+            <h3>Research Assistant, Adversarial Testing for Autonomous Driving</h3>
+            <p class="meta">Supervised by Prof. Hao Zhang, CMU and UTA / Remote</p>
+            <p>Built a MARL and diffusion-based adversarial testing framework for highway merging, generated 2000+ valid safety-critical scenarios, achieved 92% effectiveness in triggering unexpected planning behavior, and improved failure detection by 85% over random testing.</p>
+          </article>
+          <article class="reveal">
+            <span class="date">Jan 2026 - Present</span>
+            <h3>Independent Research, Human-Computer Interaction</h3>
+            <p class="meta">Remote</p>
+            <p>Explored contactless in-vehicle interaction for off-road and engineering machinery under high noise and vibration, designing a three-layer perception-understanding-feedback architecture for multimodal fusion and conflict resolution.</p>
+          </article>
+          <article class="reveal">
+            <span class="date">Apr 2025 - Jul 2025</span>
+            <h3>Independent Research, Robust Autonomous Navigation</h3>
+            <p class="meta">Remote</p>
+            <p>Designed a wheel-leg robotic delivery system with less than 5 cm localization error, less than 10 cm path tracking error, 0.3 s dynamic obstacle response, and 98.2% obstacle avoidance success in hospital-style experiments.</p>
+          </article>
+          <article class="reveal">
+            <span class="date">Jun 2025 - Aug 2025</span>
+            <h3>Electrical Engineering Intern, SevnceRobotics</h3>
+            <p class="meta">Product R&amp;D Center / Shanghai, China</p>
+            <p>Designed dual-layer CAN architecture and a 24-series lithium battery BMS for humanoid robotics, completed schematic and four-layer PCB layout for a sensor acquisition board, and contributed to HR160 electrical architecture design reviews.</p>
+          </article>
+        </div>
+      </section>
+
+      <section id="cv" class="section closing-section">
+        <div class="section-label reveal">Curriculum Vitae</div>
+        <div class="closing-grid">
+          <div class="reveal">
+            <h2>Education</h2>
+            <article class="compact-item">
+              <h3>The University of Hong Kong</h3>
+              <p>BEng in Computer Engineering, Sept 2023 - Jun 2027</p>
+              <p>GPA 3.40 / 4.3, Top 15% among 2558 students.</p>
+            </article>
+            <article class="compact-item">
+              <h3>Peking University</h3>
+              <p>Academic Exchange Program, Jun 2024 - Aug 2024</p>
+              <p>Coursework: Simulation Methods for Optimization and Learning (A).</p>
+            </article>
+          </div>
+          <div id="skills" class="reveal">
+            <h2>Skills</h2>
+            <div class="skill-cloud">
+              <span>Python</span><span>PyTorch</span><span>OpenCV</span><span>C/C++</span><span>ROS 2</span>
+              <span>MATLAB</span><span>Simulink</span><span>Verilog</span><span>SystemVerilog</span><span>SQL</span>
+              <span>Altium Designer</span><span>CANoe</span><span>Git</span><span>LaTeX</span><span>EKF/UKF</span>
+              <span>PID</span><span>A*/JPS/DWA</span><span>MARL</span><span>Diffusion Models</span>
+            </div>
+            <a class="button primary cv-download" href="assets/Zhenghao_Yu_Resume.pdf" download>Download Curriculum Vitae</a>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <p>Last updated June 2026 / Academic homepage for graduate applications in computer science, robotics, and AI.</p>
+    </footer>
+
+    <script src="script.js"></script>
+  </body>
+</html>
