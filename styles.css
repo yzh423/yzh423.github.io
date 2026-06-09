@@ -198,7 +198,7 @@ main,
   margin: 10px 0 10px;
   font-family: Georgia, "Times New Roman", serif;
   font-size: clamp(2.25rem, 4.35vw, 4.15rem);
-  line-height: 114;
+  line-height: 1.14;
   letter-spacing: 0;
   white-space: nowrap;
   width: max-content;
