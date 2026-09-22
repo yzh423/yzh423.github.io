@@ -1,0 +1,13 @@
+# Asset sources
+
+## Fonts
+
+- `fonts/dm-sans-variable.ttf` is DM Sans variable regular from the [Google Fonts repository](https://github.com/google/fonts), [`ofl/dmsans/DMSans[opsz,wght].ttf`](https://github.com/google/fonts/blob/main/ofl/dmsans/DMSans%5Bopsz%2Cwght%5D.ttf). Its license is included as `fonts/dm-sans-OFL.txt`, sourced from [`ofl/dmsans/OFL.txt`](https://github.com/google/fonts/blob/main/ofl/dmsans/OFL.txt).
+- `fonts/instrument-serif-regular.ttf` and `fonts/instrument-serif-italic.ttf` are Instrument Serif regular and italic from the [Google Fonts repository](https://github.com/google/fonts), [`ofl/instrumentserif/InstrumentSerif-Regular.ttf`](https://github.com/google/fonts/blob/main/ofl/instrumentserif/InstrumentSerif-Regular.ttf) and [`ofl/instrumentserif/InstrumentSerif-Italic.ttf`](https://github.com/google/fonts/blob/main/ofl/instrumentserif/InstrumentSerif-Italic.ttf). Their license is included as `fonts/instrument-serif-OFL.txt`, sourced from [`ofl/instrumentserif/OFL.txt`](https://github.com/google/fonts/blob/main/ofl/instrumentserif/OFL.txt).
+
+## Project media
+
+- `factory-dataset-packaging.jpg`, `factory-dataset-inspection.jpg`, and `factory-dataset-towel-folding.jpg` are from [`yzh423/factory-dataset`](https://github.com/yzh423/factory-dataset): [`assets/readme/gallery/packaging.jpg`](https://github.com/yzh423/factory-dataset/blob/main/assets/readme/gallery/packaging.jpg), [`inspection.jpg`](https://github.com/yzh423/factory-dataset/blob/main/assets/readme/gallery/inspection.jpg), and [`towel-folding.jpg`](https://github.com/yzh423/factory-dataset/blob/main/assets/readme/gallery/towel-folding.jpg).
+- `fold-box-mujoco-qa-middle.png` is MuJoCo simulation evidence for Fold Box from [`yzh423/single-arm-mount-trajectory`](https://github.com/yzh423/single-arm-mount-trajectory), [`reports/piperx_two_task_complete_follow/fold_box/qa_middle.png`](https://github.com/yzh423/single-arm-mount-trajectory/blob/main/reports/piperx_two_task_complete_follow/fold_box/qa_middle.png).
+- `fold-box-mujoco-recommended.mp4` is the public recommended Fold Box MuJoCo simulation video from [`yzh423/single-arm-mount-trajectory`](https://github.com/yzh423/single-arm-mount-trajectory), [`reports/piperx_recommended_v31/8-11_Fold_Box_161044_recommended_v31.mp4`](https://github.com/yzh423/single-arm-mount-trajectory/blob/main/reports/piperx_recommended_v31/8-11_Fold_Box_161044_recommended_v31.mp4).
+- `pid-fuzzy-robustness-summary.png` is simulation evidence copied from the local public-report result figure for [`yzh423/PID-MATLAB`](https://github.com/yzh423/PID-MATLAB): `E:\\YZH123123\\PID vs Fuzzy PID\\results\\figures\\deterministic_robustness_summary.png`.
