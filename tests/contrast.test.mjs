@@ -19,8 +19,12 @@ function contrast(foreground, background) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-test("light-surface text tokens meet WCAG AA contrast", () => {
-  assert.ok(contrast(hex("gold"), hex("paper")) >= 4.5);
-  assert.ok(contrast(hex("gold"), "#ebe5d8") >= 4.5);
-  assert.ok(contrast(hex("muted"), hex("paper")) >= 4.5);
+test("editorial palette and dark closing text meet WCAG AA contrast", () => {
+  assert.equal(hex("paper").toLowerCase(), "#f5f2eb");
+  assert.equal(hex("ink").toLowerCase(), "#20251f");
+  assert.equal(hex("green").toLowerCase(), "#315447");
+  for (const color of ["ink", "green", "muted"]) assert.ok(contrast(hex(color), hex("paper")) >= 4.5, color);
+  assert.ok(contrast(hex("paper"), hex("ink")) >= 4.5);
+  assert.ok(contrast(hex("paper"), hex("green")) >= 4.5);
+  assert.ok(contrast(hex("on-dark-muted"), hex("ink")) >= 4.5);
 });

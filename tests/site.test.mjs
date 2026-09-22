@@ -44,7 +44,56 @@ test("mobile navigation is keyboard accessible and content works without JavaScr
   assert.match(script, /aria-expanded/);
   assert.match(script, /Escape/);
   assert.match(css, /\.reveal\s*\{[^}]*opacity:\s*1/s);
-  assert.match(css, /\.js\s+\.reveal\s*\{[^}]*opacity:\s*0/s);
+  assert.doesNotMatch(css, /\.js\s+\.reveal\s*\{[^}]*opacity:\s*0/s);
+  assert.match(script, /menuToggle\.focus\(\)/);
+  assert.match(script, /prefers-reduced-motion/);
+});
+
+test("editorial layout preserves anchors and puts work before the biography", () => {
+  for (const id of ["home", "projects", "publications", "about", "research", "news", "experience", "cv", "skills", "contact"]) {
+    assert.equal([...html.matchAll(new RegExp(`id="${id}"`, "g"))].length, 1, id);
+  }
+  const order = ["home", "projects", "publications", "about", "research", "news", "experience", "cv", "contact"].map(id => html.indexOf(`id="${id}"`));
+  assert.deepEqual(order, [...order].sort((a, b) => a - b));
+  assert.match(css, /\.topbar\s*\{[^}]*position:\s*sticky/s);
+  assert.doesNotMatch(css, /nameSheen|titleCycle|--sidebar-width/);
+});
+
+test("local editorial fonts and every referenced asset exist", async () => {
+  assert.match(css, /font-family:\s*"DM Sans"/);
+  assert.match(css, /font-family:\s*"Instrument Serif"/);
+  assert.equal([...css.matchAll(/font-display:\s*swap/g)].length, 3);
+  const paths = [...html.matchAll(/(?:src|href|poster)="((?:assets|papers)\/[^"#?]+)"/g), ...css.matchAll(/url\("([^"#?]+)"\)/g)].map(match => match[1]);
+  await Promise.all([...new Set(paths)].map(path => access(new URL(`../${path}`, import.meta.url))));
+});
+
+test("project evidence uses current scoped results and native disclosure", () => {
+  assert.match(html, /https:\/\/yzh423\.github\.io\/factory-dataset\//);
+  for (const phrase of ["33 tasks", "2,016", "10.198 GiB", "13 UMI collections", "58 episodes", "42,223 frames", "23 archives", "three controllers", "39 deterministic runs", "360 paired stochastic trials", "0/30"]) assert.ok(html.includes(phrase), phrase);
+  assert.doesNotMatch(html, /33\.3(?:→|&rarr;)80\.2%|126<\/dt>/);
+  assert.match(html, /https:\/\/github\.com\/yzh423\/PID-MATLAB\/blob\/main\/docs\/report\/technical_report\.pdf/);
+  const projects = html.slice(html.indexOf('<section id="projects"'), html.indexOf('<section id="publications"'));
+  assert.equal([...projects.matchAll(/<details>/g)].length, 3);
+  assert.match(html, /<video[^>]*controls[^>]*preload="none"[^>]*width="1280"[^>]*height="720"/);
+  assert.match(html, /poster="assets\/fold-box-mujoco-qa-middle.png"/);
+  assert.match(html, /simulation evidence/i);
+});
+
+test("media reserves space and publications show full figures", () => {
+  for (const [tag] of html.matchAll(/<img\b[^>]*>/g)) {
+    assert.match(tag, /width="\d+"/);
+    assert.match(tag, /height="\d+"/);
+    assert.match(tag, /alt="[^"]+"/);
+    if (!tag.includes('fetchpriority="high"')) assert.match(tag, /loading="lazy"/);
+  }
+  assert.match(css, /\.publication img\s*\{[^}]*object-fit:\s*contain/s);
+});
+
+test("native video uses a browser-compatible H.264 source", async () => {
+  const source = html.match(/<source src="([^"]+)" type="video\/mp4">/)?.[1];
+  assert.ok(source, "native MP4 source");
+  const video = await readFile(new URL(`../${source}`, import.meta.url));
+  assert.ok(video.includes(Buffer.from("avc1")), "video must contain an H.264/AVC sample entry");
 });
 
 test("every local image and PDF linked from markup exists", async () => {
