@@ -96,6 +96,14 @@ test("native video uses a browser-compatible H.264 source", async () => {
   assert.ok(video.includes(Buffer.from("avc1")), "video must contain an H.264/AVC sample entry");
 });
 
+test("mobile no-JS header scrolls away without changing the sticky enhanced navigation", () => {
+  const mobile = css.slice(css.indexOf("@media (max-width: 780px)"), css.indexOf("@media (max-width: 520px)"));
+  assert.match(mobile, /\.no-js \.topbar\s*\{\s*position:\s*static;\s*\}/);
+  assert.match(css, /\.topbar\s*\{\s*position:\s*sticky;/);
+  assert.match(mobile, /\.js \.primary-navigation\s*\{\s*display:\s*none;\s*\}/);
+  assert.match(mobile, /\.js \.topbar\.menu-open \.primary-navigation\s*\{\s*display:\s*grid;\s*\}/);
+});
+
 test("every local image and PDF linked from markup exists", async () => {
   const paths = [...html.matchAll(/(?:src|href)="((?:assets|papers)\/[^"#?]+)"/g)].map((match) => match[1]);
   assert.ok(paths.length >= 10);

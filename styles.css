@@ -177,6 +177,7 @@ video { width: 100%; background: #000; }
   .about-layout, .closing-grid { gap: 40px; }
 }
 @media (max-width: 780px) {
+  .no-js .topbar { position: static; }
   html { scroll-padding-top: 84px; }
   section, #skills { scroll-margin-top: 84px; }
   .nav-inner { min-height: 70px; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 0 20px; }
