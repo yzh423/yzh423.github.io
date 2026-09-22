@@ -71,7 +71,7 @@ test("project evidence uses current scoped results and native disclosure", () =>
   assert.match(html, /https:\/\/yzh423\.github\.io\/factory-dataset\//);
   for (const phrase of ["33 tasks", "2,016", "10.198 GiB", "13 UMI collections", "58 episodes", "42,223 frames", "23 archives", "three controllers", "39 deterministic runs", "360 paired stochastic trials", "0/30"]) assert.ok(html.includes(phrase), phrase);
   assert.doesNotMatch(html, /33\.3(?:→|&rarr;)80\.2%|126<\/dt>/);
-  assert.match(html, /https:\/\/github\.com\/yzh423\/PID-MATLAB\/blob\/main\/docs\/report\/technical_report\.pdf/);
+  assert.match(html, /https:\/\/github\.com\/yzh423\/PID-MATLAB\/blob\/745eb8f2fe486c2ff3c2a3d0d110d433d8fe34eb\/docs\/report\/technical_report\.pdf/);
   const projects = html.slice(html.indexOf('<section id="projects"'), html.indexOf('<section id="publications"'));
   assert.equal([...projects.matchAll(/<details>/g)].length, 3);
   assert.match(html, /<video[^>]*controls[^>]*preload="none"[^>]*width="1280"[^>]*height="720"/);
