@@ -47,6 +47,12 @@ function updateActiveNavigation() {
   destinations.forEach(({ link, section }) => {
     if (section && section.getBoundingClientRect().top <= readingLine) current = link;
   });
+  // A short closing section cannot always reach the reading line. Allow two
+  // pixels for fractional scroll positions when the document reaches its end.
+  const root = document.documentElement;
+  const atBottom = window.scrollY > 0 && window.scrollY + root.clientHeight >= root.scrollHeight - 2;
+  const finalDestination = destinations.at(-1);
+  if (atBottom && finalDestination?.section) current = finalDestination.link;
   destinations.forEach(({ link }) => {
     const active = link === current;
     link.classList.toggle("active", active);

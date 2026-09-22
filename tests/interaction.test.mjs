@@ -20,13 +20,16 @@ function element(attrs = {}) {
 function boot({ reduced = false, observer = true } = {}) {
   const topbar = element();
   const toggle = element({ "aria-expanded": "false" });
-  const links = [element({ href: "#projects" }), element({ href: "#publications" }), element({ href: "assets/Zhenghao_Yu_Resume.pdf" })];
+  const links = ["#projects", "#publications", "#experience", "#contact", "assets/Zhenghao_Yu_Resume.pdf"].map(href => element({ href }));
+  const sectionLinks = links.filter(link => link.attrs.href.startsWith("#"));
   const nav = element();
-  nav.querySelectorAll = selector => selector === "a" ? links : links.slice(0, 2);
-  const sections = links.slice(0, 2).map(link => element({ id: link.attrs.href.slice(1) }));
+  nav.querySelectorAll = selector => selector === "a" ? links : sectionLinks;
+  const sections = sectionLinks.map(link => element({ id: link.attrs.href.slice(1) }));
   const reveal = element();
   const doc = element();
   doc.documentElement = element();
+  doc.documentElement.scrollHeight = 10000;
+  doc.documentElement.clientHeight = 800;
   doc.querySelector = selector => ({ ".topbar": topbar, ".menu-toggle": toggle, "#primary-navigation": nav })[selector];
   doc.querySelectorAll = selector => selector === ".reveal" ? [reveal] : sections;
   doc.getElementById = id => sections.find(section => section.id === id);
@@ -38,6 +41,7 @@ function boot({ reduced = false, observer = true } = {}) {
   }
   const win = element();
   win.innerHeight = 800;
+  win.scrollY = 0;
   if (observer) win.IntersectionObserver = Observer;
   runInNewContext(source, { document: doc, window: win, IntersectionObserver: Observer, matchMedia: query => ({ matches: query.includes("reduced-motion") && reduced, addEventListener() {} }), requestAnimationFrame: callback => callback() });
   return { topbar, toggle, links, doc, observers, reveal, sections, win };
@@ -85,4 +89,34 @@ test("active navigation follows the last reached destination and clears at home"
   page.sections.forEach(section => { section.top = 500; });
   page.win.listeners.scroll();
   assert.equal(page.links.some(link => link.attrs["aria-current"]), false);
+});
+
+test("Contact becomes current at the document bottom even below the reading line", () => {
+  const page = boot();
+  page.win.innerHeight = 1080;
+  page.doc.documentElement.clientHeight = 1080;
+  page.doc.documentElement.scrollHeight = 10000;
+  page.sections[0].top = -8000;
+  page.sections[1].top = -5000;
+  page.sections[2].top = -1000;
+  page.sections[3].top = 350;
+  const experience = page.links[2];
+  const contact = page.links[3];
+
+  page.win.scrollY = 8800;
+  page.win.listeners.scroll();
+  assert.equal(experience.attrs["aria-current"], "location");
+  assert.equal(contact.attrs["aria-current"], undefined);
+
+  for (const scrollY of [8920, 8919]) {
+    page.win.scrollY = scrollY;
+    page.win.listeners.scroll();
+    assert.equal(contact.attrs["aria-current"], "location", "Contact is current at or within one pixel of the bottom");
+    assert.equal(experience.attrs["aria-current"], undefined);
+  }
+
+  page.win.scrollY = 8800;
+  page.win.listeners.scroll();
+  assert.equal(experience.attrs["aria-current"], "location", "normal section tracking resumes above the bottom");
+  assert.equal(contact.attrs["aria-current"], undefined);
 });
