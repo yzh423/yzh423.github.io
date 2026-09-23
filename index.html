@@ -11,16 +11,32 @@
   </head>
   <body>
     <a class="skip-link" href="#main-content">Skip to main content</a>
-    <header class="topbar">
+    <aside class="topbar" aria-label="Profile and primary navigation">
       <div class="nav-inner">
-        <a class="brand" href="#home" aria-label="Zhenghao Yu — home">ZY<span> / Zhenghao Yu</span></a>
+        <a class="brand" href="#home" aria-label="Zhenghao Yu — home">
+          <img class="sidebar-portrait" src="assets/portrait.jpg" alt="Portrait of Zhenghao Yu" width="720" height="720" fetchpriority="high">
+          <span class="brand-copy"><strong>Zhenghao Yu</strong><small>Daniel · Robotics researcher</small></span>
+        </a>
         <button class="menu-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">+</span></button>
+        <p class="sidebar-intro">Computer Engineering at HKU.<br>Building reliable embodied intelligence.</p>
         <nav id="primary-navigation" class="primary-navigation" aria-label="Primary navigation">
-          <a href="#projects">Work</a><a href="#publications">Publications</a><a href="#about">About</a><a href="#experience">Experience</a><a href="#contact">Contact</a>
-          <a class="cv-link" href="assets/Zhenghao_Yu_Resume.pdf" download>CV <span aria-hidden="true">↗</span></a>
+          <a href="#home"><span>01</span> Home</a>
+          <a href="#projects"><span>02</span> Work</a>
+          <a href="#publications"><span>03</span> Publications</a>
+          <a href="#about"><span>04</span> About</a>
+          <a href="#research"><span>05</span> Research</a>
+          <a href="#news"><span>06</span> News</a>
+          <a href="#experience"><span>07</span> Experience</a>
+          <a href="#cv"><span>08</span> Education</a>
+          <a href="#contact"><span>09</span> Contact</a>
         </nav>
+        <div class="sidebar-footer">
+          <a class="sidebar-cv" href="assets/Zhenghao_Yu_Resume.pdf" download>Download CV <span aria-hidden="true">↗</span></a>
+          <div><a href="mailto:Zhenghao@connect.hku.hk">Email</a><a href="https://github.com/yzh423?tab=repositories" target="_blank" rel="noreferrer">GitHub ↗</a></div>
+          <small>Hong Kong · Open to research opportunities</small>
+        </div>
       </div>
-    </header>
+    </aside>
     <main id="main-content">
       <section id="home" class="hero section">
         <div class="hero-content">
@@ -32,9 +48,9 @@
           <p class="hero-note">Prospective MS / PhD applicant · Hong Kong</p>
         </div>
         <figure class="hero-image">
-          <div class="image-frame"><img src="assets/factory-dataset-packaging.jpg" alt="Dual-arm manipulation setup handling containers beside an open packaging box" width="1280" height="720" fetchpriority="high"></div>
-          <figcaption><span>01 / In the real world</span><span>Factory manipulation · Ragtime Lab</span></figcaption>
-          <p class="image-note">Good systems begin<br>with the details.</p>
+          <div class="hero-photo"><img src="assets/portrait.jpg" alt="Portrait of Zhenghao Yu" width="720" height="720" fetchpriority="high"></div>
+          <div class="hero-robot"><img src="assets/factory-dataset-packaging.jpg" alt="Dual-arm manipulation experiment at Ragtime Lab" width="1280" height="720" fetchpriority="high"><span>In the lab / 2026</span></div>
+          <figcaption><span>Researcher &amp; engineer</span><span>People, systems, evidence.</span></figcaption>
         </figure>
       </section>
       <section id="projects" class="section projects-section">

@@ -10,7 +10,7 @@ function setMenu(open) {
 }
 
 menuToggle.addEventListener("click", () => setMenu(menuToggle.getAttribute("aria-expanded") !== "true"));
-navigation.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => setMenu(false)));
+topbar.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => setMenu(false)));
 document.addEventListener("keydown", (event) => {
   if (event.key !== "Escape" || menuToggle.getAttribute("aria-expanded") !== "true") return;
   setMenu(false);
@@ -35,8 +35,7 @@ if ("IntersectionObserver" in window && !matchMedia("(prefers-reduced-motion: re
   revealItems.forEach((item) => revealObserver.observe(item));
 }
 
-// Track only destinations represented in the top navigation. About stays
-// current through Research/News, and Experience through Education/Skills.
+// Track the destinations represented in the left navigation.
 const destinations = navLinks.map((link) => ({
   link,
   section: document.getElementById(link.getAttribute("href").slice(1))

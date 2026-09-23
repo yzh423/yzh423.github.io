@@ -27,4 +27,5 @@ test("editorial palette and dark closing text meet WCAG AA contrast", () => {
   assert.ok(contrast(hex("paper"), hex("ink")) >= 4.5);
   assert.ok(contrast(hex("paper"), hex("green")) >= 4.5);
   assert.ok(contrast(hex("on-dark-muted"), hex("ink")) >= 4.5);
+  assert.ok(contrast(hex("on-dark-muted"), hex("green")) >= 4.5);
 });

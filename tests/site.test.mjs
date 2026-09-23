@@ -49,14 +49,20 @@ test("mobile navigation is keyboard accessible and content works without JavaScr
   assert.match(script, /prefers-reduced-motion/);
 });
 
-test("editorial layout preserves anchors and puts work before the biography", () => {
+test("profile sidebar and portrait hero preserve every section anchor", () => {
   for (const id of ["home", "projects", "publications", "about", "research", "news", "experience", "cv", "skills", "contact"]) {
     assert.equal([...html.matchAll(new RegExp(`id="${id}"`, "g"))].length, 1, id);
   }
   const order = ["home", "projects", "publications", "about", "research", "news", "experience", "cv", "contact"].map(id => html.indexOf(`id="${id}"`));
   assert.deepEqual(order, [...order].sort((a, b) => a - b));
-  assert.match(css, /\.topbar\s*\{[^}]*position:\s*sticky/s);
-  assert.doesNotMatch(css, /nameSheen|titleCycle|--sidebar-width/);
+  assert.match(html, /<aside class="topbar"/);
+  assert.match(html, /class="sidebar-portrait"[^>]+src="assets\/portrait\.jpg"/);
+  assert.match(html, /class="hero-photo"><img src="assets\/portrait\.jpg"/);
+  assert.match(html, /href="#home"[^>]*><span>01<\/span> Home/);
+  assert.match(css, /\.topbar\s*\{[^}]*position:\s*fixed;/s);
+  assert.match(css, /\.topbar\s*\{[^}]*overflow-y:\s*auto;/s);
+  assert.match(css, /@media \(max-width: 780px\)[\s\S]*?\.topbar\s*\{[^}]*position:\s*sticky;/);
+  assert.doesNotMatch(css, /nameSheen|titleCycle/);
 });
 
 test("local editorial fonts and every referenced asset exist", async () => {
@@ -99,7 +105,7 @@ test("native video uses a browser-compatible H.264 source", async () => {
 test("mobile no-JS header scrolls away without changing the sticky enhanced navigation", () => {
   const mobile = css.slice(css.indexOf("@media (max-width: 780px)"), css.indexOf("@media (max-width: 520px)"));
   assert.match(mobile, /\.no-js \.topbar\s*\{\s*position:\s*static;\s*\}/);
-  assert.match(css, /\.topbar\s*\{\s*position:\s*sticky;/);
+  assert.match(mobile, /\.topbar\s*\{\s*position:\s*sticky;/);
   assert.match(mobile, /\.js \.primary-navigation\s*\{\s*display:\s*none;\s*\}/);
   assert.match(mobile, /\.js \.topbar\.menu-open \.primary-navigation\s*\{\s*display:\s*grid;\s*\}/);
 });

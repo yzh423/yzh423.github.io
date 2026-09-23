@@ -20,10 +20,11 @@ function element(attrs = {}) {
 function boot({ reduced = false, observer = true } = {}) {
   const topbar = element();
   const toggle = element({ "aria-expanded": "false" });
-  const links = ["#projects", "#publications", "#experience", "#contact", "assets/Zhenghao_Yu_Resume.pdf"].map(href => element({ href }));
+  const links = ["#home", "#projects", "#publications", "#about", "#research", "#news", "#experience", "#cv", "#contact", "assets/Zhenghao_Yu_Resume.pdf"].map(href => element({ href }));
   const sectionLinks = links.filter(link => link.attrs.href.startsWith("#"));
   const nav = element();
-  nav.querySelectorAll = selector => selector === "a" ? links : sectionLinks;
+  nav.querySelectorAll = () => sectionLinks;
+  topbar.querySelectorAll = () => links;
   const sections = sectionLinks.map(link => element({ id: link.attrs.href.slice(1) }));
   const reveal = element();
   const doc = element();
@@ -96,12 +97,9 @@ test("Contact becomes current at the document bottom even below the reading line
   page.win.innerHeight = 1080;
   page.doc.documentElement.clientHeight = 1080;
   page.doc.documentElement.scrollHeight = 10000;
-  page.sections[0].top = -8000;
-  page.sections[1].top = -5000;
-  page.sections[2].top = -1000;
-  page.sections[3].top = 350;
-  const experience = page.links[2];
-  const contact = page.links[3];
+  page.sections.forEach((section, index) => { section.top = index < 7 ? -1000 : index === 7 ? 500 : 350; });
+  const experience = page.links.find(link => link.attrs.href === "#experience");
+  const contact = page.links.find(link => link.attrs.href === "#contact");
 
   page.win.scrollY = 8800;
   page.win.listeners.scroll();
