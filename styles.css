@@ -55,7 +55,7 @@ section, #skills { scroll-margin-top: 24px; }
 .brand:hover { text-decoration: none; }
 .sidebar-portrait { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; object-position: center 27%; border: 3px solid rgba(245,242,235,.9); }
 .brand-copy { display: grid; gap: 2px; }
-.brand-copy strong { font-family: var(--serif); font-weight: 400; font-size: 1.9rem; line-height: 1; letter-spacing: -.02em; }
+.brand-copy strong { font-family: var(--serif); font-weight: 400; font-size: 1.9rem; line-height: 1; letter-spacing: 0; }
 .brand-copy small { font-family: var(--serif); font-size: 1.12rem; line-height: 1; color: var(--on-dark-muted); }
 .brand-copy em { color: inherit; font-style: italic; }
 .sidebar-intro { margin: 22px 0 24px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.25); font-size: .73rem; line-height: 1.5; color: var(--on-dark-muted); }
@@ -80,7 +80,7 @@ section, #skills { scroll-margin-top: 24px; }
 .section-label { margin-bottom: 32px; }
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .95fr); gap: 48px; align-items: center; min-height: min(840px, 100vh); padding-top: 72px; padding-bottom: 80px; }
 .hero .eyebrow { margin-bottom: 32px; }
-.hero h1 { font-size: clamp(3.3rem, 6.1vw, 6.6rem); line-height: 1.03; letter-spacing: -.03em; margin-bottom: 40px; }
+.hero h1 { font-size: clamp(3.3rem, 6.1vw, 6.6rem); line-height: 1.03; letter-spacing: .005em; margin-bottom: 40px; }
 .hero h1 em { font-style: italic; color: var(--green); }
 .hero-positioning { font-size: 1.35rem; line-height: 1.45; letter-spacing: -.025em; }
 .hero-intro { max-width: 430px; font-size: .95rem; color: var(--muted); }
