@@ -80,7 +80,7 @@ section, #skills { scroll-margin-top: 24px; }
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, .95fr); gap: 48px; align-items: center; min-height: min(840px, 100vh); padding-top: 72px; padding-bottom: 80px; }
 .hero .eyebrow { margin-bottom: 32px; }
 .hero h1 { font-size: clamp(3.3rem, 6.1vw, 6.6rem); line-height: 1.03; letter-spacing: -.03em; margin-bottom: 40px; }
-.hero h1 span { font-style: italic; color: var(--green); }
+.hero h1 em { font-style: italic; color: var(--green); }
 .hero-positioning { font-size: 1.35rem; line-height: 1.45; letter-spacing: -.025em; }
 .hero-intro { max-width: 430px; font-size: .95rem; color: var(--muted); }
 .hero-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 24px; margin-top: 32px; }
