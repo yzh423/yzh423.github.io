@@ -56,7 +56,8 @@ section, #skills { scroll-margin-top: 24px; }
 .sidebar-portrait { width: 92px; height: 92px; border-radius: 50%; object-fit: cover; object-position: center 27%; border: 3px solid rgba(245,242,235,.9); }
 .brand-copy { display: grid; gap: 2px; }
 .brand-copy strong { font-family: var(--serif); font-weight: 400; font-size: 1.9rem; line-height: 1; letter-spacing: -.02em; }
-.brand-copy small { font-size: .7rem; color: var(--on-dark-muted); letter-spacing: .015em; }
+.brand-copy small { font-family: var(--serif); font-size: 1.12rem; line-height: 1; color: var(--on-dark-muted); }
+.brand-copy em { color: inherit; font-style: italic; }
 .sidebar-intro { margin: 22px 0 24px; padding-top: 18px; border-top: 1px solid rgba(255,255,255,.25); font-size: .73rem; line-height: 1.5; color: var(--on-dark-muted); }
 .primary-navigation { display: grid; gap: 1px; margin-bottom: 28px; }
 .primary-navigation a { position: relative; display: flex; align-items: center; gap: 12px; min-height: 39px; padding: 4px 10px 4px 14px; color: var(--paper); font-size: .82rem; text-decoration: none; transition: background 220ms ease, transform 220ms ease, color 220ms ease; }
@@ -220,7 +221,7 @@ video { width: 100%; background: #000; }
   .brand { display: flex; flex-direction: row; align-items: center; gap: 12px; color: var(--ink); }
   .sidebar-portrait { width: 46px; height: 46px; border-width: 2px; border-color: var(--green); }
   .brand-copy strong { font-size: 1.25rem; }
-  .brand-copy small { color: var(--muted); font-size: .61rem; }
+  .brand-copy small { color: var(--muted); font-size: .85rem; }
   .sidebar-intro { display: none; }
   .topbar :focus-visible { outline-color: var(--green); }
   .js .menu-toggle { display: flex; gap: 20px; align-items: center; min-height: 44px; padding: 6px 12px; color: var(--ink); background: transparent; border: 1px solid var(--line); font-size: .8rem; cursor: pointer; }
@@ -268,7 +269,7 @@ video { width: 100%; background: #000; }
 @media (max-width: 520px) {
   .nav-inner, .section, .contact-inner, .site-footer > div { width: calc(100% - 40px); }
   .brand-copy strong { font-size: 1.16rem; }
-  .brand-copy small { font-size: .55rem; }
+  .brand-copy small { font-size: .8rem; }
   .sidebar-portrait { width: 42px; height: 42px; }
   .hero .eyebrow { font-size: .6rem; letter-spacing: .1em; }
   .hero { display: flex; flex-direction: column; gap: 28px; padding-top: 32px; }
