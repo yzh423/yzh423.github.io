@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <meta name="theme-color" content="#F5F2EB">
-    <meta name="description" content="Zhenghao (Daniel) Yu — robotics and embodied AI research, from real factory data to reproducible robot evaluation. Computer Engineering at the University of Hong Kong.">
+    <meta name="description" content="Zhenghao (Daniel) Yu is a Computer Engineering student at HKU working on robot design, manipulation data, motion evaluation, and autonomous systems.">
     <title>Zhenghao Yu | Robotics, AI, Autonomous Systems</title>
     <link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
     <link rel="stylesheet" href="styles.css?v=heading-spacing-1">
@@ -18,7 +18,7 @@
           <span class="brand-copy"><strong>Zhenghao Yu</strong><small>Daniel · Robotics researcher</small></span>
         </a>
         <button class="menu-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">+</span></button>
-        <p class="sidebar-intro">Computer Engineering at HKU.<br>Building reliable embodied intelligence.</p>
+        <p class="sidebar-intro">Computer Engineering at HKU.<br>Designing robots and testing their limits.</p>
         <nav id="primary-navigation" class="primary-navigation" aria-label="Primary navigation">
           <a href="#home"><span>01</span> Home</a>
           <a href="#projects"><span>02</span> Work</a>
@@ -43,9 +43,9 @@
           <p class="eyebrow">Robotics · Embodied AI · Autonomous systems</p>
           <h1>Zhenghao<br><span>(Daniel) Yu</span></h1>
           <p class="hero-positioning">From real-world data<br>to reliable robot behavior.</p>
-          <p class="hero-intro">Computer Engineering at the University of Hong Kong. I build and evaluate robotic systems, with an emphasis on reproducible evidence and the limits of what works.</p>
+          <p class="hero-intro">I study Computer Engineering at the University of Hong Kong. My work connects robot data, motion, and control—and tests how systems behave beyond ideal conditions.</p>
           <div class="hero-actions"><a class="button primary" href="#projects">Explore selected work <span aria-hidden="true">↗</span></a><a class="text-link" href="assets/Zhenghao_Yu_Resume.pdf" download>Download CV <span aria-hidden="true">↗</span></a></div>
-          <p class="hero-note">Prospective MS / PhD applicant · Hong Kong</p>
+          <p class="hero-note">Seeking MS / PhD research opportunities · Hong Kong</p>
         </div>
         <figure class="hero-image">
           <div class="hero-visual">
@@ -57,7 +57,7 @@
       </section>
       <section id="projects" class="section projects-section">
         <div class="section-label reveal">01 / Selected Work</div>
-        <div class="section-heading reveal"><h2>Data. Motion.<br><em>Evidence.</em></h2><p>Three perspectives on reliable robotics.<br>Open work from Ragtime Lab, 2026.</p></div>
+        <div class="section-heading reveal"><h2>Data. Motion.<br><em>Evidence.</em></h2><p>Three projects from my 2026 Ragtime Lab internship: factory data, motion evaluation, and control.</p></div>
         <article class="project-feature reveal">
           <figure class="project-media">
             <div class="image-frame"><img src="assets/factory-dataset-inspection.jpg" alt="Industrial inspection scene from the factory manipulation dataset" width="960" height="544" loading="lazy"></div>
@@ -66,18 +66,18 @@
           </figure>
           <div class="project-copy">
             <p class="eyebrow">01 / Data infrastructure</p><h3>Factory Manipulation<br>Dataset</h3>
-            <p>A source-preserving record of real manipulation, built to make task analysis, imitation learning, and benchmarking easier to reproduce.</p>
+            <p>A documented collection of real factory and lab manipulation tasks. Original files, synchronized observations, and task notes remain available for analysis and benchmarking.</p>
             <dl class="project-metrics"><div><dt>33</dt><dd>tasks</dd></div><div><dt>2,016</dt><dd>source files</dd></div><div><dt>10.198 GiB</dt><dd>preserved data</dd></div></dl>
-            <details><summary>Inside the dataset</summary><p>The library spans 33 tasks and 23 archives. Its UMI material includes 13 UMI collections, 58 episodes, and 42,223 frames. Source files and provenance are preserved alongside task documentation and LeRobot v3 data.</p></details>
+            <details><summary>Inside the dataset</summary><p>The collection covers 33 tasks in 23 archives, including 13 UMI collections with 58 episodes and 42,223 frames. It keeps the original source files and provenance alongside task notes and LeRobot v3 data.</p></details>
             <div class="resource-links"><a href="https://yzh423.github.io/factory-dataset/" target="_blank" rel="noreferrer">Dataset website <span aria-hidden="true">↗</span></a><a href="https://github.com/yzh423/factory-dataset" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a></div>
           </div>
         </article>
         <article class="project-feature project-featured reveal">
           <div class="project-copy">
             <p class="eyebrow">02 / Motion &amp; evaluation</p><h3>Robot Mount &amp;<br>Trajectory Evaluation</h3>
-            <p>From task registration to executable motion: a reproducible pipeline for strict inverse kinematics, collision-aware branch selection, and dynamics-limited retiming.</p>
-            <p class="evidence-note">Shown here: Fold Box in MuJoCo. This is simulation evidence, with calibrated tool-center-point tracking visualized along the trajectory.</p>
-            <details><summary>Methods &amp; scope</summary><p>The broader evaluation portfolio covers 27 trajectories, 12 task families, and 4 mount layouts. These are portfolio-wide counts, not the scope of this single Fold Box demonstration. The pipeline combines Python, URDF models, SE(3) IK, collision checks, and synchronized MuJoCo evidence.</p></details>
+            <p>A pipeline from recorded tasks to executable motion, with strict inverse kinematics, collision-aware branch selection, and dynamics-limited retiming.</p>
+            <p class="evidence-note">The Fold Box video shows a MuJoCo simulation with calibrated tool-center-point paths overlaid on the executed motion.</p>
+            <details><summary>Methods &amp; scope</summary><p>The broader evaluation covered 27 trajectories from 12 task families and 4 mount layouts; those counts do not describe this single Fold Box run. The pipeline uses Python, URDF models, SE(3) IK, collision checks, and synchronized MuJoCo video.</p></details>
             <div class="resource-links"><a href="https://github.com/yzh423/single-arm-mount-trajectory" target="_blank" rel="noreferrer">Evaluation pipeline <span aria-hidden="true">↗</span></a></div>
           </div>
           <figure class="project-media">
@@ -95,9 +95,9 @@
           </figure>
           <div class="project-copy">
             <p class="eyebrow">03 / Control &amp; robustness</p><h3>Reliable Manipulation:<br>PID vs Fuzzy-PID</h3>
-            <p>A torque-aware simulation study comparing three controllers: manual PID, Mamdani Fuzzy-PID, and optimization PID. The question is where each controller remains reliable—and where all three fail.</p>
+            <p>This torque-aware simulation compares three controllers: manual PID, Mamdani Fuzzy-PID, and optimization PID. It tests where each succeeds—and where all three fail.</p>
             <p class="study-counts">39 deterministic runs<br>360 paired stochastic trials</p>
-            <details><summary>Results &amp; limitations</summary><p>All three controllers share a 0/30 success result under combined stress. The study uses inverse-dynamics feedforward, Bayesian tuning, robustness analysis, and independent physical-model cross-validation in MATLAB, Simulink, and Simscape Multibody. These simulation results do not establish hardware performance.</p></details>
+            <details><summary>Results &amp; limitations</summary><p>Under combined stress, each controller succeeded in 0/30 trials. The study uses inverse-dynamics feedforward, Bayesian tuning, robustness analysis, and independent physical-model cross-validation in MATLAB, Simulink, and Simscape Multibody. Hardware performance has not been established.</p></details>
             <div class="resource-links"><a href="https://github.com/yzh423/PID-MATLAB" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a><a href="https://github.com/yzh423/PID-MATLAB/blob/745eb8f2fe486c2ff3c2a3d0d110d433d8fe34eb/docs/report/technical_report.pdf" target="_blank" rel="noreferrer">Technical report <span aria-hidden="true">↗</span></a></div>
           </div>
         </article>
@@ -105,28 +105,28 @@
       </section>
       <section id="publications" class="section publication-section">
         <div class="section-label reveal">Publications</div>
-        <div class="section-heading reveal"><h2>Selected Publications</h2><p>First-author name shown in bold.</p></div>
+        <div class="section-heading reveal"><h2>Selected Publications</h2><p>Autonomous driving, robot navigation, and in-vehicle interaction.</p></div>
         <article class="publication reveal">
           <img src="assets/ramp-merging.png" alt="Ramp merging simulation scenario" width="1590" height="646" loading="lazy">
-          <div><p class="pub-status">Accepted / In Press / IEEE OJITS / 2026</p><h3>Game-Diffusion-based Multi-Agent Learning of Ramp Merging Coordination for Connected and Automated Vehicles</h3><p class="authors"><strong>Zhenghao Yu</strong>, Chaoyi Chen, Nuo Lei, Bingbing Li, Boli Chen, and Hao Zhang</p><p>Game-Diff MARL combines diffusion-based trajectory refinement, game-theoretic strategy selection, and adaptive gating for robust CAV coordination in HighwayEnv, reducing collision rate from 12.3% to 3.7% against the reported baselines.</p><div class="pub-links"><a href="papers/game-diff-marl-cav-ramp-merging.pdf" target="_blank" rel="noreferrer">Read manuscript</a><a href="#experience">Research context</a></div></div>
+          <div><p class="pub-status">Accepted / In Press / IEEE OJITS / 2026</p><h3>Game-Diffusion-based Multi-Agent Learning of Ramp Merging Coordination for Connected and Automated Vehicles</h3><p class="authors"><strong>Zhenghao Yu</strong>, Chaoyi Chen, Nuo Lei, Bingbing Li, Boli Chen, and Hao Zhang</p><p>Combines diffusion-based trajectory refinement, game-theoretic strategy selection, and adaptive gating for CAV ramp merging in HighwayEnv. Against the reported baselines, collision rate fell from 12.3% to 3.7%.</p><div class="pub-links"><a href="papers/game-diff-marl-cav-ramp-merging.pdf" target="_blank" rel="noreferrer">Read manuscript</a><a href="#experience">Research context</a></div></div>
         </article>
         <article class="publication reveal">
           <img src="assets/robot-planning.png" alt="Robot mapping and planning workflow" width="629" height="812" loading="lazy">
-          <div><p class="pub-status">Published / ICEEGT 2025 / pp. 704-720</p><h3>Design and Implementation of a Wheeled Robot with Obstacle Avoidance and Navigation Capabilities for Drug Delivery</h3><p class="authors"><strong>Zhenghao Yu</strong></p><p>Designs and validates a wheel-leg hybrid drug-delivery robot for constrained hospital environments, integrating multi-sensor perception, EKF localization, optimized A* global planning, DWA local avoidance, and PID balancing control.</p><div class="pub-links"><a href="papers/wheel-leg-drug-delivery-robot.pdf" target="_blank" rel="noreferrer">Read paper</a></div></div>
+          <div><p class="pub-status">Published / ICEEGT 2025 / pp. 704-720</p><h3>Design and Implementation of a Wheeled Robot with Obstacle Avoidance and Navigation Capabilities for Drug Delivery</h3><p class="authors"><strong>Zhenghao Yu</strong></p><p>Presents a wheel-leg drug-delivery robot tested in hospital environments, combining multi-sensor localization, global and local planning, and PID self-balancing.</p><div class="pub-links"><a href="papers/wheel-leg-drug-delivery-robot.pdf" target="_blank" rel="noreferrer">Read paper</a></div></div>
         </article>
         <article class="publication reveal">
           <img src="assets/hmi-results.png" alt="HMI evaluation results chart" width="1370" height="904" loading="lazy">
-          <div><p class="pub-status">Published / JIKE / Vol. 4, No. 2 / April 2026</p><h3>Design and Wizard-of-Oz Evaluation of a Tri-Modal Contactless In-Vehicle HMI for High-Noise and High-Vibration Cabins</h3><p class="authors"><strong>Zhenghao Yu</strong></p><p>A gaze, head-confirmation, and voice-refinement protocol for harsh vehicle cabins, evaluated in a Wizard-of-Oz study with 30 participants that found lower error rate and workload than a pooled single-modality contactless baseline.</p><div class="pub-links"><a href="papers/tri-modal-contactless-hmi.pdf" target="_blank" rel="noreferrer">Read paper</a><a href="https://doi.org/10.62517/jike.202604230" target="_blank" rel="noreferrer">DOI</a></div></div>
+          <div><p class="pub-status">Published / JIKE / Vol. 4, No. 2 / April 2026</p><h3>Design and Wizard-of-Oz Evaluation of a Tri-Modal Contactless In-Vehicle HMI for High-Noise and High-Vibration Cabins</h3><p class="authors"><strong>Zhenghao Yu</strong></p><p>Evaluates a gaze, head-confirmation, and voice interface for noisy, vibrating cabins. In a 30-participant Wizard-of-Oz study, it reduced errors and workload compared with a pooled single-modality contactless baseline.</p><div class="pub-links"><a href="papers/tri-modal-contactless-hmi.pdf" target="_blank" rel="noreferrer">Read paper</a><a href="https://doi.org/10.62517/jike.202604230" target="_blank" rel="noreferrer">DOI</a></div></div>
         </article>
       </section>
       <section id="about" class="section about-section">
         <div class="section-label reveal">About Me</div>
         <div class="about-layout"><div class="about-essay reveal">
           <p class="eyebrow">Prospective MS / PhD applicant in robotics and AI</p>
-          <h2>Building reliable embodied intelligence.</h2>
-          <p>I am Zhenghao (Daniel) Yu, a Computer Engineering undergraduate at <strong>The University of Hong Kong</strong>. My work spans robot system design, learning-based control, autonomous driving, embedded systems, and human-computer interaction. I am interested in systems that remain measurable and useful outside a clean lab setting.</p>
-          <p>Most recently, at Ragtime Lab, I worked across the robotics evaluation stack: curating multimodal factory data, comparing robot designs, optimizing dual-arm mounting and trajectory execution, and building reproducible control studies. This systems perspective complements my earlier research in safety-critical driving, wheel-leg navigation, and contactless interaction for harsh vehicle cabins.</p>
-          <p class="art-line">I like research that ends in auditable evidence: documented datasets, reproducible experiments, explicit acceptance criteria, and results that state their limits as clearly as their gains.</p>
+          <h2>From robot design to measurable results.</h2>
+          <p>I’m Zhenghao (Daniel) Yu, a Computer Engineering undergraduate at <strong>The University of Hong Kong</strong>. My work spans robot design and control, autonomous driving, embedded systems, and human-computer interaction. Across these areas, I focus on how systems behave beyond ideal test conditions.</p>
+          <p>At Ragtime Lab, I curated multimodal factory data, compared robot designs, evaluated mounting and trajectories, and studied manipulator control. Earlier projects took me from adversarial tests for highway merging to wheel-leg hospital navigation and contactless interfaces for noisy vehicle cabins.</p>
+          <p class="art-line">I want my work to hold up when others look closely: data they can inspect, experiments they can repeat, and results that show where a system works—and where it doesn’t.</p>
         </div>
         <div class="about-images reveal">
           <figure class="portrait"><img src="assets/portrait.jpg" alt="Zhenghao (Daniel) Yu" width="720" height="720" loading="lazy"><figcaption>Zhenghao (Daniel) Yu</figcaption></figure>
@@ -137,19 +137,19 @@
         <div class="section-label reveal">Research</div>
         <h2 class="reveal">Research Themes</h2>
         <div class="research-grid">
-          <article class="research-card reveal"><span>01</span><h3>Robot Design and Evaluation</h3><p>Task-driven morphology comparison, installation optimization, SE(3) inverse kinematics, collision-aware validation, and reproducible simulation evidence.</p></article>
-          <article class="research-card reveal"><span>02</span><h3>Trustworthy Autonomous Driving</h3><p>Safety-critical testing, CAV ramp merging, SOTIF-aligned evaluation, adversarial scenario generation, and failure discovery for planning systems.</p></article>
-          <article class="research-card reveal"><span>03</span><h3>Robotic Systems and Navigation</h3><p>Wheel-leg platforms, multimodal sensing, EKF localization, A*/JPS/DWA planning, torque-aware control, and robust trajectory execution.</p></article>
-          <article class="research-card reveal"><span>04</span><h3>Human-Centered Embodied Interaction</h3><p>Contactless multimodal HCI, gaze-head-voice interaction, Wizard-of-Oz evaluation, usability metrics, and special-purpose vehicle interfaces.</p></article>
+          <article class="research-card reveal"><span>01</span><h3>Robot Design and Evaluation</h3><p>Comparing robot designs and mount layouts against task requirements, then checking motion feasibility, collisions, and execution in simulation.</p></article>
+          <article class="research-card reveal"><span>02</span><h3>Trustworthy Autonomous Driving</h3><p>Finding failure cases in highway-merging planners through adversarial scenarios, multi-agent learning, and SOTIF-aligned testing.</p></article>
+          <article class="research-card reveal"><span>03</span><h3>Robotic Systems and Navigation</h3><p>Connecting sensor fusion, global and local planning, and balance control on wheel-leg robotic platforms.</p></article>
+          <article class="research-card reveal"><span>04</span><h3>Human-Centered Embodied Interaction</h3><p>Designing and evaluating gaze, head, and voice interaction for vehicle cabins where noise and vibration limit conventional interfaces.</p></article>
         </div>
       </section>
       <section id="news" class="section news-section">
         <div class="section-label reveal">News</div>
         <h2 class="reveal">Recent Updates</h2>
         <ul class="news-list reveal">
-          <li><time datetime="2026-09">Sep 2026</time><span>Released a public factory manipulation dataset and reproducible robot trajectory evaluation projects from my Ragtime Lab internship.</span></li>
-          <li><time datetime="2026-07">Jul 2026</time><span>Game-Diffusion-based Multi-Agent Learning paper accepted / in press at IEEE Open Journal of Intelligent Transportation Systems.</span></li>
-          <li><time datetime="2026-04">Apr 2026</time><span>Tri-modal contactless in-vehicle HMI paper published in the Journal of Intelligence and Knowledge Engineering.</span></li>
+          <li><time datetime="2026-09">Sep 2026</time><span>Released a public factory-manipulation dataset and a robot mount and trajectory evaluation pipeline from my Ragtime Lab internship.</span></li>
+          <li><time datetime="2026-07">Jul 2026</time><span>My game-diffusion paper on CAV ramp merging was accepted by the IEEE Open Journal of Intelligent Transportation Systems and is in press.</span></li>
+          <li><time datetime="2026-04">Apr 2026</time><span>Published a study of tri-modal contactless in-vehicle interaction in the Journal of Intelligence and Knowledge Engineering.</span></li>
         </ul>
         <details class="news-archive"><summary>Earlier updates</summary><ul class="news-list">
           <li><time datetime="2025-07">Jul 2025</time><span>Wheel-leg drug-delivery robot paper published at ICEEGT 2025, pp. 704-720.</span></li>
@@ -159,11 +159,11 @@
         <div class="section-label reveal">Experience</div>
         <h2 class="reveal">Research and Industry Experience</h2>
         <div class="timeline">
-          <article class="experience-featured reveal"><span class="date">Jul 2026 - Sep 2026</span><h3>Robotics Research Intern, Ragtime Lab</h3><p class="meta">Zhenjiang Pioneer Cropscience Co., Ltd. / Zhenjiang, China</p><p>Curated a 33-task multimodal manipulation dataset and developed task-driven robot design, installation, trajectory, and control evaluation workflows spanning 13 robot arms. Built reproducible evidence pipelines with provenance hashes, automated checks, aggregate reports, and synchronized MuJoCo video.</p><a class="inline-link" href="#projects">See internship projects →</a></article>
-          <article class="reveal"><span class="date">Jun 2025 - Present</span><h3>Research Assistant, Adversarial Testing for Autonomous Driving</h3><p class="meta">Supervised by Prof. Hao Zhang, CMU and UTA / Remote</p><p>Built a MARL and diffusion-based adversarial testing framework for highway merging, generated 2,000+ valid safety-critical scenarios, achieved 92% effectiveness in triggering unexpected planning behavior, and improved failure detection by 85% over random testing.</p></article>
-          <article class="reveal"><span class="date">Jan 2026 - Present</span><h3>Independent Research, Human-Computer Interaction</h3><p class="meta">Supervised by Prof. Xiang Chen, UCLA / Remote</p><p>Designed a tri-modal gaze, head-confirmation, and voice-refinement interface for high-noise, high-vibration vehicle cabins, including a three-layer fusion architecture and a Wizard-of-Oz study with 30+ participants.</p></article>
-          <article class="reveal"><span class="date">Apr 2025 - Jul 2025</span><h3>Independent Research, Robust Autonomous Navigation</h3><p class="meta">Supervised by Prof. Naira Hovakimyan, UIUC / Remote</p><p>Designed a wheel-leg robotic delivery system with no more than 5 cm localization error, no more than 10 cm path-tracking error, 0.3 s dynamic-obstacle response, and 98.2% obstacle-avoidance success in hospital experiments.</p></article>
-          <article class="reveal"><span class="date">Jun 2025 - Aug 2025</span><h3>Electrical Engineering Intern, SevnceRobotics</h3><p class="meta">Product R&amp;D Center / Shanghai, China</p><p>Designed a dual-layer CAN architecture and 24-series lithium battery BMS for humanoid robots, completed a four-layer sensor-acquisition PCB, and contributed to HR160 electrical architecture reviews.</p></article>
+          <article class="experience-featured reveal"><span class="date">Jul 2026 - Sep 2026</span><h3>Robotics Research Intern, Ragtime Lab</h3><p class="meta">Zhenjiang Pioneer Cropscience Co., Ltd. / Zhenjiang, China</p><p>Built a 33-task multimodal manipulation dataset and evaluation workflows for robot design, mounting, trajectories, and control across 13 robot arms. Added provenance hashes, automated checks, aggregate reports, and synchronized MuJoCo videos so results can be traced back to their sources.</p><a class="inline-link" href="#projects">See internship projects →</a></article>
+          <article class="reveal"><span class="date">Jun 2025 - Present</span><h3>Research Assistant, Adversarial Testing for Autonomous Driving</h3><p class="meta">Supervised by Prof. Hao Zhang, CMU and UTA / Remote</p><p>Developed a MARL and diffusion-based framework for testing highway-merging planners. In HighwayEnv, it generated 2,000+ valid safety-critical scenarios, achieved 92% effectiveness in triggering unexpected planning behavior, and improved failure detection by 85% over random testing.</p></article>
+          <article class="reveal"><span class="date">Jan 2026 - Present</span><h3>Independent Research, Human-Computer Interaction</h3><p class="meta">Supervised by Prof. Xiang Chen, UCLA / Remote</p><p>Designed a gaze, head-confirmation, and voice-refinement interface for noisy, vibrating vehicle cabins. Built a three-layer fusion architecture and evaluated the prototype with 30+ participants in a Wizard-of-Oz study.</p></article>
+          <article class="reveal"><span class="date">Apr 2025 - Jul 2025</span><h3>Independent Research, Robust Autonomous Navigation</h3><p class="meta">Supervised by Prof. Naira Hovakimyan, UIUC / Remote</p><p>Developed a wheel-leg drug-delivery robot with multi-sensor localization, adaptive path planning, and PID balance control. Hospital experiments measured no more than 5 cm localization error, no more than 10 cm path-tracking error, 0.3 s response to dynamic obstacles, and 98.2% obstacle-avoidance success.</p></article>
+          <article class="reveal"><span class="date">Jun 2025 - Aug 2025</span><h3>Electrical Engineering Intern, SevnceRobotics</h3><p class="meta">Product R&amp;D Center / Shanghai, China</p><p>Designed a dual-layer CAN architecture and 24-series lithium battery BMS for humanoid robots. Built a four-layer sensor-acquisition PCB and contributed to HR160 electrical architecture reviews.</p></article>
         </div>
       </section>
       <section id="cv" class="section closing-section">
@@ -182,7 +182,7 @@
         <div class="contact-inner">
           <p class="section-label">Keep in touch</p>
           <h2>Let’s build something<br><em>worth testing.</em></h2>
-          <p class="availability">I am exploring MS / PhD opportunities in robotics and AI, and welcome conversations about research and collaboration.</p>
+          <p class="availability">I’m interested in MS and PhD research opportunities in robotics and AI. If our work overlaps, I’d be glad to connect.</p>
           <a class="contact-email" href="mailto:Zhenghao@connect.hku.hk">Zhenghao@connect.hku.hk <span aria-hidden="true">↗</span></a>
           <div class="contact-bottom"><p>Based in Hong Kong<br>Computer Engineering · HKU</p><div class="resource-links"><a href="https://github.com/yzh423" target="_blank" rel="noreferrer">GitHub <span aria-hidden="true">↗</span></a><a href="assets/Zhenghao_Yu_Resume.pdf" download>Curriculum Vitae <span aria-hidden="true">↗</span></a><a href="#home">Back to top ↑</a></div></div>
         </div>
