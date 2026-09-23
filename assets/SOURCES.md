@@ -1,5 +1,10 @@
 # Asset sources
 
+## Hero photography
+
+- `hku-pokfulam-view.jpg` is a 1280 px web version of ["The University of Hong Kong in Pok Fu Lam 2023 11 part11.jpg"](https://commons.wikimedia.org/wiki/File:The_University_of_Hong_Kong_in_Pok_Fu_Lam_2023_11_part11.jpg) by Qwer132477, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The website displays a responsive crop.
+- `hong-kong-harbour.jpg` is a 1280 px web version of ["2024-12-27 Avenue of Stars and skyline of Wan Chai, Hong Kong.jpg"](https://commons.wikimedia.org/wiki/File:2024-12-27_Avenue_of_Stars_and_skyline_of_Wan_Chai,_Hong_Kong.jpg) by Alexkom000, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The website displays a responsive crop.
+
 ## Fonts
 
 - `fonts/dm-sans-variable.ttf` is DM Sans variable regular from the [Google Fonts repository](https://github.com/google/fonts), [`ofl/dmsans/DMSans[opsz,wght].ttf`](https://github.com/google/fonts/blob/main/ofl/dmsans/DMSans%5Bopsz%2Cwght%5D.ttf). Its license is included as `fonts/dm-sans-OFL.txt`, sourced from [`ofl/dmsans/OFL.txt`](https://github.com/google/fonts/blob/main/ofl/dmsans/OFL.txt).

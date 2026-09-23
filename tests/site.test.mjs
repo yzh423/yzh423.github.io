@@ -49,7 +49,7 @@ test("mobile navigation is keyboard accessible and content works without JavaScr
   assert.match(script, /prefers-reduced-motion/);
 });
 
-test("profile sidebar and portrait hero preserve every section anchor", () => {
+test("profile sidebar and place-based hero preserve every section anchor", () => {
   for (const id of ["home", "projects", "publications", "about", "research", "news", "experience", "cv", "skills", "contact"]) {
     assert.equal([...html.matchAll(new RegExp(`id="${id}"`, "g"))].length, 1, id);
   }
@@ -57,7 +57,10 @@ test("profile sidebar and portrait hero preserve every section anchor", () => {
   assert.deepEqual(order, [...order].sort((a, b) => a - b));
   assert.match(html, /<aside class="topbar"/);
   assert.match(html, /class="sidebar-portrait"[^>]+src="assets\/portrait\.jpg"/);
-  assert.match(html, /class="hero-photo"><img src="assets\/portrait\.jpg"/);
+  const hero = html.slice(html.indexOf('<section id="home"'), html.indexOf('<section id="projects"'));
+  assert.match(hero, /assets\/hku-pokfulam-view\.jpg/);
+  assert.match(hero, /assets\/hong-kong-harbour\.jpg/);
+  assert.doesNotMatch(hero, /assets\/portrait\.jpg|factory-dataset-packaging\.jpg/);
   assert.match(html, /href="#home"[^>]*><span>01<\/span> Home/);
   assert.match(css, /\.topbar\s*\{[^}]*position:\s*fixed;/s);
   assert.match(css, /\.topbar\s*\{[^}]*overflow-y:\s*auto;/s);
