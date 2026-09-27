@@ -90,14 +90,14 @@
           <div class="project-copy">
             <p class="eyebrow">03 / Motion &amp; evaluation</p><h3>Robot Mount &amp;<br>Trajectory Evaluation</h3>
             <p>A pipeline for testing how recorded dual-hand tasks map to PiperX installations, using strict inverse kinematics, collision checks, and the original controller-event timing.</p>
-            <p class="evidence-note">This full 17.64-second Fold Box simulation follows 94.83% of paired raw-tool targets within 1 mm and 0.5°. Failed frames show a safe hold; the simulated state, swept-edge, and topology checks report zero violations.</p>
-            <details><summary>Methods &amp; scope</summary><p>The broader evaluation covered 27 trajectories from 12 task families and 4 mount layouts. This video shows one complete baseline recording, with no retiming or object model. It is a MuJoCo kinematic playback of the saved joint states, not forward-dynamics or hardware execution. The published joint path exceeds the PiperX speed and acceleration limits and is not a hardware-ready command.</p></details>
+            <p class="evidence-note">This full 17.64-second Fold Box simulation follows 97.88% of paired raw-tool targets within 1 mm and 0.5° after a mount adjustment, up from 94.83%. Failed frames show a safe hold; the simulated state, swept-edge, and topology checks report zero violations.</p>
+            <details><summary>Methods &amp; scope</summary><p>The broader evaluation covered 27 trajectories from 12 task families and 4 mount layouts. This video shows one complete optimized recording, with no retiming or object model. Nine target frames are geometrically incompatible with the 15 mm clearance rule even at the stated tolerances, setting a 98.81% upper bound for this raw recording. It is a MuJoCo kinematic playback of the saved joint states, not forward-dynamics or hardware execution. The published joint path exceeds the PiperX speed and acceleration limits and is not a hardware-ready command.</p></details>
             <div class="resource-links"><a href="https://github.com/yzh423/single-arm-mount-trajectory" target="_blank" rel="noreferrer">Evaluation pipeline <span aria-hidden="true">↗</span></a></div>
           </div>
           <figure class="project-media">
-            <video controls playsinline preload="none" width="1280" height="720" poster="assets/fold-box-piperx-complete-trajectories-poster.png" aria-label="Full Fold Box PiperX dual-arm MuJoCo simulation comparing original and actual trajectories" aria-describedby="fold-box-caption">
-              <source src="assets/fold-box-piperx-complete-trajectories-h264.mp4" type="video/mp4">
-              <a href="assets/fold-box-piperx-complete-trajectories-h264.mp4">Download the Fold Box simulation video</a>.
+            <video controls playsinline preload="none" width="1280" height="720" poster="assets/fold-box-piperx-optimized-mount-complete-trajectories-poster.png" aria-label="Full Fold Box PiperX dual-arm MuJoCo simulation comparing original and actual trajectories" aria-describedby="fold-box-caption">
+              <source src="assets/fold-box-piperx-optimized-mount-complete-trajectories-h264.mp4" type="video/mp4">
+              <a href="assets/fold-box-piperx-optimized-mount-complete-trajectories-h264.mp4">Download the Fold Box simulation video</a>.
             </video>
             <figcaption id="fold-box-caption">Fold Box · full controller-event MuJoCo kinematic replay. The scene keeps complete original target and actual TCP paths faintly visible in 3D, with bright local trails for the current motion. The complete XY path overview shows both full paths and highlights actual motion elapsed so far. Live error and status indicate following or safe hold.</figcaption>
           </figure>
