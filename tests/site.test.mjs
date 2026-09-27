@@ -28,6 +28,7 @@ test("publication metadata matches the current CV and manuscripts", () => {
 test("current CV and all publication PDFs are available at stable paths", async () => {
   const expected = [
     ["assets/Zhenghao_Yu_Resume.pdf", 400_000],
+    ["assets/Zhenghao_Yu_CV.pdf", 400_000],
     ["papers/game-diff-marl-cav-ramp-merging.pdf", 7_000_000],
     ["papers/wheel-leg-drug-delivery-robot.pdf", 700_000],
     ["papers/tri-modal-contactless-hmi.pdf", 800_000]
@@ -37,6 +38,11 @@ test("current CV and all publication PDFs are available at stable paths", async 
     await access(url);
     assert.ok((await stat(url)).size > minimumBytes, `${path} should contain the current document`);
   }
+  assert.deepEqual(
+    await readFile(new URL("../assets/Zhenghao_Yu_Resume.pdf", import.meta.url)),
+    await readFile(new URL("../assets/Zhenghao_Yu_CV.pdf", import.meta.url)),
+    "the existing download address and the new CV file should contain the same document"
+  );
 });
 
 test("mobile navigation is keyboard accessible and content works without JavaScript", () => {
