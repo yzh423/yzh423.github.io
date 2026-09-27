@@ -5,13 +5,14 @@ import { access, readFile, stat } from "node:fs/promises";
 const pageUrl = new URL("../projects/reliable-robotic-manipulation/index.html", import.meta.url);
 const page = await readFile(pageUrl, "utf8");
 
-test("R3 page distinguishes the latest diagnostic from prior tuning results", () => {
+test("research page distinguishes the latest diagnostic from prior tuning results", () => {
   assert.match(page, /Simulation, Adaptive Control, and Optimization Framework for Reliable Robotic Manipulation/);
   for (const phrase of ["60/60", "20/20", "6/20", "five cases", "four fixed controllers", "no optimization", "no confirmation", "simulation"]) {
     assert.match(page.toLowerCase(), new RegExp(phrase.toLowerCase().replace("/", "\\/")));
   }
   assert.doesNotMatch(page, /80\.2%|33\.3%|126 paired|360 paired stochastic trials/);
-  assert.match(page, /earlier V8R/);
+  assert.match(page, /earlier study/);
+  assert.doesNotMatch(page.replace(/<[^>]+>/g, " "), /V8RS|V8R|R3/);
   assert.match(page, /manuscript in preparation/i);
 });
 

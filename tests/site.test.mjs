@@ -79,7 +79,7 @@ test("local editorial fonts and every referenced asset exist", async () => {
 
 test("project evidence uses current scoped results and native disclosure", () => {
   assert.match(html, /https:\/\/yzh423\.github\.io\/factory-dataset\//);
-  for (const phrase of ["33 tasks", "2,016", "10.198 GiB", "13 UMI collections", "58 episodes", "42,223 frames", "23 archives", "R3 runs completed", "plant-only pairs stable", "whole-loop pairs sensitive"]) assert.ok(html.includes(phrase), phrase);
+  for (const phrase of ["33 tasks", "2,016", "10.198 GiB", "13 UMI collections", "58 episodes", "42,223 frames", "23 archives", "simulation runs completed", "plant-only pairs stable", "whole-loop pairs sensitive"]) assert.ok(html.includes(phrase), phrase);
   assert.doesNotMatch(html, /33\.3(?:→|&rarr;)80\.2%|126<\/dt>|360 paired stochastic trials|39 deterministic runs/);
   assert.match(html, /assets\/manipulation-research\/r3-technical-report\.pdf/);
   const projects = html.slice(html.indexOf('<section id="projects"'), html.indexOf('<section id="publications"'));
