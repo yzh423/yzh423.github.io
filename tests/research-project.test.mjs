@@ -16,6 +16,25 @@ test("research page distinguishes the latest diagnostic from prior tuning result
   assert.match(page, /manuscript in preparation/i);
 });
 
+test("paired outcome claims match the recorded original-grid comparisons", async () => {
+  const home = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  const jointRmsPairs = [
+    [0.0420408610370447, 0.00333318281629777, 92.1],
+    [0.0124099837144, 0.00204951571392129, 83.5],
+    [0.0458080208654838, 0.00164875517970888, 96.4]
+  ];
+  for (const [original, research, reduction] of jointRmsPairs) {
+    assert.equal(Number(((1 - research / original) * 100).toFixed(1)), reduction);
+    assert.match(page, new RegExp(`${reduction}%`));
+  }
+  assert.equal(Number(((1 - 0.760 / 3.565) * 100).toFixed(1)), 78.7);
+  assert.equal(Number(((1 - 3.09393242249039 / 4.50231571732368) * 100).toFixed(1)), 31.3);
+  for (const phrase of ["83.5–96.4%", "78.7%", "31.3%", "selected simulation cases", "higher squared-torque integral"]) {
+    assert.ok(page.includes(phrase), phrase);
+  }
+  assert.match(home, /83\.5–96\.4% across three prespecified reliability cases/);
+});
+
 test("every detail-page anchor and local media path resolves", async () => {
   const ids = new Set([...page.matchAll(/\bid="([^"]+)"/g)].map(match => match[1]));
   for (const [, id] of page.matchAll(/href="#([^"]+)"/g)) assert.ok(ids.has(id), `missing anchor #${id}`);

@@ -57,6 +57,14 @@
         <div><strong>20/20</strong><span>plant-only refinements stable</span></div>
         <div><strong>6/20</strong><span>whole-loop refinements sensitive</span></div>
       </div>
+      <section id="outcomes" class="section detail-conclusions" aria-labelledby="outcomes-heading">
+        <div><p class="section-label">Paired outcomes</p><h2 id="outcomes-heading">What improved<br><em>against the baseline.</em></h2></div>
+        <div class="comparison-copy">
+          <p><strong>83.5–96.4% lower joint RMS tracking error.</strong> Against the initial manually tuned PID on the same 1 ms simulation grid, the research Fuzzy-PID reduced error by 92.1% in the nominal case, 83.5% with noise and disturbance, and 96.4% in the long-travel case.</p>
+          <p><strong>78.7% shorter stable-arrival time; 31.3% less positive mechanical work.</strong> In one matched endpoint-only task, the research Fuzzy-PID reached the target in 0.760 s versus 3.565 s and recorded 3.094 J versus 4.502 J for the manual PID baseline.</p>
+          <p class="comparison-limit">These are comparisons on selected simulation cases, not an overall success-rate estimate. The endpoint case also had a higher squared-torque integral, so lower positive work does not establish lower electrical energy or an improvement on every actuation metric.</p>
+        </div>
+      </section>
       <section id="framework" class="section detail-framework">
         <div class="detail-section-heading"><p class="section-label">The framework</p><h2>Model the robot.<br><em>Test the assumptions.</em></h2></div>
         <div class="method-grid">

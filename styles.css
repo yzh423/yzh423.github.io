@@ -121,6 +121,7 @@ a:hover span[aria-hidden="true"] { transform: translate(2px, -2px); }
 .research-feature { border-top: 1px solid var(--green); }
 .research-feature .project-copy h3 { font-size: clamp(2.15rem, 2.8vw, 2.9rem); text-wrap: balance; }
 .research-feature .project-metrics { gap: 16px 24px; }
+.research-feature .project-outcome { color: var(--green); font-weight: 600; margin-top: 18px; }
 .project-copy > p:not(.eyebrow) { font-size: .92rem; }
 .project-media img { width: 100%; }
 .project-media .gallery-inset { width: 48%; margin-top: 24px; margin-left: auto; }
