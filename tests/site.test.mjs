@@ -6,9 +6,10 @@ const html = await readFile(new URL("../index.html", import.meta.url), "utf8");
 const css = await readFile(new URL("../styles.css", import.meta.url), "utf8");
 const script = await readFile(new URL("../script.js", import.meta.url), "utf8");
 
-test("publishes the three internship projects and repository links", () => {
+test("publishes the independent research project and repository links", () => {
   assert.match(html, /href="#projects"/);
   assert.match(html, /<section id="projects"/);
+  assert.match(html, /projects\/reliable-robotic-manipulation\//);
   for (const url of [
     "https://github.com/yzh423/factory-dataset",
     "https://github.com/yzh423/single-arm-mount-trajectory",
@@ -78,9 +79,9 @@ test("local editorial fonts and every referenced asset exist", async () => {
 
 test("project evidence uses current scoped results and native disclosure", () => {
   assert.match(html, /https:\/\/yzh423\.github\.io\/factory-dataset\//);
-  for (const phrase of ["33 tasks", "2,016", "10.198 GiB", "13 UMI collections", "58 episodes", "42,223 frames", "23 archives", "three controllers", "39 deterministic runs", "360 paired stochastic trials", "0/30"]) assert.ok(html.includes(phrase), phrase);
-  assert.doesNotMatch(html, /33\.3(?:→|&rarr;)80\.2%|126<\/dt>/);
-  assert.match(html, /https:\/\/github\.com\/yzh423\/PID-MATLAB\/blob\/745eb8f2fe486c2ff3c2a3d0d110d433d8fe34eb\/docs\/report\/technical_report\.pdf/);
+  for (const phrase of ["33 tasks", "2,016", "10.198 GiB", "13 UMI collections", "58 episodes", "42,223 frames", "23 archives", "R3 runs completed", "plant-only pairs stable", "whole-loop pairs sensitive"]) assert.ok(html.includes(phrase), phrase);
+  assert.doesNotMatch(html, /33\.3(?:→|&rarr;)80\.2%|126<\/dt>|360 paired stochastic trials|39 deterministic runs/);
+  assert.match(html, /assets\/manipulation-research\/r3-technical-report\.pdf/);
   const projects = html.slice(html.indexOf('<section id="projects"'), html.indexOf('<section id="publications"'));
   assert.equal([...projects.matchAll(/<details>/g)].length, 3);
   assert.match(html, /<video[^>]*controls[^>]*preload="none"[^>]*width="1280"[^>]*height="720"/);

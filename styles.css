@@ -118,6 +118,9 @@ a:hover span[aria-hidden="true"] { transform: translate(2px, -2px); }
 .project-feature { display: grid; grid-template-columns: 1.1fr 1fr; align-items: center; gap: 64px; padding: 48px 0 64px; }
 .project-copy, .project-media { min-width: 0; }
 .project-copy h3 { font-family: var(--serif); font-size: clamp(2rem, 3vw, 3rem); line-height: 1.08; margin-bottom: 24px; }
+.research-feature { border-top: 1px solid var(--green); }
+.research-feature .project-copy h3 { font-size: clamp(2.15rem, 2.8vw, 2.9rem); text-wrap: balance; }
+.research-feature .project-metrics { gap: 16px 24px; }
 .project-copy > p:not(.eyebrow) { font-size: .92rem; }
 .project-media img { width: 100%; }
 .project-media .gallery-inset { width: 48%; margin-top: 24px; margin-left: auto; }
