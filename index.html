@@ -91,15 +91,15 @@
             <p class="eyebrow">03 / Motion &amp; evaluation</p><h3>Robot Mount &amp;<br>Trajectory Evaluation</h3>
             <p>A pipeline for testing how recorded dual-hand tasks map to PiperX installations, using strict inverse kinematics, collision checks, and the original controller-event timing.</p>
             <p class="evidence-note">This full 17.64-second Fold Box simulation follows 94.83% of paired raw-tool targets within 1 mm and 0.5°. Failed frames show a safe hold; the simulated state, swept-edge, and topology checks report zero violations.</p>
-            <details><summary>Methods &amp; scope</summary><p>The broader evaluation covered 27 trajectories from 12 task families and 4 mount layouts. This video shows one complete baseline recording, with no retiming or object model. It demonstrates geometric following in MuJoCo; the published joint path exceeds the PiperX speed and acceleration limits and is not a hardware-ready command.</p></details>
+            <details><summary>Methods &amp; scope</summary><p>The broader evaluation covered 27 trajectories from 12 task families and 4 mount layouts. This video shows one complete baseline recording, with no retiming or object model. It is a MuJoCo kinematic playback of the saved joint states, not forward-dynamics or hardware execution. The published joint path exceeds the PiperX speed and acceleration limits and is not a hardware-ready command.</p></details>
             <div class="resource-links"><a href="https://github.com/yzh423/single-arm-mount-trajectory" target="_blank" rel="noreferrer">Evaluation pipeline <span aria-hidden="true">↗</span></a></div>
           </div>
           <figure class="project-media">
-            <video controls playsinline preload="none" width="1280" height="720" poster="assets/fold-box-piperx-fixed-time-poster.png" aria-label="Full Fold Box PiperX dual-arm fixed-time MuJoCo simulation" aria-describedby="fold-box-caption">
-              <source src="assets/fold-box-piperx-fixed-time-h264.mp4" type="video/mp4">
-              <a href="assets/fold-box-piperx-fixed-time-h264.mp4">Download the Fold Box simulation video</a>.
+            <video controls playsinline preload="none" width="1280" height="720" poster="assets/fold-box-piperx-target-vs-actual-poster.png" aria-label="Full Fold Box PiperX dual-arm MuJoCo simulation comparing original and actual trajectories" aria-describedby="fold-box-caption">
+              <source src="assets/fold-box-piperx-target-vs-actual-h264.mp4" type="video/mp4">
+              <a href="assets/fold-box-piperx-target-vs-actual-h264.mp4">Download the Fold Box simulation video</a>.
             </video>
-            <figcaption id="fold-box-caption">Fold Box · full controller-event MuJoCo simulation evidence. Blue and magenta trails show recent left and right tool targets; the status indicator marks following or safe hold.</figcaption>
+            <figcaption id="fold-box-caption">Fold Box · full controller-event MuJoCo simulation evidence. Each hand has dashed original target paths and solid actual TCP paths, plus live position error. The status indicator marks following or safe hold.</figcaption>
           </figure>
         </article>
         <a class="all-projects-link text-link" href="https://github.com/yzh423?tab=repositories" target="_blank" rel="noreferrer">All GitHub repositories <span aria-hidden="true">↗</span></a>
