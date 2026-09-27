@@ -18,6 +18,10 @@ test("research page distinguishes the latest diagnostic from prior tuning result
 
 test("paired outcome claims match the recorded original-grid comparisons", async () => {
   const home = await readFile(new URL("../index.html", import.meta.url), "utf8");
+  assert.match(home, /17\.9% \(20\/112\).*50\.9% \(57\/112\)/);
+  assert.match(page, /17\.9% to 50\.9% reliable task success/);
+  assert.match(page, /20\/112.*57\/112/);
+  assert.match(page, /separate validation protocol/);
   const jointRmsPairs = [
     [0.0420408610370447, 0.00333318281629777, 92.1],
     [0.0124099837144, 0.00204951571392129, 83.5],
@@ -34,7 +38,7 @@ test("paired outcome claims match the recorded original-grid comparisons", async
   for (const phrase of ["90.7% mean paired reduction", "78.7%", "31.3%", "three selected simulation cases", "higher squared-torque integral"]) {
     assert.ok(page.includes(phrase), phrase);
   }
-  assert.match(home, /90\.7% mean paired reduction in joint RMS tracking error across three prespecified reliability cases/);
+  assert.match(home, /mean paired joint RMS tracking error fell 90\.7%.*three-case numerical study|three-case numerical study.*90\.7%/);
 });
 
 test("every detail-page anchor and local media path resolves", async () => {
@@ -56,4 +60,5 @@ test("R3 evidence uses playable H.264 video and a substantive report", async () 
     assert.ok(video.includes(Buffer.from("avc1")), `${source} must be H.264`);
   }
   assert.ok((await stat(new URL("../assets/manipulation-research/r3-technical-report.pdf", import.meta.url))).size > 500_000);
+  assert.ok((await stat(new URL("../assets/manipulation-research/v8r-technical-report.pdf", import.meta.url))).size > 1_000_000);
 });
