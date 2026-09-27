@@ -90,8 +90,11 @@ test("project evidence uses current scoped results and native disclosure", () =>
   assert.match(html, /assets\/manipulation-research\/r3-technical-report\.pdf/);
   const projects = html.slice(html.indexOf('<section id="projects"'), html.indexOf('<section id="publications"'));
   assert.equal([...projects.matchAll(/<details>/g)].length, 3);
-  assert.match(html, /<video[^>]*controls[^>]*preload="none"[^>]*width="1280"[^>]*height="720"/);
-  assert.match(html, /poster="assets\/fold-box-mujoco-qa-middle.png"/);
+  assert.match(html, /<video[^>]*controls[^>]*playsinline[^>]*preload="none"[^>]*width="1280"[^>]*height="720"/);
+  assert.match(html, /poster="assets\/fold-box-piperx-fixed-time-poster.png"/);
+  assert.match(html, /94\.83% of paired raw-tool targets/);
+  assert.match(html, /no retiming or object model/);
+  assert.match(html, /not a hardware-ready command/);
   assert.match(html, /simulation evidence/i);
 });
 
@@ -108,6 +111,7 @@ test("media reserves space and publications show full figures", () => {
 test("native video uses a browser-compatible H.264 source", async () => {
   const source = html.match(/<source src="([^"]+)" type="video\/mp4">/)?.[1];
   assert.ok(source, "native MP4 source");
+  assert.equal(source, "assets/fold-box-piperx-fixed-time-h264.mp4");
   const video = await readFile(new URL(`../${source}`, import.meta.url));
   assert.ok(video.includes(Buffer.from("avc1")), "video must contain an H.264/AVC sample entry");
 });

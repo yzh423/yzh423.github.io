@@ -135,7 +135,8 @@ details p { font-size: .85rem; margin: 0 0 20px; }
 .resource-links a:hover, .pub-links a:hover { text-decoration: underline; }
 .project-media img, .publication img { transition: transform 350ms ease; }
 .project-media:hover img, .publication:hover img { transform: scale(1.015); }
-.project-featured { color: var(--paper); background: var(--ink); padding: 48px; gap: 48px; grid-template-columns: 1fr 1.15fr; margin: 16px 0 32px; }
+.project-featured { color: var(--paper); background: var(--ink); padding: 48px; gap: 28px; grid-template-columns: minmax(0, 1fr); margin: 16px 0 32px; }
+.project-featured .project-copy { max-width: 720px; }
 .project-featured .eyebrow, .project-featured a { color: var(--paper); }
 .project-featured figcaption, .project-featured .evidence-note { color: var(--on-dark-muted); }
 .project-featured details { border-color: #62665e; }
@@ -210,7 +211,7 @@ video { width: 100%; background: #000; }
   .hero { gap: 32px; }
   .hero h1 { font-size: clamp(3.3rem, 5.8vw, 5.7rem); }
   .project-feature { gap: 32px; }
-  .project-featured { padding: 32px; }
+  .project-featured { grid-template-columns: 1fr; padding: 32px; }
   .publication { grid-template-columns: 230px minmax(0, 1fr); gap: 32px; }
   .about-layout, .closing-grid { gap: 40px; }
 }
