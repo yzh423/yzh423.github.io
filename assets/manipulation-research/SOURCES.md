@@ -18,6 +18,8 @@ The R3 source manifest is `results/research-v8rs-r3/generation-db4b6672-9f16-4d9
 
 The older 126-case, 33.3% to 80.2% Fuzzy-PID metric belongs to the separate V6 feasible-execution protocol. It is intentionally not presented as an R3 outcome.
 
+The downloadable CV uses a distinct, later 112-request held-out validation result from `docs/report/research_v8r_recovery_technical_report.md` in the research checkout: original Fuzzy-PID achieved 20/112 (17.9%) requested-design reliable successes, while the fixed research Fuzzy-PID achieved 57/112 (50.9%) on the same validation inputs. This is a 33.0-percentage-point descriptive gain, not an R3 success rate or a confirmation result. The CV separately states the R3 three-case 90.7% mean paired joint-RMS reduction versus manual PID and the numerical-refinement diagnostics below.
+
 ## Paired conclusions shown on the website
 
 The following values come from `results/research-v8rs-r3/generation-db4b6672-9f16-4d9f-962f-0aa4cb34b9c8/diagnostic_runs.csv` in the source checkout. All comparisons use the same frozen input and original 1 ms plant/controller profile. The initial baseline is `manual-pid`, as specified by the implementation guide; the research controller is `research-v8-fuzzy-pid`. Percentage reduction is `(baseline - research) / baseline × 100`, rounded to one decimal place.
