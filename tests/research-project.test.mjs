@@ -27,12 +27,14 @@ test("paired outcome claims match the recorded original-grid comparisons", async
     assert.equal(Number(((1 - research / original) * 100).toFixed(1)), reduction);
     assert.match(page, new RegExp(`${reduction}%`));
   }
+  const meanPairedReduction = jointRmsPairs.reduce((sum, [original, research]) => sum + (1 - research / original), 0) / jointRmsPairs.length * 100;
+  assert.equal(Number(meanPairedReduction.toFixed(1)), 90.7);
   assert.equal(Number(((1 - 0.760 / 3.565) * 100).toFixed(1)), 78.7);
   assert.equal(Number(((1 - 3.09393242249039 / 4.50231571732368) * 100).toFixed(1)), 31.3);
-  for (const phrase of ["83.5–96.4%", "78.7%", "31.3%", "selected simulation cases", "higher squared-torque integral"]) {
+  for (const phrase of ["90.7% mean paired reduction", "78.7%", "31.3%", "three selected simulation cases", "higher squared-torque integral"]) {
     assert.ok(page.includes(phrase), phrase);
   }
-  assert.match(home, /83\.5–96\.4% across three prespecified reliability cases/);
+  assert.match(home, /90\.7% mean paired reduction in joint RMS tracking error across three prespecified reliability cases/);
 });
 
 test("every detail-page anchor and local media path resolves", async () => {
