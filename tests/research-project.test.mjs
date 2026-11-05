@@ -48,12 +48,13 @@ test("every detail-page anchor and local media path resolves", async () => {
   for (const path of new Set(paths)) await access(new URL(path, pageUrl));
   for (const [, tag] of page.matchAll(/(<img\b[^>]*>)/g)) {
     assert.match(tag, /alt="[^"]+"/);
-    assert.match(tag, /width="\d+" height="\d+"/);
+    assert.match(tag, /width="\d+"/);
+    assert.match(tag, /height="\d+"/);
   }
 });
 
 test("R3 evidence uses playable H.264 video and a substantive report", async () => {
-  const sources = [...page.matchAll(/<source src="([^"]+)" type="video\/mp4">/g)].map(match => match[1]);
+  const sources = [...page.matchAll(/<source src="([^"]+)" type="video\/mp4"\s*\/?>/g)].map(match => match[1]);
   assert.equal(sources.length, 2);
   for (const source of sources) {
     const video = await readFile(new URL(source, pageUrl));

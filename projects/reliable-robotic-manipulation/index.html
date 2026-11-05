@@ -1,102 +1,85 @@
-<!doctype html>
-<html lang="en" class="no-js">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#F5F2EB">
-    <meta name="description" content="Zhenghao YU's independent research on reliable robotic manipulation: nonlinear MATLAB/Simulink modeling, PID and Fuzzy-PID control, and numerical sensitivity evidence.">
-    <title>Reliable Robotic Manipulation | Zhenghao YU</title>
-    <link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
-    <link rel="stylesheet" href="../../styles.css?v=manipulation-research-draft-1">
-    <link rel="stylesheet" href="project.css?v=1">
-  </head>
-  <body class="research-detail">
-    <a class="skip-link" href="#main-content">Skip to main content</a>
-    <aside class="topbar" aria-label="Profile and project navigation">
-      <div class="nav-inner">
-        <a class="brand" href="../../index.html#home" aria-label="Zhenghao YU, Daniel — portfolio home">
-          <img class="sidebar-portrait" src="../../assets/portrait.jpg" alt="Portrait of Zhenghao YU" width="720" height="720" fetchpriority="high">
-          <span class="brand-copy"><strong>Zhenghao <em>YU</em></strong><small><em>Daniel</em></small></span>
-        </a>
-        <button class="menu-toggle" type="button" aria-controls="primary-navigation" aria-expanded="false">Menu <span aria-hidden="true">+</span></button>
-        <p class="sidebar-intro">Independent research<br>Robotic manipulation · 2026</p>
-        <nav id="primary-navigation" class="primary-navigation" aria-label="On this page">
-          <a href="#overview"><span>01</span> Overview</a>
-          <a href="#framework"><span>02</span> Framework</a>
-          <a href="#evidence"><span>03</span> Evidence</a>
-          <a href="#scope"><span>04</span> Scope</a>
-          <a href="#contact"><span>05</span> Contact</a>
-        </nav>
-        <div class="sidebar-footer">
-          <a class="sidebar-cv" href="../../index.html#projects">Back to selected work <span aria-hidden="true">↗</span></a>
-          <div><a href="../../assets/manipulation-research/r3-technical-report.pdf" target="_blank" rel="noreferrer">Report</a><a href="https://github.com/yzh423/PID-MATLAB" target="_blank" rel="noreferrer">Code ↗</a></div>
-          <small>MATLAB · Simulink · Simscape Multibody</small>
-        </div>
-      </div>
-    </aside>
-    <main id="main-content">
-      <section id="overview" class="section detail-hero">
-        <div class="detail-hero-copy">
-          <p class="eyebrow">Independent research / 2026–present</p>
-          <h1>Simulation, Adaptive Control, and Optimization Framework for Reliable Robotic Manipulation</h1>
-          <p class="detail-lede">How much of a successful robot trajectory survives a change in the simulation clock? I built a torque-limited, nonlinear two-link manipulation framework to study tracking, reliability, and the limits of its numerical evidence.</p>
-          <p class="detail-credit">Supervised by Dr. Liangcai Tan · Archimedes Controls Corp. · Remote</p>
-          <div class="detail-actions"><a class="button primary" href="#evidence">See the evidence <span aria-hidden="true">↗</span></a><a class="text-link" href="../../assets/manipulation-research/r3-technical-report.pdf" target="_blank" rel="noreferrer">Read technical report <span aria-hidden="true">↗</span></a></div>
-          <p class="detail-status">First-author manuscript in preparation · Simulation study</p>
-        </div>
-        <figure class="detail-hero-media">
-          <video controls preload="none" width="2560" height="1440" poster="../../assets/manipulation-research/r3-path-poster.jpg" aria-label="Recorded given-path simulation for four fixed PID and Fuzzy-PID controllers" aria-describedby="path-caption">
-            <source src="../../assets/manipulation-research/r3-path-evidence.mp4" type="video/mp4">
-            <a href="../../assets/manipulation-research/r3-path-evidence.mp4">Download the recorded given-path simulation</a>.
+<!DOCTYPE html>
+
+<html class="no-js" lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1" name="viewport"/>
+<meta content="#ffffff" name="theme-color"/>
+<meta content="Zhenghao YU's independent research on reliable robotic manipulation: nonlinear MATLAB/Simulink modeling, PID and Fuzzy-PID control, and numerical sensitivity evidence." name="description"/>
+<title>Reliable Robotic Manipulation | Zhenghao YU</title>
+<link href="../../assets/favicon.svg" rel="icon" type="image/svg+xml"/>
+<link href="../../styles.css?v=academic-1" rel="stylesheet"/>
+<link href="project.css?v=1" rel="stylesheet"/>
+<script src="../../preferences.js"></script></head>
+<body class="research-detail">
+<a class="skip-link" data-zh="跳至主要内容" href="#main-content">Skip to main content</a>
+<header class="site-header"><div class="nav-inner">
+<a aria-label="Zhenghao YU — home" class="brand" href="../../#home">Zhenghao YU<span aria-hidden="true">.</span></a>
+<nav aria-label="Primary navigation" class="primary-navigation" data-zh-label="页内导航" id="primary-navigation"><a data-zh="概览" href="#overview">Overview</a><a data-zh="方法" href="#framework">Framework</a><a data-zh="实验结果" href="#evidence">Evidence</a><a data-zh="研究范围" href="#scope">Scope</a><a data-zh="联系" href="#contact">Contact</a></nav>
+<div class="nav-actions"><button aria-label="切换为中文" class="language-toggle" lang="zh-CN" type="button">中</button><button aria-label="Switch to dark theme" class="theme-toggle icon-button" type="button"><svg aria-hidden="true" class="sun-icon" viewbox="0 0 24 24"><circle cx="12" cy="12" r="4"></circle><path d="M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5"></path></svg><svg aria-hidden="true" class="moon-icon" viewbox="0 0 24 24"><path d="M20.8 13A9 9 0 0 1 11 3.2 9 9 0 1 0 20.8 13Z"></path></svg></button><button aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation" class="menu-toggle" type="button"><svg aria-hidden="true" viewbox="0 0 24 24"><path d="M4 8h16M4 16h16"></path></svg></button></div>
+</div><div aria-hidden="true" class="reading-progress"></div></header>
+<main id="main-content">
+<section class="section detail-hero" id="overview">
+<div class="detail-hero-copy">
+<h1 data-zh="面向可靠机器人操作的仿真、自适应控制与优化框架">Simulation, Adaptive Control, and Optimization Framework for Reliable Robotic Manipulation</h1>
+<p class="detail-lede" data-zh="当仿真时钟改变，一条成功的机器人轨迹还能保留多少可靠性？我建立了带力矩限制的非线性双连杆操作框架，研究轨迹跟踪、可靠性与数值证据的适用范围。">How much of a successful robot trajectory survives a change in the simulation clock? I built a torque-limited, nonlinear two-link manipulation framework to study tracking, reliability, and the limits of its numerical evidence.</p>
+<p class="detail-credit" data-zh="导师：Dr. Liangcai Tan · Archimedes Controls Corp. · 远程">Supervised by Dr. Liangcai Tan · Archimedes Controls Corp. · Remote</p>
+<div class="detail-actions"><a class="button primary" data-zh="查看实验结果 ↗" href="#evidence">See the evidence <span aria-hidden="true">↗</span></a><a class="text-link" data-zh="阅读技术报告 ↗" href="../../assets/manipulation-research/r3-technical-report.pdf" rel="noreferrer" target="_blank">Read technical report <span aria-hidden="true">↗</span></a></div>
+<p class="detail-status" data-zh="第一作者论文撰写中 · 仿真研究">First-author manuscript in preparation · Simulation study</p>
+</div>
+<figure class="detail-hero-media">
+<video aria-describedby="path-caption" aria-label="Recorded given-path simulation for four fixed PID and Fuzzy-PID controllers" controls="" data-zh-label="已记录的机器人仿真视频" height="1440" playsinline="" poster="../../assets/manipulation-research/r3-path-poster.jpg" preload="none" width="2560">
+<source src="../../assets/manipulation-research/r3-path-evidence.mp4" type="video/mp4"/>
+<a data-zh="下载给定路径仿真视频" href="../../assets/manipulation-research/r3-path-evidence.mp4">Download the recorded given-path simulation</a>.
           </video>
-          <figcaption id="path-caption">Recorded given-path simulation · four fixed controllers · one selected case. This is simulated motion, not physical-robot footage.</figcaption>
-        </figure>
-      </section>
-      <div class="detail-stat-band" aria-label="Numerical sensitivity results">
-        <div><strong>60/60</strong><span>scheduled simulation runs completed</span></div>
-        <div><strong>20/20</strong><span>plant-only refinements stable</span></div>
-        <div><strong>6/20</strong><span>whole-loop refinements sensitive</span></div>
-      </div>
-      <section id="outcomes" class="section detail-conclusions" aria-labelledby="outcomes-heading">
-        <div><p class="section-label">Paired outcomes</p><h2 id="outcomes-heading">What improved<br><em>against the baseline.</em></h2></div>
-        <div class="comparison-copy">
-          <p><strong>17.9% to 50.9% reliable task success.</strong> On an earlier held-out set of 112 requested simulation tasks, the original Fuzzy-PID succeeded in 20/112 and the research controller in 57/112 under the same reliability criteria, a 33.0 percentage-point gain. This requested-task measure includes pre-execution rejections and belongs to a separate validation protocol.</p>
-          <p><strong>90.7% mean paired reduction in joint RMS tracking error.</strong> Against the initial manually tuned PID on the same 1 ms simulation grid, the research Fuzzy-PID reduced error by 92.1% in the nominal case, 83.5% with noise and disturbance, and 96.4% in the long-travel case. The mean gives each of these three prespecified cases equal weight.</p>
-          <p><strong>78.7% shorter stable-arrival time; 31.3% less positive mechanical work.</strong> In one matched endpoint-only task, the research Fuzzy-PID reached the target in 0.760 s versus 3.565 s and recorded 3.094 J versus 4.502 J for the manual PID baseline.</p>
-          <p class="comparison-limit">The 112-task success rates are descriptive held-out validation results; the confirmation gate failed, so no confirmation set was run. The 90.7% figure summarizes tracking error in three selected simulation cases, not an overall task-success rate or a population estimate. The endpoint case also had a higher squared-torque integral, so lower positive work does not establish lower electrical energy or an improvement on every actuation metric.</p>
-        </div>
-      </section>
-      <section id="framework" class="section detail-framework">
-        <div class="detail-section-heading"><p class="section-label">The framework</p><h2>Model the robot.<br><em>Test the assumptions.</em></h2></div>
-        <div class="method-grid">
-          <article><span>01 / Plant</span><h3>Nonlinear 2-DOF dynamics</h3><p>MATLAB, Simulink, and Simscape Multibody models include configuration-dependent inertia, gravity, friction, payload, joint limits, and torque saturation.</p></article>
-          <article><span>02 / Control</span><h3>Tracking under constraints</h3><p>Torque-aware PID and Mamdani Fuzzy-PID track retimed joint and Cartesian references with inverse-dynamics feedforward, filtering, and anti-windup.</p></article>
-          <article><span>03 / Tuning</span><h3>Bayesian search with gates</h3><p>Earlier phases evaluated bounded candidate controllers against tracking and actuator criteria. The latest numerical study keeps four controllers fixed; it does not tune or select a new one.</p></article>
-          <article><span>04 / Stress testing</span><h3>Robustness by design</h3><p>Separate studies vary payload, robot configuration, model parameters, disturbance, sensing noise, and torque availability. The latest study specifically probes numerical time-step and feedback-period sensitivity.</p></article>
-        </div>
-      </section>
-      <section id="evidence" class="section detail-evidence">
-        <div class="detail-section-heading"><p class="section-label">Selected evidence</p><h2>Results with their<br><em>test conditions attached.</em></h2><p>Every graphic below comes from the recorded simulation pipeline. The latest numerical-study figures are kept separate from earlier tuning and tracking examples.</p></div>
-        <figure class="evidence-feature">
-          <a href="../../assets/manipulation-research/r3-paired-timestep-stability.png" target="_blank" rel="noreferrer"><img src="../../assets/manipulation-research/r3-paired-timestep-stability.png" alt="Paired numerical-refinement chart showing 20 stable plant-only pairs and 14 stable plus 6 sensitive whole-loop pairs" width="2098" height="1035" loading="lazy"></a>
-          <figcaption><strong>01 / Numerical sensitivity</strong><span>All 20 plant-only half-step pairs stayed inside preregistered tolerances. With both plant and feedback period halved, 6 of 20 pairs crossed a tolerance; 14 remained stable.</span></figcaption>
-        </figure>
-        <div class="evidence-grid">
-          <figure><a href="../../assets/manipulation-research/r3-state-error-profiles.png" target="_blank" rel="noreferrer"><img src="../../assets/manipulation-research/r3-state-error-profiles.png" alt="Recorded maximum joint tracking error for four fixed controllers in one selected long-travel case" width="2337" height="1584" loading="lazy"></a><figcaption><strong>02 / Tracking error</strong><span>One prespecified long-travel case, with original and refined time profiles shown for each frozen controller.</span></figcaption></figure>
-          <figure><a href="../../assets/manipulation-research/r3-reliability-case-metrics.png" target="_blank" rel="noreferrer"><img src="../../assets/manipulation-research/r3-reliability-case-metrics.png" alt="Three selected reliability cases comparing joint error, end-effector error, positive mechanical work, and mean torque slew for four fixed controllers" width="2098" height="1410" loading="lazy"></a><figcaption><strong>03 / Reliability cases</strong><span>Tracking, work, and torque-slew measures for three selected cases at the original 1 ms profile; these are case-level examples, not an aggregate success rate.</span></figcaption></figure>
-          <figure><a href="../../assets/manipulation-research/r3-arrival-time-and-cost.png" target="_blank" rel="noreferrer"><img src="../../assets/manipulation-research/r3-arrival-time-and-cost.png" alt="Selected path and endpoint-only cases comparing stable-arrival time with positive mechanical work" width="2095" height="1412" loading="lazy"></a><figcaption><strong>04 / Arrival versus effort</strong><span>Path and point commands are reported separately; earlier arrival is not assumed to mean lower mechanical work.</span></figcaption></figure>
-          <figure><a href="../../assets/manipulation-research/v8r-tracking-time-series.png" target="_blank" rel="noreferrer"><img src="../../assets/manipulation-research/v8r-tracking-time-series.png" alt="Earlier desired versus actual two-joint trajectory tracking for four controllers in one selected simulation" width="3592" height="1956" loading="lazy"></a><figcaption><strong>05 / Desired versus actual · earlier study</strong><span>An illustrative validation input from the preceding phase, not an aggregate result of the latest numerical study.</span></figcaption></figure>
-          <figure><a href="../../assets/manipulation-research/v8r-bayesian-search.png" target="_blank" rel="noreferrer"><img src="../../assets/manipulation-research/v8r-bayesian-search.png" alt="Earlier Bayesian-search candidate objectives for PID and Fuzzy-PID; neither family yielded an admissible replacement" width="1857" height="1058" loading="lazy"></a><figcaption><strong>06 / Bayesian tuning · earlier study</strong><span>Candidate objective trajectories. Neither family produced an admissible improvement, so the previously frozen controllers were retained.</span></figcaption></figure>
-        </div>
-        <details class="detail-extra-video"><summary>Watch the matched endpoint-only simulation</summary><figure><video controls preload="none" width="2560" height="1440" poster="../../assets/manipulation-research/r3-point-poster.jpg" aria-label="Recorded endpoint-only simulation for four fixed controllers" aria-describedby="point-caption"><source src="../../assets/manipulation-research/r3-point-evidence.mp4" type="video/mp4"><a href="../../assets/manipulation-research/r3-point-evidence.mp4">Download the endpoint-only simulation</a>.</video><figcaption id="point-caption">The same selected draw with an endpoint target, rather than a required intermediate path. Simulation only.</figcaption></figure></details>
-      </section>
-      <section id="scope" class="section detail-scope">
-        <div><p class="section-label">Interpretation</p><h2>What the evidence establishes—and what it leaves open.</h2></div>
-        <div><p>The latest study selected five cases before inspecting their outcomes and replayed four fixed controllers at three time profiles: original 1 ms, plant-only 0.5 ms, and coupled plant-and-controller 0.5 ms. All 60 runs and all 40 refinement comparisons completed. The plant-only comparison was stable in every selected pair; the six sensitive coupled pairs identify a feedback-sampling question for follow-up.</p><p>This is a local numerical diagnostic, not a new controller-performance ranking. This study performed no optimization, admitted no new controller, opened no confirmation set, and does not establish physical-robot reliability. The manuscript is in preparation.</p><div class="resource-links"><a href="../../assets/manipulation-research/r3-technical-report.pdf" target="_blank" rel="noreferrer">Latest numerical report <span aria-hidden="true">↗</span></a><a href="../../assets/manipulation-research/v8r-technical-report.pdf" target="_blank" rel="noreferrer">112-task validation report <span aria-hidden="true">↗</span></a><a href="https://github.com/yzh423/PID-MATLAB" target="_blank" rel="noreferrer">Public code (earlier release) <span aria-hidden="true">↗</span></a></div></div>
-      </section>
-      <section id="contact" class="contact-section"><div class="contact-inner"><p class="section-label">Research conversation</p><h2>Let’s examine the<br><em>next experiment.</em></h2><p class="availability">I’m interested in MS and PhD research opportunities in robotics and AI.</p><a class="contact-email" href="mailto:Zhenghao@connect.hku.hk">Zhenghao@connect.hku.hk <span aria-hidden="true">↗</span></a><div class="contact-bottom"><p>Based in Hong Kong<br>Computer Engineering · HKU</p><div class="resource-links"><a href="../../index.html#projects">Back to selected work <span aria-hidden="true">↗</span></a><a href="#overview">Back to top ↑</a></div></div></div></section>
-    </main>
-    <footer class="site-footer"><div>© 2026 Zhenghao YU<span>Robotic manipulation research · September 2026</span></div></footer>
-    <script src="../../script.js"></script>
-  </body>
+<figcaption data-zh="给定路径仿真记录 · 四个固定控制器 · 一项选定工况。这是仿真运动，并非实体机器人录像。" id="path-caption">Recorded given-path simulation · four fixed controllers · one selected case. This is simulated motion, not physical-robot footage.</figcaption>
+</figure>
+</section>
+<div aria-label="Numerical sensitivity results" class="detail-stat-band">
+<div><strong>60/60</strong><span data-zh="计划内仿真运行全部完成">scheduled simulation runs completed</span></div>
+<div><strong>20/20</strong><span data-zh="仅细化被控对象时保持稳定">plant-only refinements stable</span></div>
+<div><strong>6/20</strong><span data-zh="整体回路细化时呈现敏感性">whole-loop refinements sensitive</span></div>
+</div>
+<section aria-labelledby="outcomes-heading" class="section detail-conclusions" id="outcomes">
+<div><h2 data-zh="相较基线，&lt;br&gt;&lt;em&gt;有哪些改进？&lt;/em&gt;" id="outcomes-heading">What improved<br/><em>against the baseline.</em></h2></div>
+<div class="comparison-copy">
+<p data-zh="&lt;strong&gt;可靠任务成功率由 17.9% 提升至 50.9%。&lt;/strong&gt;在较早的 112 项留出请求任务中，使用相同可靠性标准，原始 Fuzzy-PID 成功 20/112 项，研究控制器成功 57/112 项，提升 33.0 个百分点。该指标包含执行前拒绝的任务，属于独立的验证协议。"><strong>17.9% to 50.9% reliable task success.</strong> On an earlier held-out set of 112 requested simulation tasks, the original Fuzzy-PID succeeded in 20/112 and the research controller in 57/112 under the same reliability criteria, a 33.0 percentage-point gain. This requested-task measure includes pre-execution rejections and belongs to a separate validation protocol.</p>
+<p data-zh="&lt;strong&gt;关节 RMS 跟踪误差的配对平均降幅为 90.7%。&lt;/strong&gt;在相同的 1 ms 仿真网格上，相较最初手动调参 PID，研究 Fuzzy-PID 在标称、噪声与扰动、长距离运动工况中分别降低误差 92.1%、83.5% 和 96.4%。平均值对这三项预先指定工况赋予相同权重。"><strong>90.7% mean paired reduction in joint RMS tracking error.</strong> Against the initial manually tuned PID on the same 1 ms simulation grid, the research Fuzzy-PID reduced error by 92.1% in the nominal case, 83.5% with noise and disturbance, and 96.4% in the long-travel case. The mean gives each of these three prespecified cases equal weight.</p>
+<p data-zh="&lt;strong&gt;稳定到达时间缩短 78.7%，正机械功降低 31.3%。&lt;/strong&gt;在一项匹配的仅终点任务中，研究 Fuzzy-PID 用时 0.760 s 到达目标，而手动 PID 基线为 3.565 s；对应正机械功分别为 3.094 J 和 4.502 J。"><strong>78.7% shorter stable-arrival time; 31.3% less positive mechanical work.</strong> In one matched endpoint-only task, the research Fuzzy-PID reached the target in 0.760 s versus 3.565 s and recorded 3.094 J versus 4.502 J for the manual PID baseline.</p>
+<p class="comparison-limit" data-zh="112 项任务的成功率属于描述性的留出验证结果；由于未通过确认门槛，未运行确认集。90.7% 仅汇总三项选定仿真工况的跟踪误差，并非整体任务成功率或总体估计。该终点任务的力矩平方积分反而更高，因此较低的正机械功不能证明电能消耗更低，也不代表所有执行器指标均有改善。">The 112-task success rates are descriptive held-out validation results; the confirmation gate failed, so no confirmation set was run. The 90.7% figure summarizes tracking error in three selected simulation cases, not an overall task-success rate or a population estimate. The endpoint case also had a higher squared-torque integral, so lower positive work does not establish lower electrical energy or an improvement on every actuation metric.</p>
+</div>
+</section>
+<section class="section detail-framework" id="framework">
+<div class="detail-section-heading"><h2 data-zh="建立模型，&lt;br&gt;&lt;em&gt;检验假设。&lt;/em&gt;">Model the robot.<br/><em>Test the assumptions.</em></h2></div>
+<div class="method-grid">
+<article><h3 data-zh="非线性二自由度动力学">Nonlinear 2-DOF dynamics</h3><p data-zh="MATLAB、Simulink 与 Simscape Multibody 模型包含随构型变化的惯性、重力、摩擦、载荷、关节限制和力矩饱和。">MATLAB, Simulink, and Simscape Multibody models include configuration-dependent inertia, gravity, friction, payload, joint limits, and torque saturation.</p></article>
+<article><h3 data-zh="约束下的轨迹跟踪">Tracking under constraints</h3><p data-zh="力矩约束 PID 和 Mamdani Fuzzy-PID 结合逆动力学前馈、滤波与抗积分饱和，跟踪重定时后的关节空间和笛卡尔空间参考轨迹。">Torque-aware PID and Mamdani Fuzzy-PID track retimed joint and Cartesian references with inverse-dynamics feedforward, filtering, and anti-windup.</p></article>
+<article><h3 data-zh="带准入门槛的贝叶斯搜索">Bayesian search with gates</h3><p data-zh="早期阶段依据跟踪与执行器准则评估有界候选控制器。最新数值研究固定使用四个控制器，不进行新的调参或选择。">Earlier phases evaluated bounded candidate controllers against tracking and actuator criteria. The latest numerical study keeps four controllers fixed; it does not tune or select a new one.</p></article>
+<article><h3 data-zh="系统化鲁棒性评估">Robustness by design</h3><p data-zh="不同研究分别改变载荷、机器人构型、模型参数、扰动、传感噪声和可用力矩。最新研究专门检验数值步长与反馈周期的敏感性。">Separate studies vary payload, robot configuration, model parameters, disturbance, sensing noise, and torque availability. The latest study specifically probes numerical time-step and feedback-period sensitivity.</p></article>
+</div>
+</section>
+<section class="section detail-evidence" id="evidence">
+<div class="detail-section-heading"><h2 data-zh="每项结果，都对应&lt;br&gt;&lt;em&gt;明确的实验条件。&lt;/em&gt;">Results with their<br/><em>test conditions attached.</em></h2><p data-zh="下列图表均来自已记录的仿真流程。最新数值研究与较早阶段的调参和跟踪示例分别呈现。">Every graphic below comes from the recorded simulation pipeline. The latest numerical-study figures are kept separate from earlier tuning and tracking examples.</p></div>
+<figure class="evidence-feature">
+<a href="../../assets/manipulation-research/r3-paired-timestep-stability.png" rel="noreferrer" target="_blank"><img alt="Paired numerical-refinement chart showing 20 stable plant-only pairs and 14 stable plus 6 sensitive whole-loop pairs" height="1035" loading="lazy" src="../../assets/manipulation-research/r3-paired-timestep-stability.png" width="2098"/></a>
+<figcaption><strong data-zh="数值敏感性">01 / Numerical sensitivity</strong><span data-zh="20 组仅将被控对象步长减半的比较均处于预注册容差内。当被控对象与反馈周期同时减半时，20 组中有六组超出容差，14 组保持稳定。">All 20 plant-only half-step pairs stayed inside preregistered tolerances. With both plant and feedback period halved, 6 of 20 pairs crossed a tolerance; 14 remained stable.</span></figcaption>
+</figure>
+<div class="evidence-grid">
+<figure><a href="../../assets/manipulation-research/r3-state-error-profiles.png" rel="noreferrer" target="_blank"><img alt="Recorded maximum joint tracking error for four fixed controllers in one selected long-travel case" height="1584" loading="lazy" src="../../assets/manipulation-research/r3-state-error-profiles.png" width="2337"/></a><figcaption><strong data-zh="跟踪误差">02 / Tracking error</strong><span data-zh="一项预先指定的长距离运动工况，分别显示各固定控制器在原始与细化时间配置下的结果。">One prespecified long-travel case, with original and refined time profiles shown for each frozen controller.</span></figcaption></figure>
+<figure><a href="../../assets/manipulation-research/r3-reliability-case-metrics.png" rel="noreferrer" target="_blank"><img alt="Three selected reliability cases comparing joint error, end-effector error, positive mechanical work, and mean torque slew for four fixed controllers" height="1410" loading="lazy" src="../../assets/manipulation-research/r3-reliability-case-metrics.png" width="2098"/></a><figcaption><strong data-zh="可靠性工况">03 / Reliability cases</strong><span data-zh="在原始 1 ms 配置下，对三项选定工况报告跟踪、机械功与力矩变化率。这些是单工况结果，并非汇总成功率。">Tracking, work, and torque-slew measures for three selected cases at the original 1 ms profile; these are case-level examples, not an aggregate success rate.</span></figcaption></figure>
+<figure><a href="../../assets/manipulation-research/r3-arrival-time-and-cost.png" rel="noreferrer" target="_blank"><img alt="Selected path and endpoint-only cases comparing stable-arrival time with positive mechanical work" height="1412" loading="lazy" src="../../assets/manipulation-research/r3-arrival-time-and-cost.png" width="2095"/></a><figcaption><strong data-zh="到达时间与控制代价">04 / Arrival versus effort</strong><span data-zh="路径命令与终点命令分别报告；更早到达不被视为正机械功必然更低。">Path and point commands are reported separately; earlier arrival is not assumed to mean lower mechanical work.</span></figcaption></figure>
+<figure><a href="../../assets/manipulation-research/v8r-tracking-time-series.png" rel="noreferrer" target="_blank"><img alt="Earlier desired versus actual two-joint trajectory tracking for four controllers in one selected simulation" height="1956" loading="lazy" src="../../assets/manipulation-research/v8r-tracking-time-series.png" width="3592"/></a><figcaption><strong data-zh="期望与实际轨迹 · 较早研究">05 / Desired versus actual · earlier study</strong><span data-zh="前一阶段中的一项验证输入示例，不属于最新数值研究的汇总结果。">An illustrative validation input from the preceding phase, not an aggregate result of the latest numerical study.</span></figcaption></figure>
+<figure><a href="../../assets/manipulation-research/v8r-bayesian-search.png" rel="noreferrer" target="_blank"><img alt="Earlier Bayesian-search candidate objectives for PID and Fuzzy-PID; neither family yielded an admissible replacement" height="1058" loading="lazy" src="../../assets/manipulation-research/v8r-bayesian-search.png" width="1857"/></a><figcaption><strong data-zh="贝叶斯调参 · 较早研究">06 / Bayesian tuning · earlier study</strong><span data-zh="候选目标函数轨迹。两类控制器均未产生满足准入条件的改进，因此保留此前冻结的控制器。">Candidate objective trajectories. Neither family produced an admissible improvement, so the previously frozen controllers were retained.</span></figcaption></figure>
+</div>
+<details class="detail-extra-video"><summary data-zh="观看匹配的仅终点仿真">Watch the matched endpoint-only simulation</summary><figure><video aria-describedby="point-caption" aria-label="Recorded endpoint-only simulation for four fixed controllers" controls="" data-zh-label="已记录的机器人仿真视频" height="1440" playsinline="" poster="../../assets/manipulation-research/r3-point-poster.jpg" preload="none" width="2560"><source src="../../assets/manipulation-research/r3-point-evidence.mp4" type="video/mp4"/><a data-zh="下载仅终点仿真视频" href="../../assets/manipulation-research/r3-point-evidence.mp4">Download the endpoint-only simulation</a>.</video><figcaption data-zh="同一选定样本，仅要求到达终点，不约束中间路径。结果仅适用于仿真。" id="point-caption">The same selected draw with an endpoint target, rather than a required intermediate path. Simulation only.</figcaption></figure></details>
+</section>
+<section class="section detail-scope" id="scope">
+<div><h2 data-zh="证据说明了什么，&lt;br&gt;&lt;em&gt;还有什么待验证？&lt;/em&gt;">What the evidence establishes—and what it leaves open.</h2></div>
+<div><p data-zh="最新研究在查看结果前指定五项工况，并在三个时间配置下回放四个固定控制器：原始 1 ms、仅被控对象 0.5 ms，以及被控对象和控制器同时 0.5 ms。全部 60 次运行与 40 组细化比较完成。仅细化被控对象时，每组比较均保持稳定；六组敏感的耦合比较提示后续应重点检验反馈采样问题。">The latest study selected five cases before inspecting their outcomes and replayed four fixed controllers at three time profiles: original 1 ms, plant-only 0.5 ms, and coupled plant-and-controller 0.5 ms. All 60 runs and all 40 refinement comparisons completed. The plant-only comparison was stable in every selected pair; the six sensitive coupled pairs identify a feedback-sampling question for follow-up.</p><p data-zh="这是一项局部数值诊断，而非新的控制器性能排名。本研究未运行优化、未接纳新控制器、未启用确认集，也不建立实体机器人的可靠性结论。论文正在准备中。">This is a local numerical diagnostic, not a new controller-performance ranking. This study performed no optimization, admitted no new controller, opened no confirmation set, and does not establish physical-robot reliability. The manuscript is in preparation.</p><div class="resource-links"><a data-zh="最新数值研究报告 ↗" href="../../assets/manipulation-research/r3-technical-report.pdf" rel="noreferrer" target="_blank">Latest numerical report <span aria-hidden="true">↗</span></a><a data-zh="112 项任务验证报告 ↗" href="../../assets/manipulation-research/v8r-technical-report.pdf" rel="noreferrer" target="_blank">112-task validation report <span aria-hidden="true">↗</span></a><a data-zh="公开代码（较早版本）↗" href="https://github.com/yzh423/PID-MATLAB" rel="noreferrer" target="_blank">Public code (earlier release) <span aria-hidden="true">↗</span></a></div></div>
+</section>
+<section class="contact-section" id="contact"><div class="contact-inner"><h2 data-zh="一起讨论&lt;br&gt;&lt;em&gt;下一项实验。&lt;/em&gt;">Let’s examine the<br/><em>next experiment.</em></h2><p class="availability" data-zh="我正在寻找机器人与人工智能方向的硕士、博士研究机会。">I’m interested in MS and PhD research opportunities in robotics and AI.</p><a class="contact-email" href="mailto:Zhenghao@connect.hku.hk">Zhenghao@connect.hku.hk <span aria-hidden="true">↗</span></a><div class="contact-bottom"><p data-zh="常驻香港&lt;br&gt;香港大学 · 计算机工程">Based in Hong Kong<br/>Computer Engineering · HKU</p><div class="resource-links"><a data-zh="返回精选项目 ↗" href="../../index.html#projects">Back to selected work <span aria-hidden="true">↗</span></a><a data-zh="返回顶部 ↑" href="#overview">Back to top ↑</a></div></div></div></section>
+</main>
+<footer class="site-footer"><div>© 2026 Zhenghao YU<span data-zh="机器人操作研究 · 2026 年 9 月">Robotic manipulation research · September 2026</span></div></footer>
+<script src="../../script.js?v=academic-1"></script>
+</body>
 </html>

@@ -1,0 +1,464 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-11-05T18:55:46.789Z",
+  "title": "Design System: Zhenghao YU Academic Homepage",
+  "extensions": {
+    "colorMeta": {
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "tonalRamp": [
+          "oklch(15% 0.00000 0.00)",
+          "oklch(26.43% 0.00000 0.00)",
+          "oklch(37.86% 0.00000 0.00)",
+          "oklch(49.29% 0.00000 0.00)",
+          "oklch(60.71% 0.00000 0.00)",
+          "oklch(72.14% 0.00000 0.00)",
+          "oklch(83.57% 0.00000 0.00)",
+          "oklch(95% 0.00000 0.00)"
+        ]
+      },
+      "surface": {
+        "role": "neutral",
+        "displayName": "Soft neutral surface",
+        "tonalRamp": [
+          "oklch(15% 0.00413 91.45)",
+          "oklch(26.43% 0.00413 91.45)",
+          "oklch(37.86% 0.00413 91.45)",
+          "oklch(49.29% 0.00413 91.45)",
+          "oklch(60.71% 0.00413 91.45)",
+          "oklch(72.14% 0.00413 91.45)",
+          "oklch(83.57% 0.00413 91.45)",
+          "oklch(95% 0.00413 91.45)"
+        ]
+      },
+      "surface-deep": {
+        "role": "neutral",
+        "displayName": "Deeper neutral surface",
+        "tonalRamp": [
+          "oklch(15% 0.00868 84.57)",
+          "oklch(26.43% 0.00868 84.57)",
+          "oklch(37.86% 0.00868 84.57)",
+          "oklch(49.29% 0.00868 84.57)",
+          "oklch(60.71% 0.00868 84.57)",
+          "oklch(72.14% 0.00868 84.57)",
+          "oklch(83.57% 0.00868 84.57)",
+          "oklch(95% 0.00868 84.57)"
+        ]
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Charcoal ink",
+        "tonalRamp": [
+          "oklch(15% 0.00730 106.90)",
+          "oklch(26.43% 0.00730 106.90)",
+          "oklch(37.86% 0.00730 106.90)",
+          "oklch(49.29% 0.00730 106.90)",
+          "oklch(60.71% 0.00730 106.90)",
+          "oklch(72.14% 0.00730 106.90)",
+          "oklch(83.57% 0.00730 106.90)",
+          "oklch(95% 0.00730 106.90)"
+        ]
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted reading ink",
+        "tonalRamp": [
+          "oklch(15% 0.01090 106.79)",
+          "oklch(26.43% 0.01090 106.79)",
+          "oklch(37.86% 0.01090 106.79)",
+          "oklch(49.29% 0.01090 106.79)",
+          "oklch(60.71% 0.01090 106.79)",
+          "oklch(72.14% 0.01090 106.79)",
+          "oklch(83.57% 0.01090 106.79)",
+          "oklch(95% 0.01090 106.79)"
+        ]
+      },
+      "accent": {
+        "role": "primary",
+        "displayName": "Research orange",
+        "tonalRamp": [
+          "oklch(15% 0.16044 40.05)",
+          "oklch(26.43% 0.16044 40.05)",
+          "oklch(37.86% 0.16044 40.05)",
+          "oklch(49.29% 0.16044 40.05)",
+          "oklch(60.71% 0.16044 40.05)",
+          "oklch(72.14% 0.16044 40.05)",
+          "oklch(83.57% 0.16044 40.05)",
+          "oklch(95% 0.16044 40.05)"
+        ]
+      },
+      "accent-soft": {
+        "role": "primary",
+        "displayName": "Soft research orange",
+        "tonalRamp": [
+          "oklch(15% 0.01606 52.56)",
+          "oklch(26.43% 0.01606 52.56)",
+          "oklch(37.86% 0.01606 52.56)",
+          "oklch(49.29% 0.01606 52.56)",
+          "oklch(60.71% 0.01606 52.56)",
+          "oklch(72.14% 0.01606 52.56)",
+          "oklch(83.57% 0.01606 52.56)",
+          "oklch(95% 0.01606 52.56)"
+        ]
+      },
+      "line": {
+        "role": "neutral",
+        "displayName": "Thin separator",
+        "tonalRamp": [
+          "oklch(15% 0.00942 106.59)",
+          "oklch(26.43% 0.00942 106.59)",
+          "oklch(37.86% 0.00942 106.59)",
+          "oklch(49.29% 0.00942 106.59)",
+          "oklch(60.71% 0.00942 106.59)",
+          "oklch(72.14% 0.00942 106.59)",
+          "oklch(83.57% 0.00942 106.59)",
+          "oklch(95% 0.00942 106.59)"
+        ]
+      },
+      "dark-paper": {
+        "role": "neutral",
+        "displayName": "Dark paper",
+        "tonalRamp": [
+          "oklch(15% 0.00420 128.69)",
+          "oklch(26.43% 0.00420 128.69)",
+          "oklch(37.86% 0.00420 128.69)",
+          "oklch(49.29% 0.00420 128.69)",
+          "oklch(60.71% 0.00420 128.69)",
+          "oklch(72.14% 0.00420 128.69)",
+          "oklch(83.57% 0.00420 128.69)",
+          "oklch(95% 0.00420 128.69)"
+        ]
+      },
+      "dark-surface": {
+        "role": "neutral",
+        "displayName": "Dark neutral surface",
+        "tonalRamp": [
+          "oklch(15% 0.00576 121.87)",
+          "oklch(26.43% 0.00576 121.87)",
+          "oklch(37.86% 0.00576 121.87)",
+          "oklch(49.29% 0.00576 121.87)",
+          "oklch(60.71% 0.00576 121.87)",
+          "oklch(72.14% 0.00576 121.87)",
+          "oklch(83.57% 0.00576 121.87)",
+          "oklch(95% 0.00576 121.87)"
+        ]
+      },
+      "dark-surface-deep": {
+        "role": "neutral",
+        "displayName": "Deeper dark surface",
+        "tonalRamp": [
+          "oklch(15% 0.01055 114.70)",
+          "oklch(26.43% 0.01055 114.70)",
+          "oklch(37.86% 0.01055 114.70)",
+          "oklch(49.29% 0.01055 114.70)",
+          "oklch(60.71% 0.01055 114.70)",
+          "oklch(72.14% 0.01055 114.70)",
+          "oklch(83.57% 0.01055 114.70)",
+          "oklch(95% 0.01055 114.70)"
+        ]
+      },
+      "dark-ink": {
+        "role": "neutral",
+        "displayName": "Dark-theme reading ink",
+        "tonalRamp": [
+          "oklch(15% 0.00673 97.35)",
+          "oklch(26.43% 0.00673 97.35)",
+          "oklch(37.86% 0.00673 97.35)",
+          "oklch(49.29% 0.00673 97.35)",
+          "oklch(60.71% 0.00673 97.35)",
+          "oklch(72.14% 0.00673 97.35)",
+          "oklch(83.57% 0.00673 97.35)",
+          "oklch(95% 0.00673 97.35)"
+        ]
+      },
+      "dark-muted": {
+        "role": "neutral",
+        "displayName": "Dark-theme muted ink",
+        "tonalRamp": [
+          "oklch(15% 0.01668 106.78)",
+          "oklch(26.43% 0.01668 106.78)",
+          "oklch(37.86% 0.01668 106.78)",
+          "oklch(49.29% 0.01668 106.78)",
+          "oklch(60.71% 0.01668 106.78)",
+          "oklch(72.14% 0.01668 106.78)",
+          "oklch(83.57% 0.01668 106.78)",
+          "oklch(95% 0.01668 106.78)"
+        ]
+      },
+      "dark-accent": {
+        "role": "primary",
+        "displayName": "Dark-theme research orange",
+        "tonalRamp": [
+          "oklch(15% 0.11629 50.72)",
+          "oklch(26.43% 0.11629 50.72)",
+          "oklch(37.86% 0.11629 50.72)",
+          "oklch(49.29% 0.11629 50.72)",
+          "oklch(60.71% 0.11629 50.72)",
+          "oklch(72.14% 0.11629 50.72)",
+          "oklch(83.57% 0.11629 50.72)",
+          "oklch(95% 0.11629 50.72)"
+        ]
+      },
+      "dark-accent-soft": {
+        "role": "primary",
+        "displayName": "Dark-theme soft orange",
+        "tonalRamp": [
+          "oklch(15% 0.02287 66.71)",
+          "oklch(26.43% 0.02287 66.71)",
+          "oklch(37.86% 0.02287 66.71)",
+          "oklch(49.29% 0.02287 66.71)",
+          "oklch(60.71% 0.02287 66.71)",
+          "oklch(72.14% 0.02287 66.71)",
+          "oklch(83.57% 0.02287 66.71)",
+          "oklch(95% 0.02287 66.71)"
+        ]
+      },
+      "dark-line": {
+        "role": "neutral",
+        "displayName": "Dark-theme thin separator",
+        "tonalRamp": [
+          "oklch(15% 0.01374 118.51)",
+          "oklch(26.43% 0.01374 118.51)",
+          "oklch(37.86% 0.01374 118.51)",
+          "oklch(49.29% 0.01374 118.51)",
+          "oklch(60.71% 0.01374 118.51)",
+          "oklch(72.14% 0.01374 118.51)",
+          "oklch(83.57% 0.01374 118.51)",
+          "oklch(95% 0.01374 118.51)"
+        ]
+      },
+      "video-ground": {
+        "role": "neutral",
+        "displayName": "Video ground",
+        "tonalRamp": [
+          "oklch(15% 0.01547 232.34)",
+          "oklch(26.43% 0.01547 232.34)",
+          "oklch(37.86% 0.01547 232.34)",
+          "oklch(49.29% 0.01547 232.34)",
+          "oklch(60.71% 0.01547 232.34)",
+          "oklch(72.14% 0.01547 232.34)",
+          "oklch(83.57% 0.01547 232.34)",
+          "oklch(95% 0.01547 232.34)"
+        ]
+      }
+    },
+    "typographyMeta": {
+      "display": {
+        "displayName": "Identity display",
+        "purpose": "The main semantic name; mobile sizing and the separate Daniel line are documented in DESIGN.md."
+      },
+      "headline": {
+        "displayName": "Section headline",
+        "purpose": "Shared Newsreader section headings."
+      },
+      "title": {
+        "displayName": "Scholarly title",
+        "purpose": "Base title hierarchy; project and publication variants permit natural wrapping."
+      },
+      "detail-display": {
+        "displayName": "Research-detail display",
+        "purpose": "The complete scientific title, with narrower responsive sizes."
+      },
+      "body": {
+        "displayName": "Sustained prose",
+        "purpose": "The final 15px prose cascade on main and detail pages at all breakpoints."
+      },
+      "body-open": {
+        "displayName": "Open prose",
+        "purpose": "15px hero introduction and project prose with 1.8 line height."
+      },
+      "body-base": {
+        "displayName": "Inherited body default",
+        "purpose": "The desktop inherited 16px default; explicitly sized sustained passages remain 15px."
+      },
+      "label": {
+        "displayName": "Supporting label",
+        "purpose": "Compact metadata, statuses, resource links, and dates."
+      },
+      "caption": {
+        "displayName": "Evidence caption",
+        "purpose": "Scientific media captions retain their full qualifications."
+      },
+      "button": {
+        "displayName": "Action label",
+        "purpose": "Primary/secondary actions and desktop section navigation."
+      },
+      "graph-branch": {
+        "displayName": "Research branch",
+        "purpose": "Native topic buttons with stationary hit targets."
+      }
+    },
+    "shadows": [],
+    "motion": [
+      {
+        "name": "ease-out",
+        "value": "cubic-bezier(.22,1,.36,1)",
+        "purpose": "Button, navigation, menu, topic-note, reveal, and identity transitions."
+      },
+      {
+        "name": "ease-in-out",
+        "value": "cubic-bezier(.65,0,.35,1)",
+        "purpose": "Gentle drift of research-node text; hit targets remain stationary."
+      },
+      {
+        "name": "utility-feedback",
+        "value": "150ms",
+        "purpose": "Utility background and pressed-scale feedback."
+      },
+      {
+        "name": "interaction-transition",
+        "value": "180ms",
+        "purpose": "Action feedback, navigation underline, menu entrance, and non-transient note changes."
+      },
+      {
+        "name": "reading-entrance",
+        "value": "420ms",
+        "purpose": "Once-only opacity .45 to 1 and translateY 12px to 0; default content remains visible."
+      },
+      {
+        "name": "identity-reveal",
+        "value": "760ms",
+        "purpose": "Initial name clip reveal only at the homepage top and only when enhancement is enabled."
+      },
+      {
+        "name": "research-label-drift",
+        "value": "8s alternate infinite; translate 0 -3px to 0 3px",
+        "purpose": "Visible desktop graph labels only; pauses for focus, hover, selection, global pause, reduced motion, hidden/offscreen state, and the phone layout."
+      }
+    ],
+    "breakpoints": [
+      {
+        "name": "compact-desktop-max",
+        "value": "1100px"
+      },
+      {
+        "name": "tablet-max",
+        "value": "850px"
+      },
+      {
+        "name": "phone-max",
+        "value": "600px"
+      },
+      {
+        "name": "small-phone-max",
+        "value": "360px"
+      }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary action",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "Native evidence and CV actions; ink at rest, orange on hover.",
+      "html": "<a class=\"ds-primary\" href=\"#evidence\">See the evidence <span aria-hidden=\"true\">↗</span></a>",
+      "css": ".ds-primary{display:inline-flex;align-items:center;justify-content:center;gap:14px;min-height:44px;padding:10px 20px;border:0;border-radius:999px;font:500 13px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif);text-decoration:none;cursor:pointer;transition:transform 180ms cubic-bezier(.22,1,.36,1),background-color 180ms ease}.ds-primary:active{transform:scale(.98)}.ds-primary:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(prefers-reduced-motion:reduce){.ds-primary{transition:none}}.ds-primary{background:var(--ink,#242420);color:var(--paper,#fff)}.ds-primary:hover{background:var(--accent,#b94513)}"
+    },
+    {
+      "name": "Secondary action",
+      "kind": "button",
+      "refersTo": "button-secondary",
+      "description": "The research exploration action inside the motion banner.",
+      "html": "<a class=\"ds-secondary\" href=\"#research\">Explore research<svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><path d=\"M5 12h14m-5-5 5 5-5 5\"/></svg></a>",
+      "css": ".ds-secondary{display:inline-flex;align-items:center;justify-content:center;gap:14px;min-height:44px;padding:10px 20px;border:0;border-radius:999px;font:500 13px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif);text-decoration:none;cursor:pointer;transition:transform 180ms cubic-bezier(.22,1,.36,1),background-color 180ms ease}.ds-secondary:active{transform:scale(.98)}.ds-secondary:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(prefers-reduced-motion:reduce){.ds-secondary{transition:none}}.ds-secondary{background:var(--paper,#fff);color:var(--ink,#242420)}.ds-secondary:hover{background:var(--surface-deep,#eae7e1)}.ds-secondary svg{width:17px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round;transition:transform 180ms cubic-bezier(.22,1,.36,1)}.ds-secondary:hover svg{transform:translateX(3px)}@media(prefers-reduced-motion:reduce){.ds-secondary svg{transition:none}}"
+    },
+    {
+      "name": "Utility button",
+      "kind": "button",
+      "refersTo": "utility-button",
+      "description": "Circular theme control; the same bounds hold language and mobile-menu controls.",
+      "html": "<button class=\"ds-utility\" type=\"button\" aria-label=\"Switch to dark theme\"><svg aria-hidden=\"true\" viewBox=\"0 0 24 24\"><circle cx=\"12\" cy=\"12\" r=\"4\"/><path d=\"M12 2v2m0 16v2M2 12h2m16 0h2M5 5l1.5 1.5m11 11L19 19M5 19l1.5-1.5m11-11L19 5\"/></svg></button>",
+      "css": ".ds-utility{display:grid;place-items:center;width:40px;height:40px;border:0;border-radius:50%;background:none;color:var(--ink,#242420);font:600 13px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif);cursor:pointer;transition:background-color 150ms ease,transform 150ms cubic-bezier(.22,1,.36,1)}.ds-utility:hover{background:var(--surface,#f5f4f1)}.ds-utility:active{transform:scale(.95)}.ds-utility svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}.ds-utility:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:600px){.ds-utility{width:38px}}@media(prefers-reduced-motion:reduce){.ds-utility{transition:none}}"
+    },
+    {
+      "name": "Top navigation",
+      "kind": "nav",
+      "refersTo": "navigation",
+      "description": "Section navigation with a thin current-location underline; the site script manages current location and the mobile menu.",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary navigation\"><a href=\"#about\">About</a><a href=\"#research\" aria-current=\"location\">Research</a><a href=\"#projects\">Work</a></nav>",
+      "css": ".ds-nav{display:flex;align-items:center;gap:26px;min-height:76px;border-bottom:1px solid var(--line,#deded7);background:var(--paper,#fff);color:var(--ink,#242420)}.ds-nav a{position:relative;padding:23px 0;color:inherit;font:500 13px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif);text-decoration:none}.ds-nav a::after{content:\"\";position:absolute;height:2px;background:var(--accent,#b94513);left:0;right:0;bottom:15px;transform:scaleX(0);transform-origin:left;transition:transform 180ms cubic-bezier(.22,1,.36,1)}.ds-nav a:hover{color:var(--accent,#b94513)}.ds-nav a:hover::after,.ds-nav a[aria-current=\"location\"]::after{transform:scaleX(1)}.ds-nav a:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:1100px){.ds-nav{gap:17px}.ds-nav a{font-size:12px}}@media(max-width:850px){.ds-nav{min-height:68px;flex-wrap:wrap;gap:0 26px}.ds-nav a{padding:12px 0;font-size:14px}.ds-nav a::after{bottom:8px}}@media(prefers-reduced-motion:reduce){.ds-nav a::after{transition:none}}"
+    },
+    {
+      "name": "Research topic",
+      "kind": "button",
+      "refersTo": "research-node",
+      "description": "A native research button; the live map supplies aria-controls, selection, focus previews, and arrow-key movement.",
+      "html": "<button class=\"ds-node\" type=\"button\" aria-pressed=\"false\"><span>Control &amp; reliability</span></button>",
+      "css": ".ds-node{min-height:44px;padding:6px 10px;border:0;border-radius:5px;background:var(--paper,#fff);color:var(--ink,#242420);font:500 20px/1.3 var(--serif, Newsreader, \"Songti SC\", \"Noto Serif CJK SC\", Georgia, serif);white-space:nowrap;cursor:pointer}.ds-node:hover,.ds-node:focus-visible,.ds-node[aria-pressed=\"true\"]{background:var(--accent-soft,#faeee7);color:var(--accent,#b94513)}.ds-node:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:1100px){.ds-node{font-size:17px}}@media(max-width:850px){.ds-node{font-size:15px;padding-inline:5px}}@media(max-width:600px){.ds-node{min-height:46px;padding:10px;font-size:17px;white-space:normal;background:var(--surface,#f5f4f1)}.ds-node:hover,.ds-node:focus-visible,.ds-node[aria-pressed=\"true\"]{background:var(--accent-soft,#faeee7)}}"
+    },
+    {
+      "name": "Research note",
+      "kind": "custom",
+      "refersTo": "research-note",
+      "description": "A compact, polite status region below the map, with an ordinary research destination link.",
+      "html": "<div class=\"ds-note\" role=\"status\" aria-live=\"polite\"><div><strong>Research is connected.</strong><p>Hover, tap, or tab to a topic to see how it connects to my work.</p></div><a href=\"#projects\">Explore the work</a></div>",
+      "css": ".ds-note{display:flex;align-items:center;justify-content:space-between;gap:26px;min-height:108px;padding:20px 24px;border-radius:8px;background:var(--surface,#f5f4f1);color:var(--ink,#242420)}.ds-note strong{font:500 21px/1.4 var(--serif, Newsreader, \"Songti SC\", \"Noto Serif CJK SC\", Georgia, serif)}.ds-note p{margin:0;max-width:75ch;font:400 13px/1.7 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif);color:var(--muted,#62625b)}.ds-note a{flex:none;color:var(--accent,#b94513);font:400 12px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif);text-underline-offset:.24em;text-decoration-thickness:1px}.ds-note a:hover{color:var(--accent,#b94513)}.ds-note a:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:600px){.ds-note{display:block;padding:18px;min-height:184px}.ds-note p{margin-top:5px;font-size:12px}.ds-note a{display:inline-block;margin-top:14px}}"
+    },
+    {
+      "name": "Research reading row",
+      "kind": "card",
+      "refersTo": "research-row",
+      "description": "A flat row separated by a thin rule, with a scholarly title and 15px description.",
+      "html": "<article class=\"ds-research-row\"><h3>Robot Design and Evaluation</h3><p>Comparing robot designs and mount layouts against task requirements, then checking motion feasibility, collisions, and execution in simulation.</p></article>",
+      "css": ".ds-research-row{display:grid;grid-template-columns:.85fr 1fr;gap:60px;align-items:baseline;padding:28px 0;border-top:1px solid var(--line,#deded7);color:var(--ink,#242420)}.ds-research-row h3{margin:0;font:500 24px/1.25 var(--serif, Newsreader, \"Songti SC\", \"Noto Serif CJK SC\", Georgia, serif);letter-spacing:-.01em;text-wrap:balance}.ds-research-row p{margin:0;color:var(--muted,#62625b);font:400 15px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif)}@media(max-width:600px){.ds-research-row{grid-template-columns:1fr;gap:12px;padding:23px 0}.ds-research-row h3{font-size:23px}}"
+    },
+    {
+      "name": "Method article",
+      "kind": "card",
+      "refersTo": "method",
+      "description": "A detail-page method begins with its descriptive heading; redundant overline labels are absent.",
+      "html": "<article class=\"ds-method\"><h3>Nonlinear 2-DOF dynamics</h3><p>MATLAB, Simulink, and Simscape Multibody models include configuration-dependent inertia, gravity, friction, payload, joint limits, and torque saturation.</p></article>",
+      "css": ".ds-method{padding-top:22px;border-top:1px solid var(--line,#deded7);color:var(--ink,#242420)}.ds-method h3{margin:12px 0;font:500 26px/1.25 var(--serif, Newsreader, \"Songti SC\", \"Noto Serif CJK SC\", Georgia, serif);letter-spacing:-.01em;text-wrap:balance}.ds-method p{margin:0;font:400 15px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif)}"
+    },
+    {
+      "name": "Native scope disclosure",
+      "kind": "custom",
+      "description": "Optional scientific detail retains native disclosure behavior and sustained 15px project prose.",
+      "html": "<details class=\"ds-scope\"><summary>Study scope</summary><p>The 112-task success comparison comes from an earlier held-out validation. The later numerical study used five prespecified cases and four fixed controllers.</p></details>",
+      "css": ".ds-scope{margin-top:20px;color:var(--ink,#242420)}.ds-scope summary{cursor:pointer;width:fit-content;padding:8px 0;font:500 13px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif)}.ds-scope summary:hover{color:var(--accent,#b94513)}.ds-scope p{margin:0;padding:8px 0 12px;color:var(--muted,#62625b);font:400 15px/1.8 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif)}.ds-scope summary:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}"
+    }
+  ],
+  "narrative": {
+    "northStar": "The connected academic homepage",
+    "overview": "A restrained, personal academic setting makes research, recorded experiments, and their context easy to inspect. The light world pairs white ground, charcoal text, and a warm orange accent; the dark world uses neutral charcoal surfaces with a lighter orange accent. Newsreader brings a scholarly voice to headings while Inter keeps prose and controls direct.\n\nThis records the approved, code-led implementation of the user-pinned [Zhouhu Tan reference](https://tanzhouhu.github.io/#research), as scoped in [PRODUCT.md](PRODUCT.md) and [the surface brief](docs/reference-redesign.md). Thin separators and Inter are explicit reference commitments. A real portrait, a two-line identity, bounded particle lettering, and recorded simulation give the homepage its personal character; the detail page shares the same reading system. The source of truth is the final cascade in both stylesheets, including their closing readability and particle-layout rules.\n",
+    "keyCharacteristics": [
+      "Scholarly serif headings and sustained, bilingual sans-serif prose.",
+      "Flat reading surfaces, thin separators, and restrained orange emphasis.",
+      "A real portrait, two-line name, particle lettering, and labeled simulation preview.",
+      "Native controls, visible keyboard focus, and usable static fallbacks.",
+      "Research evidence retains its captions, scope, source links, and downloads."
+    ],
+    "rules": [
+      {
+        "name": "The Reference Continuity Rule",
+        "body": "Keep the user-pinned thin separators and Inter body type; they are part of this approved visual world.",
+        "section": "colors"
+      },
+      {
+        "name": "The Reading Size Rule",
+        "body": "Keep sustained prose at the final 15px size on phones and desktops; do not recover superseded smaller declarations as design tokens.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Reading Rule",
+        "body": "Preserve the flat surfaces and structural rules used by the shipped pages.",
+        "section": "elevation"
+      }
+    ],
+    "dos": [
+      "Do retain the user-pinned thin separators, Inter body text, and Newsreader headings.",
+      "Do preserve the two-line name, real portrait, and full wrapping scholarly titles.",
+      "Do use the final 15px sustained prose size in both languages and at every breakpoint.",
+      "Do keep the particle CTA and hint in separate normal-flow rows with a 10px gap.",
+      "Do preserve native buttons, links, video controls, visible focus, and static reading fallbacks.",
+      "Do retain evidence captions, simulation qualifications, original PDF URLs, and the distinction between validation protocols."
+    ],
+    "donts": [
+      "Don't reintroduce superseded 13px/14px sustained-prose defaults from earlier CSS rules.",
+      "Don't add redundant method labels above the existing descriptive headings.",
+      "Don't hide scholarly content until an animation completes or require motion to navigate.",
+      "Don't represent recorded simulation as physical-robot execution."
+    ]
+  }
+}

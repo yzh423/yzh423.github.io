@@ -12,6 +12,15 @@
 
 ## Project media
 
+## November 2026 academic redesign
+
+- Design and interaction reference: [Zhouhu Tan's public homepage](https://tanzhouhu.github.io/#research). No personal copy, code, photographs or video from that site is included here. The particle lettering and accessible research map are original local JavaScript/HTML/CSS implementations.
+- The home banner reuses the unchanged `fold-box-piperx-optimized-mount-complete-trajectories-h264.mp4` with its existing poster and explicit simulation label. Full recordings and provenance remain available below.
+- Local Inter variable font and license: [Google Fonts / Inter](https://github.com/google/fonts/tree/main/ofl/inter). Newsreader regular and italic variable fonts and license: [Google Fonts / Newsreader](https://github.com/google/fonts/tree/main/ofl/newsreader). Downloaded from the official Google Fonts repository; locally compressed to WOFF2 with FontTools, preserving the source TTF and OFL license files. Both original and compressed copies are distributed under the SIL Open Font License 1.1.
+- Existing photographs, figures, videos and all seven PDF downloads remain unchanged from published commit `8220242`.
+
+## Recorded project assets
+
 - `factory-dataset-packaging.jpg`, `factory-dataset-inspection.jpg`, and `factory-dataset-towel-folding.jpg` are from [`yzh423/factory-dataset`](https://github.com/yzh423/factory-dataset): [`assets/readme/gallery/packaging.jpg`](https://github.com/yzh423/factory-dataset/blob/main/assets/readme/gallery/packaging.jpg), [`inspection.jpg`](https://github.com/yzh423/factory-dataset/blob/main/assets/readme/gallery/inspection.jpg), and [`towel-folding.jpg`](https://github.com/yzh423/factory-dataset/blob/main/assets/readme/gallery/towel-folding.jpg).
 - `fold-box-mujoco-qa-middle.png` is MuJoCo simulation evidence for Fold Box from [`yzh423/single-arm-mount-trajectory`](https://github.com/yzh423/single-arm-mount-trajectory), [`reports/piperx_two_task_complete_follow/fold_box/qa_middle.png`](https://github.com/yzh423/single-arm-mount-trajectory/blob/main/reports/piperx_two_task_complete_follow/fold_box/qa_middle.png).
 - `fold-box-mujoco-recommended.mp4` is the public recommended Fold Box MuJoCo simulation video from [`yzh423/single-arm-mount-trajectory`](https://github.com/yzh423/single-arm-mount-trajectory), [`reports/piperx_recommended_v31/8-11_Fold_Box_161044_recommended_v31.mp4`](https://github.com/yzh423/single-arm-mount-trajectory/blob/main/reports/piperx_recommended_v31/8-11_Fold_Box_161044_recommended_v31.mp4).
