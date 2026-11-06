@@ -212,7 +212,7 @@ Reading widths are deliberate: About paragraphs reach 68ch; the hero introductio
 
 The shared content maximum is 1120px. Page gutters are 32px above 850px, 24px at or below 850px, and 22px at or below 600px. The sticky top navigation has a 76px minimum row height, reducing to 68px at the tablet breakpoint. Anchor offsets add 24px to the header height. Ordinary sections use 88px vertical padding, then 64px and 56px at the tablet and phone breakpoints; hero and contact spacing have their own observed rules.
 
-Desktop composition uses open columns: About is 1.7:1; research rows are 0.85:1; featured projects are 0.9:1.1; publications pair a 260px image with flexible text. Project spacing is 48px, reducing to 32px at 1100px. Publication media narrows to 200px at 850px. At 600px, About, research rows, projects, publications, education/skills, and contact stack in reading order; news dates move above the entry and timeline articles become blocks.
+Desktop composition uses open columns: About is 1.7:1; research rows use a 76px illustrated margin beside a title and description; featured projects are 0.9:1.1; publications pair a 260px image with flexible text. Project spacing is 48px, reducing to 32px at 1100px. Publication media narrows to 200px at 850px. At 600px, About, projects, publications, education/skills, and contact stack in reading order; news dates move above the entry and timeline articles become blocks.
 
 The butterfly film, canvas and fallback lettering fill one clipped banner. Its desktop height ranges from 260px to 345px. At 620px and below it ranges from 210px to 260px and the film covers the frame. The research link sits at bottom center, with the motion control at bottom right.
 
@@ -256,11 +256,11 @@ The persistent pause control stops the film, assembles the letters and stills th
 
 The central label connects to four research branches, each with two leaves. Twelve solid SVG lines show these relationships and three faint dashed lines cross between branches. Each 44px-high or larger topic button can be previewed by mouse hover or keyboard focus. Click, Enter, Space or tap toggles a selection. Arrow keys move between topics, and Tab on a selected topic enters the link in its note.
 
-Label motion and SVG endpoints share the same coordinates. The labels drift and respond to the pointer while the button hit areas stay fixed. Selection underlines the label, and the active parent edge turns orange. The note names the topic, explains its connection and links to the relevant work. It opens just below the button when space permits, otherwise above, and stays inside the field horizontally. Escape and outside presses dismiss it. The connected geometry remains available when motion is paused.
+On narrow screens each research row keeps its index and sketch beside the stacked text. In the map, four spokes meet at a single SVG junction directly behind the transparent central label. Branch hubs, lettering and all incident edges share one sampled position per frame. The labels drift and respond to the pointer while the button hit areas stay fixed. Selection underlines the label, and the path from the active topic to the central label turns orange. The note names the topic, explains its connection and links to the relevant work. It opens just below the button when space permits, otherwise above, and stays inside the field horizontally. Escape and outside presses dismiss it. The connected geometry remains available when motion is paused.
 
 ### Research rows, projects, and publications
 
-Thin rules separate the reading rows. Each homepage project opens with still evidence beside its title and description. The path-tracking simulation and the Fold Box trajectory replay each sit in a closed native disclosure under their project image. Opening a disclosure reveals a captioned player with native controls. The reader starts playback explicitly, and closing the disclosure pauses it. Study scope and dataset descriptions have separate disclosures. Publication titles, status, author metadata and resource links wrap in reading order.
+Thin rules separate the reading rows. Hover or keyboard focus extends a slim orange mark beside the index, reveals the topic’s original ink sketch, and accents its linked title. A touch reader can tap the description to preview the sketch or tap the title to open its project or paper. Each homepage project opens with still evidence beside its title and description. The path-tracking simulation and the Fold Box trajectory replay each sit in a closed native disclosure under their project image. Opening a disclosure reveals a captioned player with native controls. The reader starts playback explicitly, and closing the disclosure pauses it. Study scope and dataset descriptions have separate disclosures. Publication titles, status, author metadata and resource links wrap in reading order.
 
 ### Methods and evidence
 
@@ -268,7 +268,7 @@ The detail method grid starts each article with its descriptive heading and para
 
 ### Static and reduced-motion reading
 
-Content starts visible. Once-only scroll entrances use a short opacity/12px movement and never determine whether text can be read. Keyboard interaction, pause, and reduced-motion preference suppress enhanced entrances. With JavaScript disabled, English content, ordinary anchor navigation, research rows, native disclosures, PDF links, and manual video controls remain usable. The interactive graph/note and unavailable utility controls are hidden; the mobile header becomes static and navigation remains exposed.
+The HTML is readable by default. With motion enabled, observed reading units fade in once, moving up 16px over 760ms. Simultaneous arrivals stagger by at most 135ms. Keyboard interaction, pause, and reduced-motion preference suppress enhanced entrances. With JavaScript disabled, English content, ordinary anchor navigation, research rows, native disclosures, PDF links, and manual video controls remain usable. The interactive graph/note and unavailable utility controls are hidden; the mobile header becomes static and navigation remains exposed.
 
 ## Do's and Don'ts
 

@@ -308,8 +308,8 @@
       },
       {
         "name": "reading-entrance",
-        "value": "420ms",
-        "purpose": "Once-only opacity .45 to 1 and translateY 12px to 0; default content remains visible."
+        "value": "760ms",
+        "purpose": "Reading units fade from 0 to 1 and rise 16px on first entry; simultaneous arrivals are staggered by up to 135ms."
       },
       {
         "name": "identity-reveal",

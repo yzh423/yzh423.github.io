@@ -66,6 +66,14 @@ try {
     const b=document.querySelector('[data-node="control"] span').getBoundingClientRect(),r=l.ownerSVGElement.getBoundingClientRect();
     return Math.abs(r.left+l.x2.baseVal.value-(b.left+b.width/2))<2;
   }),true,'line follows moving label');
+  const hubAligned = await page.locator('.graph-stage').evaluate(stage => {
+    const hub=stage.querySelector('[data-hub="root"]'), label=stage.querySelector('.graph-center span');
+    const lines=[...stage.querySelectorAll('[data-from="root"]')], r=label.getBoundingClientRect(), svg=hub.ownerSVGElement.getBoundingClientRect();
+    return lines.length===4 && lines.every(l=>l.getAttribute('x1')===hub.getAttribute('cx') && l.getAttribute('y1')===hub.getAttribute('cy'))
+      && Math.abs(svg.left+hub.cx.baseVal.value-r.left-r.width/2)<1 && Math.abs(svg.top+hub.cy.baseVal.value-r.top-r.height/2)<1
+      && getComputedStyle(label).backgroundColor==='rgba(0, 0, 0, 0)';
+  });
+  assert.ok(hubAligned,'all four spokes must meet at the visible hub behind the title');
   record('preview plays muted only in view; pause/resume controls stop video and decorative motion');
 
   const control = page.locator('[data-node="control"]');
@@ -82,6 +90,13 @@ try {
   await page.locator('[data-node="control"]').click();
   assert.match(await page.locator('#graph-note').innerText(), /非线性建模/);
   record('research nodes support pointer, keyboard arrows, Enter, Escape and translated evidence links');
+
+  const row=page.locator('#theme-autonomy'), topic=row.locator('.topic-link');
+  await row.hover();
+  await page.waitForFunction(()=>getComputedStyle(document.querySelector('#theme-autonomy .topic-sketch')).opacity==='1');
+  await topic.focus(); await page.keyboard.press('Enter');
+  assert.equal(await page.evaluate(()=>document.activeElement.id),'paper-ramp-merging');
+  record('illustrated research rows reveal on hover and lead keyboard readers to the matching evidence');
 
   await theme(page, 'dark');
   assert.equal(await page.locator('.button').first().evaluate(e => getComputedStyle(e).backgroundColor), 'rgb(22, 23, 21)');

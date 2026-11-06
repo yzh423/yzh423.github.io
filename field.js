@@ -139,17 +139,25 @@
     const svg=stage.querySelector('svg');
     const items=Object.entries(layout).map(([key,L],i)=>{
       const button=stage.querySelector(key==='root'?'.graph-center':'[data-node="'+key+'"]');
-      return {key,L,i,button,label:button.querySelector('span'),x:0,y:0,u:0,v:0,dx:0,dy:0};
+      return {key,L,i,button,label:button.querySelector('span'),x:0,y:0,u:0,v:0,dx:0,dy:0,vx:0,vy:0};
     });
     const byKey=Object.fromEntries(items.map(n=>[n.key,n])),edges=[];
     function edge(a,b,faint=false){
       const line=document.createElementNS('http://www.w3.org/2000/svg','line');
+      line.dataset.from=a;
       if(faint)line.classList.add('thread');else line.dataset.edge=b;
       svg.append(line);edges.push({a:byKey[a],b:byKey[b],line});
     }
     items.filter(n=>n.L[0]).forEach(n=>edge(n.L[0],n.key));
     edge('robustness','autonomy',true);edge('motion','interaction',true);edge('control','data',true);
+    for(const n of items.filter(n=>n.key==='root'||n.L[0]==='root')){
+      const dot=document.createElementNS(svg.namespaceURI,'circle');
+      dot.dataset.hub=n.key;dot.classList.add('junction');
+      if(n.key==='root')dot.classList.add('junction-root');
+      dot.setAttribute('r',n.key==='root'?'2.6':'1.65');svg.append(dot);n.dot=dot;
+    }
     let w,h,t=0,frame=0,last=0,visible=false,narrow=false;
+    let mx=0,my=0,weight=0;
     const pointer=pointerFor(stage,start);
     function size(){
       w=stage.clientWidth;h=stage.clientHeight;narrow=matchMedia('(max-width:620px)').matches;
@@ -161,22 +169,33 @@
     }
     function paint(dt){
       if(!w||!h)return;
-      const r=pointer.active?stage.getBoundingClientRect():null;
-      const mx=r?pointer.cx-r.left:0,my=r?pointer.cy-r.top:0;
+      const running=enabled(), follow=1-Math.exp(-dt*13);
+      if(pointer.active){
+        const r=stage.getBoundingClientRect(), px=pointer.cx-r.left, py=pointer.cy-r.top;
+        if(weight<.002){mx=px;my=py;} else {mx+=(px-mx)*follow;my+=(py-my)*follow;}
+      }
+      weight+=((pointer.active && running ? 1 : 0)-weight)*follow;
+      const radius=narrow?64:102, stiffness=11, decay=Math.exp(-stiffness*dt);
       for(const n of items){
         const phase=n.i*2.37, amp=(n.key==='root'?.46:1)*(narrow?.60:1);
-        const ax=n.x-mx,ay=n.y-my,dist=Math.max(1,Math.hypot(ax,ay));
-        const force=r?Math.max(0,1-dist/(narrow?100:180))**2:0;
-        const tx=amp*(Math.sin(t*.65+phase)*5.8+Math.cos(t*.34-phase)*3+ax/dist*force*15);
-        const ty=amp*(Math.cos(t*.54+phase)*5.4+Math.sin(t*.38+phase)*2+ay/dist*force*11);
-        const k=1-Math.exp(-dt*7);
-        n.dx=enabled()?n.dx+(tx-n.dx)*k:0;n.dy=enabled()?n.dy+(ty-n.dy)*k:0;
-        n.u=n.x+n.dx;n.v=n.y+n.dy;
+        const ax=n.x-mx,ay=n.y-my;
+        // A continuous field (including directly under the cursor) avoids a direction snap.
+        const force=weight*.27*Math.exp(-(ax*ax+ay*ay)/(2*radius*radius));
+        const parent=byKey[n.L[0]];
+        const tx=(parent?.dx||0)*.19 + amp*(Math.sin(t*.57+phase)*5.5+Math.cos(t*.31-phase)*2.5+ax*force);
+        const ty=(parent?.dy||0)*.19 + amp*(Math.cos(t*.49+phase)*5+Math.sin(t*.35+phase)*2+ay*force);
+        if(running){
+          const x=n.dx-tx,y=n.dy-ty,qx=(n.vx+stiffness*x)*dt,qy=(n.vy+stiffness*y)*dt;
+          n.dx=tx+(x+qx)*decay;n.dy=ty+(y+qy)*decay;
+          n.vx=(n.vx-stiffness*qx)*decay;n.vy=(n.vy-stiffness*qy)*decay;
+        }else{n.dx=n.dy=n.vx=n.vy=0;}
+        n.u=(n.x+n.dx).toFixed(2);n.v=(n.y+n.dy).toFixed(2);
         n.label.style.transform='translate('+n.dx.toFixed(2)+'px,'+n.dy.toFixed(2)+'px)';
+        if(n.dot){n.dot.setAttribute('cx',n.u);n.dot.setAttribute('cy',n.v);}
       }
       for(const {a,b,line} of edges){
-        line.setAttribute('x1',a.u.toFixed(2));line.setAttribute('y1',a.v.toFixed(2));
-        line.setAttribute('x2',b.u.toFixed(2));line.setAttribute('y2',b.v.toFixed(2));
+        line.setAttribute('x1',a.u);line.setAttribute('y1',a.v);
+        line.setAttribute('x2',b.u);line.setAttribute('y2',b.v);
       }
     }
     function tick(now){

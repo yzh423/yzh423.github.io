@@ -31,7 +31,11 @@ The pause control and reduced-motion preference provide a settled composition. B
 
 Four branches connect the central research label to eight topics. Solid lines join each parent and child, while three dashed lines show related branches and topics. The same SVG connections track the moving labels on desktop and in the taller phone layout. Topic buttons keep fixed hit areas. A visitor can scroll or pinch zoom over the map.
 
-Hover or focus opens a short note beside the topic. Clicking or tapping pins the note, underlines the selected label and highlights its incoming edge. The note opens below or above the button according to available space and has a link to the associated project, research row or publication section. Arrow keys move between topics. Tab from a selected topic reaches its note link. Escape clears the selection. With JavaScript disabled, the research rows provide a linear way to read the material.
+Hover or focus opens a short note beside the topic. Clicking or tapping pins the note, underlines the selected label and highlights the path through its parent to the central junction. The note opens below or above the button according to available space and has a link to the associated project, research row or publication section. Arrow keys move between topics. Tab from a selected topic reaches its note link. Escape clears the selection. With JavaScript disabled, the research rows provide a linear way to read the material.
+
+## Research rows and scrolling
+
+The four indexed rows have original line drawings of a robot arm, a highway merge, a mobile robot and an in-cabin interface. Hover or keyboard focus reveals a margin rule and sketch. A fine pointer can click anywhere on the row; on touch, tapping the description previews the sketch and tapping the title follows the evidence link directly. Each new reading unit fades in once as it enters the viewport. Motion preferences, keyboard navigation, print and script-free reading keep the content available.
 
 ## Project recordings
 

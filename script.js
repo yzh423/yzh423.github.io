@@ -188,7 +188,13 @@
     previewNode = transient ? node : null;
     const active = node || selectedNode;
     for (const item of nodes) item.setAttribute('aria-pressed', String(item === selectedNode));
-    for (const edge of graph.querySelectorAll('[data-edge]')) edge.classList.toggle('is-active', edge.dataset.edge === active?.dataset.node);
+    const edges = [...graph.querySelectorAll('[data-edge]')];
+    const trail = new Set();
+    let key = active?.dataset.node;
+    while (key && key !== 'root' && !trail.has(key)) {
+      trail.add(key); key = edges.find(edge => edge.dataset.edge === key)?.dataset.from;
+    }
+    for (const edge of edges) edge.classList.toggle('is-active', trail.has(edge.dataset.edge));
     noteAnimation?.cancel();
     note.querySelector('strong').textContent = active ? active.textContent : say('Research is connected.', '研究是彼此相连的。');
     note.querySelector('p').textContent = active ? say(active.dataset.note, active.dataset.noteZh) : say('Hover, tap, or tab to a topic to see how it connects to my work.', '悬停、点选或用 Tab 键选择一个主题，查看它与我的工作的联系。');
@@ -238,6 +244,21 @@
   graph?.addEventListener('focusout', event => { if (!graph.contains(event.relatedTarget)) showNode(selectedNode, true); });
   document.addEventListener('site:language', () => showNode(previewNode || selectedNode, true));
 
+  // On touch screens a tap on the description previews the sketch; the title
+  // remains a normal, single-tap link. A swipe never counts as a tap.
+  const topics = document.querySelector('.research-grid');
+  if (topics) {
+    let peek, timer;
+    const clear = () => { clearTimeout(timer); peek?.classList.remove('is-peeked'); peek = null; };
+    topics.addEventListener('click', event => {
+      if (event.target.closest('a') || !matchMedia('(hover: none), (pointer: coarse)').matches) return;
+      const row = event.target.closest('.research-card');
+      if (!row) return;
+      clear(); peek = row; row.classList.add('is-peeked'); timer = setTimeout(clear, 1600);
+    });
+    document.addEventListener('pointerdown', event => { if (peek && !peek.contains(event.target)) clear(); }, {passive: true});
+  }
+
   for (const disclosure of document.querySelectorAll('.recording')) {
     disclosure.addEventListener('toggle', () => { if (!disclosure.open) disclosure.querySelector('video')?.pause(); });
   }
@@ -250,17 +271,33 @@
     if (document.hidden) for (const video of document.querySelectorAll('video')) video.pause();
   });
 
-  // Repeated reading stays still. Entrances run once and never hide default content.
+  // Reveal the individual reading units, including items below the fold of a large section.
   if ('IntersectionObserver' in window) {
+    const targets = document.querySelectorAll([
+      '.about-essay', '.about-images', '.field-heading', '.research-map', '.research-card',
+      '.section-heading', '.project-media', '.project-copy', '.all-projects-link', '.publication',
+      'main > section > h2', '.news-list li', '.news-archive > summary', '.timeline article',
+      '.closing-grid h2', '.compact-item', '.skill-groups > div', '.cv-download',
+      '.contact-inner > *', '.detail-stat-band', '.detail-section-heading', '.comparison-copy',
+      '.detail-conclusions > div:first-child', '.method-grid article', '.evidence-feature', '.evidence-grid figure', '.detail-extra-video > summary', '.detail-scope > div'
+    ].join(','));
     const reveal = new IntersectionObserver(entries => {
+      let order = 0;
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
         reveal.unobserve(entry.target);
-        if (entry.boundingClientRect.top < 0) continue;
-        animate(entry.target, [{ opacity: .45, transform: 'translateY(12px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' });
+        entry.target.classList.remove('read-pending');
+        if (entry.target.matches(':focus-within')) continue;
+        animate(entry.target, [{ opacity: 0, translate: '0 16px' }, { opacity: 1, translate: '0 0' }], {
+          duration: 760, delay: Math.min(order++, 3) * 45, easing: 'cubic-bezier(.22,.74,.24,1)', fill: 'backwards'
+        });
       }
-    }, { threshold: .08 });
-    for (const el of document.querySelectorAll('main > section > h2, .section-heading, .publication, .timeline article, .about-essay, .field-heading, .research-card, .project-feature')) reveal.observe(el);
+    }, { threshold: 0, rootMargin: '0px 0px -16px 0px' });
+    for (const el of targets) { el.classList.add('read-pending'); reveal.observe(el); }
+    document.addEventListener('focusin', event => {
+      const el = event.target.closest('.read-pending');
+      if (el) { el.classList.remove('read-pending'); reveal.unobserve(el); }
+    });
   }
   setLanguage(language);
   syncScroll();
