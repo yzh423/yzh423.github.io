@@ -164,99 +164,67 @@
   addEventListener('scroll', () => { if (!scrollFrame) scrollFrame = requestAnimationFrame(syncScroll); }, { passive: true });
   addEventListener('resize', () => { if (!scrollFrame) scrollFrame = requestAnimationFrame(syncScroll); }, { passive: true });
 
-  // Native buttons give the map the same hover/tap exploration as the reference,
-  // while adding keyboard access and allowing ordinary vertical touch scrolling.
+  // Each topic is already a link in the HTML. The optional preview shares
+  // that destination; it never intercepts a first tap to ask for a second one.
   const nodes = [...document.querySelectorAll('.graph-node')];
   const graph = document.querySelector('.research-map');
   const note = document.querySelector('#graph-note');
-  let selectedNode = null;
-  let previewNode = null;
-  let noteAnimation;
-  let dismissTimer;
-  function placeNote(active) {
-    if (!active) return;
-    const field = graph.getBoundingClientRect(), anchor = active.getBoundingClientRect();
+  let activeNode = null, dismissTimer;
+  function placeNote(node) {
+    if (!node || note.hidden) return;
+    const field = graph.getBoundingClientRect(), anchor = node.getBoundingClientRect();
     const left = anchor.left - field.left + (anchor.width - note.offsetWidth) / 2;
-    const below = anchor.bottom - field.top + 3;
     const room = Math.min(field.bottom, innerHeight) - anchor.bottom;
     note.style.left = Math.max(0, Math.min(left, field.width - note.offsetWidth)) + 'px';
-    note.style.top = (room >= note.offsetHeight + 4 ? below : Math.max(0, anchor.top - field.top - note.offsetHeight - 3)) + 'px';
+    note.style.top = (room >= note.offsetHeight + 4 ? anchor.bottom - field.top + 3 : Math.max(0, anchor.top - field.top - note.offsetHeight - 3)) + 'px';
   }
-  function showNode(node, transient = false) {
+  function preview(node) {
     clearTimeout(dismissTimer);
     if (!note) return;
-    previewNode = transient ? node : null;
-    const active = node || selectedNode;
-    for (const item of nodes) item.setAttribute('aria-pressed', String(item === selectedNode));
-    const edges = [...graph.querySelectorAll('[data-edge]')];
-    const trail = new Set();
-    let key = active?.dataset.node;
+    activeNode?.classList.remove('is-previewed');
+    activeNode = node;
+    note.hidden = !node;
+    if (node) {
+      node.classList.add('is-previewed');
+      note.setAttribute('href',node.getAttribute('href'));
+      note.querySelector('strong').textContent = node.firstElementChild.textContent;
+      note.querySelector('.note-text').textContent = document.getElementById(node.getAttribute('aria-describedby')).textContent;
+      placeNote(node);
+    } else { note.removeAttribute('href'); }
+    const edges = [...graph.querySelectorAll('[data-edge]')], trail = new Set();
+    let key = node?.dataset.node;
     while (key && key !== 'root' && !trail.has(key)) {
-      trail.add(key); key = edges.find(edge => edge.dataset.edge === key)?.dataset.from;
+      trail.add(key); key = edges.find(e => e.dataset.edge === key)?.dataset.from;
     }
     for (const edge of edges) edge.classList.toggle('is-active', trail.has(edge.dataset.edge));
-    noteAnimation?.cancel();
-    note.querySelector('strong').textContent = active ? active.textContent : say('Research is connected.', '研究是彼此相连的。');
-    note.querySelector('p').textContent = active ? say(active.dataset.note, active.dataset.noteZh) : say('Hover, tap, or tab to a topic to see how it connects to my work.', '悬停、点选或用 Tab 键选择一个主题，查看它与我的工作的联系。');
-    const link = note.querySelector('a');
-    link.href = active?.dataset.link || '#projects';
-    link.textContent = active ? say('Explore this work', '查看相关研究') : say('Explore the work', '查看相关项目');
-    note.classList.toggle('is-shown', !!active);
-    placeNote(active);
-    if (!transient && active) noteAnimation = animate(note.querySelector('div'), [{ opacity: .55, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 180, easing: 'cubic-bezier(.22,1,.36,1)' });
   }
+  const dismissSoon = () => { clearTimeout(dismissTimer); dismissTimer = setTimeout(() => preview(null), 180); };
   for (const node of nodes) {
-    node.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') showNode(node, true); });
-    node.addEventListener('focus', () => showNode(node, true));
-    node.addEventListener('click', () => { selectedNode = selectedNode === node ? null : node; showNode(selectedNode); });
-    node.addEventListener('keydown', event => {
-      if (event.key === 'Escape') { selectedNode = null; showNode(null); }
-      if (['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(event.key) && !event.altKey && !event.metaKey && !event.ctrlKey) {
-        event.preventDefault();
-        const step = ['ArrowLeft','ArrowUp'].includes(event.key) ? -1 : 1;
+    node.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') preview(node); });
+    node.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') dismissSoon(); });
+    node.addEventListener('focus', () => preview(node));
+    node.addEventListener('keydown', e => {
+      if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key) && !e.altKey && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault();
+        const step = ['ArrowLeft','ArrowUp'].includes(e.key) ? -1 : 1;
         nodes[(nodes.indexOf(node) + step + nodes.length) % nodes.length].focus();
       }
     });
   }
-  for (const node of nodes) node.addEventListener('pointerleave', e => {
-    if (e.pointerType === 'mouse') dismissTimer = setTimeout(() => showNode(selectedNode, true), 180);
-  });
-  note?.addEventListener('pointerenter', () => clearTimeout(dismissTimer));
-  note?.addEventListener('pointerleave', () => showNode(selectedNode, true));
-  graph?.addEventListener('keydown', e => {
-    if (e.key === 'Escape' && note.contains(e.target)) {
-      const previous = selectedNode || previewNode;
-      previous?.focus(); selectedNode = null; showNode(null);
-    }
-    if (e.key === 'Tab' && !e.shiftKey && selectedNode === e.target) {
-      e.preventDefault(); note.querySelector('a').focus();
-    }
-  });
   if (graph) {
-    document.addEventListener('pointerdown', e => {
-      if (!e.target.closest('.graph-node, .graph-note') && (selectedNode || previewNode)) {
-        selectedNode = null; showNode(null);
+    note.addEventListener('pointerenter', () => clearTimeout(dismissTimer));
+    note.addEventListener('pointerleave', dismissSoon);
+    graph.addEventListener('focusout', e => { if (!graph.contains(e.relatedTarget)) preview(null); });
+    graph.addEventListener('keydown', e => { if (e.key === 'Escape') preview(null); });
+    graph.addEventListener('click', e => {
+      if (!e.ctrlKey && !e.metaKey && !e.shiftKey && !e.altKey && e.target.closest('a')) {
+        // Let native navigation (and the document's anchor handler) read the href first.
+        requestAnimationFrame(() => preview(null));
       }
-    }, {passive: true});
-    new ResizeObserver(() => placeNote(previewNode || selectedNode)).observe(graph);
-  }
-  graph?.addEventListener('pointerleave', () => showNode(selectedNode, true));
-  graph?.addEventListener('focusout', event => { if (!graph.contains(event.relatedTarget)) showNode(selectedNode, true); });
-  document.addEventListener('site:language', () => showNode(previewNode || selectedNode, true));
-
-  // On touch screens a tap on the description previews the sketch; the title
-  // remains a normal, single-tap link. A swipe never counts as a tap.
-  const topics = document.querySelector('.research-grid');
-  if (topics) {
-    let peek, timer;
-    const clear = () => { clearTimeout(timer); peek?.classList.remove('is-peeked'); peek = null; };
-    topics.addEventListener('click', event => {
-      if (event.target.closest('a') || !matchMedia('(hover: none), (pointer: coarse)').matches) return;
-      const row = event.target.closest('.research-card');
-      if (!row) return;
-      clear(); peek = row; row.classList.add('is-peeked'); timer = setTimeout(clear, 1600);
     });
-    document.addEventListener('pointerdown', event => { if (peek && !peek.contains(event.target)) clear(); }, {passive: true});
+    document.addEventListener('pointerdown', e => { if (activeNode && !graph.contains(e.target)) preview(null); }, {passive:true});
+    document.addEventListener('site:language', () => { if (activeNode) preview(activeNode); });
+    new ResizeObserver(() => placeNote(activeNode)).observe(graph);
   }
 
   for (const disclosure of document.querySelectorAll('.recording')) {

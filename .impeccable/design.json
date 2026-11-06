@@ -286,7 +286,7 @@
       },
       "graph-branch": {
         "displayName": "Research branch",
-        "purpose": "Native topic buttons with stationary hit targets."
+        "purpose": "Native topic links with stationary hit targets."
       }
     },
     "shadows": [],
@@ -390,19 +390,19 @@
     },
     {
       "name": "Research topic",
-      "kind": "button",
+      "kind": "link",
       "refersTo": "research-node",
-      "description": "Native topic button with a stationary hit area. Its label and the connected SVG endpoints move together.",
-      "html": "<button class=\"ds-node\" type=\"button\" aria-pressed=\"false\"><span>Control &amp; reliability</span></button>",
-      "css": ".ds-node{min-height:44px;padding:0;border:0;background:none;color:var(--ink,#242420);font:580 clamp(16px,1.65vw,22px)/1.18 var(--serif,Newsreader,Georgia,serif);cursor:pointer}.ds-node span{display:block;padding:2px 5px;background:var(--paper,#fff);border-radius:3px}.ds-node:is(:hover,:focus-visible,[aria-pressed=\"true\"]){color:var(--accent,#b94513)}.ds-node[aria-pressed=\"true\"] span{text-decoration:underline;text-underline-offset:4px}.ds-node:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:620px){.ds-node{font-size:16px}.ds-node span{text-wrap:balance}}"
+      "description": "Native link with a fixed hit area and a hover or focus preview. Its label and the connected SVG endpoints move together.",
+      "html": "<a class=\"ds-node\" href=\"#project-control\"><span>Control &amp; reliability</span></a>",
+      "css": ".ds-node{min-height:44px;text-decoration:none;padding:0;border:0;background:none;color:var(--ink,#242420);font:580 clamp(16px,1.65vw,22px)/1.18 var(--serif,Newsreader,Georgia,serif);cursor:pointer}.ds-node span{display:block;padding:2px 5px;background:var(--paper,#fff);border-radius:3px}.ds-node:is(:hover,:focus-visible,.is-previewed){color:var(--accent,#b94513)}.ds-node.is-previewed span{text-decoration:underline;text-underline-offset:4px}.ds-node:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:620px){.ds-node{font-size:16px}.ds-node span{text-wrap:balance}}"
     },
     {
       "name": "Research note",
       "kind": "custom",
       "refersTo": "research-note",
-      "description": "Near-topic note with a link to the relevant work. The map places it above or below the active topic.",
-      "html": "<div class=\"ds-note\" role=\"status\" aria-live=\"polite\"><strong>Control &amp; reliability</strong><p>Nonlinear modeling, torque-aware control, and tests that expose numerical sensitivity.</p><a href=\"#project-control\">Explore this work</a></div>",
-      "css": ".ds-note{width:min(290px,100%);box-sizing:border-box;padding:14px 17px;background:var(--paper,#fff);color:var(--ink,#242420);border:1px solid var(--line,#deded7);border-radius:7px}.ds-note strong{font:500 17px/1.4 var(--serif,Newsreader,Georgia,serif)}.ds-note p{margin:4px 0;font:400 13px/1.5 var(--sans,Inter,sans-serif);color:var(--muted,#62625b)}.ds-note a{display:inline-block;margin-top:5px;font:400 12px/1.75 var(--sans,Inter,sans-serif);color:var(--accent,#b94513);text-underline-offset:.24em}.ds-note a:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px}@media(max-width:620px){.ds-note{width:min(236px,100%)}}"
+      "description": "Linked preview above or below the topic; the entire note shares its destination.",
+      "html": "<a class=\"ds-note\" href=\"#project-control\" tabindex=\"-1\"><strong>Control &amp; reliability</strong><span>Nonlinear modeling, torque-aware control, and tests that expose numerical sensitivity.</span></a>",
+      "css": ".ds-note{display:block;text-decoration:none;width:min(290px,100%);box-sizing:border-box;padding:14px 17px;background:var(--paper,#fff);color:var(--ink,#242420);border:1px solid var(--line,#deded7);border-radius:7px}.ds-note strong{font:500 17px/1.4 var(--serif,Newsreader,Georgia,serif)}.ds-note span{display:block;margin:4px 0;font:400 13px/1.5 var(--sans,Inter,sans-serif);color:var(--muted,#62625b)}.ds-note:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px}@media(max-width:620px){.ds-note{display:block;text-decoration:none;width:min(236px,100%)}}"
     },
     {
       "name": "Research reading row",

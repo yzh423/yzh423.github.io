@@ -1,4 +1,4 @@
-"""Render the original typographic butterfly film (numpy, Pillow, imageio-ffmpeg).
+"""Render the original typographic butterfly film (numpy, scipy, Pillow, imageio-ffmpeg).
 The marks, wing drawings and camera moves are authored here; no input footage.
 Run: python scripts/render-butterfly.py
 """
@@ -7,6 +7,7 @@ import math
 import subprocess
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
+from scipy.ndimage import distance_transform_edt
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
@@ -20,10 +21,6 @@ def ramp(a,b,x):
     n=np.clip((x-a)/(b-a),0,1)
     return n*n*(3-2*n)
 def mix(a,b,x): return a+(b-a)*x
-def track(t,keys):
-    for (a,v),(b,w) in zip(keys,keys[1:]):
-        if t<=b: return mix(v,w,ramp(a,b,t))
-    return keys[-1][1]
 def curve(points):
     p=np.array(points,dtype=float); t=np.linspace(0,1,34)[:,None]
     return np.vstack([(1-t)**3*a+3*(1-t)**2*t*b+3*(1-t)*t*t*c+t**3*d
@@ -72,19 +69,22 @@ glyph=tiles[char,iy%8,ix%6].astype('f')/255
 pressure=(.89+.11*np.cos(col*1.73+row*.37)).astype('f')
 glyph*=pressure
 dist=np.hypot(((XX*.94+YY*.34)/5.9)%1-.5, ((YY*.94-XX*.34)/5.9)%1-.5)
-radial=np.sqrt(((U-.5)*1.27)**2+((V-.47)*.52)**2)
 rolloff=(.7*np.sin(U*7+V*3)+.3*np.sin(V*11-U*4)).astype('f')
 
 def projection(t):
-    macro=ramp(1.94,3.18,t)*(1-ramp(3.69,5.61,t))
+    # One push toward the left forewing and one pullback. Interpolating in log
+    # magnification keeps the camera moving through the change of print stock.
+    push=ramp(0,2.92,t)
+    pull=ramp(2.92,5.78,t)
+    macro=push*(1-pull)
     env=(1-ramp(4.85,5.85,t))
-    fold=.20+env*(.18+.50*(.5+.5*math.sin(2*math.pi*(t*.92+.048*math.sin(2*t))-.8)))
+    fold=.20+env*(1-.48*macro)*(.18+.50*(.5+.5*math.sin(2*math.pi*(t*.92+.048*math.sin(2*t))-.8)))
     turn=.055+.095*math.sin(t*1.35)*env-.17*macro
-    zoom=track(t,[(0,1.08),(.97,1.48),(1.94,1.73),(3.18,4.25),(3.69,4.08),(5.65,1.62)])
-    cx=W*(.5+.28*macro)+9*math.sin(t*2.2)*env
-    cy=H*(.523+.61*macro)+5*math.sin(t*3.1)*env
-    center=np.array([cx,cy])/2
+    zoom=math.exp(math.log(1.08)+math.log(4.55/1.08)*push+math.log(1.62/4.55)*pull)
     rot=np.array([[math.cos(turn),-math.sin(turn)],[math.sin(turn),math.cos(turn)]])
+    # Keep the same piece of membrane under the lens as its angle changes.
+    aim=rot@np.array([-118*math.cos(fold),-79+118*.27*math.sin(fold)])
+    center=(np.array([W*.5+9*math.sin(t*2.2)*env,H*.523+5*math.sin(t*3.1)*env])-zoom*macro*aim)/2
     return center,rot,zoom,fold
 
 def wing_plate(t):
@@ -113,9 +113,18 @@ PALE=np.array([239,239,225],dtype='f')
 GREEN=np.array([151,166,133],dtype='f')
 def frame(t):
     wing=wing_plate(t)
-    # Iris from pigment on bare paper to pale wings knocked out of sage type.
-    iris=ramp(-.13,.14,1.01*ramp(.52,1.67,t)-radial-.16)
-    dots=ramp(3.10,4.66,t-.18*(U-.5))
+    # Let the very same letters that print the wing spread beyond its moving
+    # silhouette. The distance is measured on this frame, not from screen centre.
+    if t<=.50: impression=0.
+    elif t>=2.21: impression=1.
+    else:
+        stride=6
+        silhouette=wing[::stride,::stride]>.06
+        distance=(distance_transform_edt(~silhouette)-distance_transform_edt(silhouette))*stride
+        distance=np.asarray(Image.fromarray(distance.astype('f')).resize((W,H),Image.Resampling.BILINEAR))
+        front=mix(-215,1060,ramp(.50,2.21,t))
+        impression=ramp(-98,98,front-distance+(U-.5)*48+(V-.5)*24)
+    dots=ramp(3.18,4.85,t-.18*(U-.5))
     wing_cover=ramp(.045,.82,wing)
     # Positive-print passages are made from the same alphabet as the ground.
     ink=wing*(.095+.905*glyph)
@@ -130,7 +139,7 @@ def frame(t):
         start=mix(PAPER[j],INK[j],ink)
         field=mix(SAGE[j],PALE[j],light)
         dot_field=mix(PALE[j],GREEN[j],print_dot*.93)
-        image[:,:,j]=np.clip(mix(mix(start,field,iris),dot_field,dots),0,255)
+        image[:,:,j]=np.clip(mix(mix(start,field,impression),dot_field,dots),0,255)
     return Image.fromarray(image)
 
 if __name__=='__main__':

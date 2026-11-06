@@ -9,7 +9,7 @@
   function pointerFor(el, wake) {
     const p = { active: false, cx: 0, cy: 0 };
     const sample = e => {
-      if (e.target.closest('a, .motion-toggle, .flight-replay')) { clear(); return; }
+      if (e.target.closest('.flight-action, .motion-toggle, .flight-replay')) { clear(); return; }
       p.active = true; p.cx = e.clientX; p.cy = e.clientY; wake();
     };
     const clear = () => { p.active = false; wake(); };
@@ -69,37 +69,45 @@
       ctx.clearRect(0,0,w,h);
       if(!intro&&!still)return false;
       const r=stage.getBoundingClientRect(),px=pointer.cx-r.left,py=pointer.cy-r.top,act=pointer.active&&!still;
-      const kFollow=1-Math.exp(-dt*21),kTrail=1-Math.exp(-dt*9);
+      const kFollow=1-Math.exp(-dt*42),kTrail=1-Math.exp(-dt*13);
       if(act&&strength<.002){mx=px;my=py;}
       const moveX=act?(px-mx)*kFollow:0,moveY=act?(py-my)*kFollow:0;
       mx+=moveX;my+=moveY;
       flowX+=(clamp(moveX/Math.max(.001,dt),-1100,1100)-flowX)*kTrail;
       flowY+=(clamp(moveY/Math.max(.001,dt),-1100,1100)-flowY)*kTrail;
-      strength+=((act?1:0)-strength)*(1-Math.exp(-dt*(act?18:8)));
+      strength+=((act?1:0)-strength)*(1-Math.exp(-dt*46));
       const tx=act?clamp(px/w-.5,-.5,.5)*Math.min(w*.055,29):0,ty=act?clamp(py/h-.5,-.5,.5)*15:0;
       fx+=(tx-fx)*kTrail;fy+=(ty-fy)*kTrail;
       if(still)fx=fy=strength=flowX=flowY=0;
       film.style.transform='translate('+fx.toFixed(2)+'px,'+fy.toFixed(2)+'px) rotate('+(fx*.049).toFixed(3)+'deg)';
       let movingInk=false;
-      const radius=clamp(w*.105,47,112), invRadius=1/radius, stiffness=16,decay=Math.exp(-dt*stiffness);
-      const vx=flowX*.028,vy=flowY*.028;
+      const radius=clamp(w*.107,47,116), invRadius=1/radius;
+      const vx=flowX*.018,vy=flowY*.018,stroke2=moveX*moveX+moveY*moveY;
+      const attack=44,release=24,attackDecay=Math.exp(-dt*attack),releaseDecay=Math.exp(-dt*release);
       for(let i=0;i<groups.length;i++){
         ctx.fillStyle=palette[i];
         for(const p of groups[i]){
-          // A compact lens separates nearby grains; a short directional wake follows a fast stroke.
-          const ax=p.x-mx,ay=p.y-my,d2=ax*ax+ay*ay;
+          // Sample the swept segment as well as its tip. A fast mouse or a
+          // sparsely sampled finger cannot jump over an entire stroke of type.
+          const tipX=p.x-mx,tipY=p.y-my;
+          const along=stroke2>1?clamp(-(tipX*moveX+tipY*moveY)/stroke2,0,1):0;
+          const ax=tipX+along*moveX,ay=tipY+along*moveY,d2=ax*ax+ay*ay;
           let destX=0,destY=0;
-          if(!still&&strength>.001&&d2<radius*radius*2.56){
+          if(act&&d2<radius*radius){
             const dist=Math.sqrt(d2),s=1-clamp(dist*invRadius,0,1);
-            const gain=strength*radius*.58*s*s*p.depth/Math.max(2,dist);
-            const tailX=ax+vx*.95,tailY=ay+vy*.95;
-            const tail=strength*.54*Math.max(0,1-Math.hypot(tailX,tailY)*invRadius)**2;
+            const gain=strength*radius*.46*s*s*(.78+.22*p.depth)*(1-.24*along)/Math.sqrt(d2+25);
+            const tail=strength*.41*s*s;
             destX=ax*gain+vx*tail;destY=ay*gain+vy*tail;
           }
+          // Attack quickly, then let each grain release on its own critically
+          // damped spring. There is no second slow fade multiplying the return.
+          const advancing=destX*destX+destY*destY>p.dx*p.dx+p.dy*p.dy;
+          const stiffness=advancing?attack:release,decay=advancing?attackDecay:releaseDecay;
           const x=p.dx-destX,y=p.dy-destY,qx=(p.vx+stiffness*x)*dt,qy=(p.vy+stiffness*y)*dt;
           p.dx=still?0:destX+(x+qx)*decay;p.dy=still?0:destY+(y+qy)*decay;
           p.vx=still?0:(p.vx-stiffness*qx)*decay;p.vy=still?0:(p.vy-stiffness*qy)*decay;
-          if(Math.abs(p.dx-destX)+Math.abs(p.dy-destY)>.06)movingInk=true;
+          if(Math.abs(p.dx-destX)+Math.abs(p.dy-destY)>.025||Math.abs(p.vx)+Math.abs(p.vy)>.45)movingInk=true;
+          else {p.dx=destX;p.dy=destY;p.vx=p.vy=0;}
           let cx=p.x+p.dx,cy=p.y+p.dy,alpha=1;
           if(!still&&entry<assemblyTime){
             const progress=clamp((entry-p.delay)/p.span,0,1),spread=(1-progress)**3;

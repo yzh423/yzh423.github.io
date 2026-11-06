@@ -89,20 +89,22 @@ try {
   assert.ok(hubAligned,'all four spokes must meet at the visible hub behind the title');
   record('preview plays muted only in view; pause/resume controls stop video and decorative motion');
 
-  const control = page.locator('[data-node="control"]');
-  await control.click();
-  assert.equal(await control.getAttribute('aria-pressed'), 'true');
-  assert.match(await page.locator('#graph-note').innerText(), /Nonlinear modeling/);
+  const control = page.locator('[data-node="control"]'), note = page.locator('#graph-note');
+  const graphLinks = await page.locator('.graph-node').evaluateAll(links => Object.fromEntries(links.map(a => [a.dataset.node, a.tagName === 'A' && a.getAttribute('href')])));
+  assert.deepEqual(graphLinks,{control:'#project-control',data:'#project-data',autonomy:'#theme-autonomy',interaction:'#paper-cabin-interaction',pid:'#project-control',robustness:'projects/reliable-robotic-manipulation/#scope',dataset:'#project-data',motion:'#project-motion',driving:'#paper-ramp-merging',navigation:'#paper-robot-navigation',hmi:'#paper-cabin-interaction',evaluation:'#paper-cabin-interaction'});
+  await control.hover(); await note.waitFor({state:'visible'});
+  assert.match(await note.innerText(), /Nonlinear modeling/);
+  assert.equal(await note.getAttribute('href'), await control.getAttribute('href'));
   await control.focus(); await page.keyboard.press('ArrowRight');
   assert.equal(await page.evaluate(() => document.activeElement.dataset.node), 'data');
-  await page.keyboard.press('Enter');
-  assert.match(await page.locator('#graph-note').innerText(), /Documented factory tasks/);
-  await page.keyboard.press('Escape');
-  assert.equal(await page.locator('.graph-node[aria-pressed="true"]').count(), 0);
-  await language(page, 'zh-CN');
-  await page.locator('[data-node="control"]').click();
-  assert.match(await page.locator('#graph-note').innerText(), /非线性建模/);
-  record('research nodes support pointer, keyboard arrows, Enter, Escape and translated evidence links');
+  assert.match(await note.innerText(), /Documented factory tasks/);
+  await page.keyboard.press('Escape'); assert.ok(await note.isHidden());
+  await page.keyboard.press('Enter'); await page.waitForURL(u=>u.hash==='#project-data');
+  await language(page, 'zh-CN'); await control.hover();
+  assert.match(await note.innerText(), /非线性建模/);
+  await note.click(); await page.waitForURL(u=>u.hash==='#project-control');
+  assert.ok(await page.locator('.work-title').evaluateAll(links=>links.length===6 && links.every(a=>a.href===document.querySelector('a.work-image[aria-labelledby="'+a.parentNode.id+'"]').href)));
+  record('all twelve map topics, preview cards and six linked works lead directly to their evidence; arrows, Escape and both languages work');
 
   const row=page.locator('#theme-autonomy'), topic=row.locator('.topic-link');
   await row.hover();
@@ -233,6 +235,7 @@ try {
   for(const route of ['', 'projects/reliable-robotic-manipulation/']) {
     await np.goto(new URL(route,base).href);
     assert.equal(await np.locator('h1').isVisible(),true);
+    if (!route) assert.equal(await np.locator('.graph-node:visible').count(),12);
     assert.equal(await np.locator('.primary-navigation').isVisible(),true);
     assert.equal(await np.locator('.site-header').evaluate(e=>getComputedStyle(e).position),'static');
     assert.ok(await np.evaluate(()=>document.documentElement.scrollWidth<=innerWidth+1));
@@ -243,13 +246,18 @@ try {
   const touchContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   const tp=await touchContext.newPage();observe(tp);await tp.goto(base);
   await tp.locator('#research').evaluate(e=>e.scrollIntoView({block:'start'}));
-  await tp.locator('[data-node="data"]').tap();assert.equal(await tp.locator('[data-node="data"]').getAttribute('aria-pressed'),'true');
+  await tp.locator('[data-node="dataset"]').tap(); await tp.waitForURL(u=>u.hash==='#project-data');
+  const touchRow=tp.locator('#theme-autonomy');
+  await touchRow.evaluate(e=>e.scrollIntoView({behavior:'instant',block:'center'}));
+  const desc=await touchRow.locator('p').boundingBox(); await tp.touchscreen.tap(desc.x+desc.width/2,desc.y+desc.height/2);
+  await tp.waitForURL(u=>u.hash==='#paper-ramp-merging');
+  await tp.locator('.graph-stage').evaluate(e=>e.scrollIntoView({behavior:'instant',block:'center'}));
   const before=await tp.evaluate(()=>scrollY);const cdp=await touchContext.newCDPSession(tp);
   await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:180,y:650}]});
   for(const y of [600,540,480,400,320])await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:180,y}]});
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await tp.waitForTimeout(300);assert.ok(await tp.evaluate(()=>scrollY)>before+80,'graph must not hijack vertical touch scroll');
-  await touchContext.close();record('touch map selection works while vertical scrolling stays native');
+  await touchContext.close();record('a single tap on a map topic or research row follows the link; vertical scrolling stays native');
   assert.deepEqual(errors,[],'console errors');assert.deepEqual(failedResources,[],'failed local resources');
   record('no page errors, console errors or failed same-origin resources');
 } finally {
