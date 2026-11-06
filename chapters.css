@@ -10,7 +10,8 @@
 @media screen {
   html.chapter-mode { overflow-y: hidden; scroll-padding: var(--reader-header) 0 0; scroll-snap-type: y mandatory; }
   .chapter-mode { --rail-height: calc(45px + env(safe-area-inset-bottom, 0px)); }
-  .chapter-mode main { padding-bottom: var(--rail-height); }
+  .chapter-mode main { padding-block: var(--reader-header) var(--rail-height); }
+  .chapter-mode .site-header { position:fixed; inset:0 0 auto; }
   .chapter-sheet {
     height: calc(100vh - var(--reader-header) - var(--rail-height));
     height: calc(100dvh - var(--reader-header) - var(--rail-height));
@@ -44,42 +45,49 @@
   .chapter-buttons svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.5; }
   .chapter-buttons button:enabled:is(:hover,:focus-visible) { color: var(--accent); background: var(--surface); }
   html.chapter-mode[data-turn] .chapter-sheet .read-pending { opacity: 1 !important; }
-  .chapter-beam { display: none; }
-  html[data-turn] .chapter-beam {
-    display: block; pointer-events: none; position: fixed; z-index: 52;
-    inset: var(--reader-header) 0 var(--rail-height); view-transition-name: chapter-beam;
-    /* Three fine diffraction lines and a fading screen, not a full-page flash. */
-    background: linear-gradient(174deg, transparent 42%, #008dc116 46%, #226de13b 49.4%, #00a6b8 49.63%, transparent 49.85%, #9351d1bb 50.07%, transparent 50.32%, #e762423d 50.62%, transparent 51.4%),
-                repeating-linear-gradient(90deg,#718adf2e 0 1px,transparent 1px 14px);
-    mask-image: linear-gradient(174deg,transparent 40%,#000 48%,#000 51%,transparent 54%);
-  }
-  /* Keep the masthead and controls fixed over the old and new page exposures. */
-  .chapter-mode .site-header { view-transition-name: chapter-header; }
-  .chapter-mode .chapter-rail { view-transition-name: chapter-rail; }
+  html[data-turn] { scroll-snap-type:none; }
+  html[data-turn] .portfolio { background:var(--cover-paper,#fff); }
+  .chapter-sheet.ink-out { position:relative; z-index:2; pointer-events:none; }
+  .chapter-sheet.ink-in { pointer-events:none; }
+  .chapter-particles { pointer-events:none; position:fixed; z-index:32; left:0; right:0;
+    top:var(--reader-header); width:100%; height:calc(100dvh - var(--reader-header) - var(--rail-height)); }
 }
-::view-transition { pointer-events: none; }
-::view-transition-group(*) { animation-duration: 640ms; }
-::view-transition-group(chapter-header), ::view-transition-group(chapter-rail) { z-index: 3; animation: none; }
-::view-transition-old(chapter-header), ::view-transition-old(chapter-rail), ::view-transition-old(chapter-beam) { display: none; }
-::view-transition-new(chapter-header), ::view-transition-new(chapter-rail) { animation: none; }
-::view-transition-group(chapter-beam) { z-index: 2; animation: none; }
-::view-transition-old(root) { animation: sheet-recede 640ms cubic-bezier(.22,.6,.32,1) both; mix-blend-mode: normal; }
-::view-transition-new(root) { animation: plate-down 640ms cubic-bezier(.38,.04,.2,1) both; mix-blend-mode: normal; }
-::view-transition-new(chapter-beam) { animation: beam-down 640ms cubic-bezier(.38,.04,.2,1) both; mix-blend-mode: normal; }
-[data-turn="up"]::view-transition-new(root) { animation-name: plate-up; }
-[data-turn="up"]::view-transition-new(chapter-beam) { animation-direction: reverse; animation-timing-function: cubic-bezier(.8,0,.62,.96); }
-@keyframes sheet-recede { to { transform: scale(.987); opacity: .85; } }
-@keyframes plate-down { from { clip-path: polygon(0 0,100% 0,100% -16%,0 -1%); } to { clip-path: polygon(0 0,100% 0,100% 101%,0 116%); } }
-@keyframes plate-up { from { clip-path: polygon(0 116%,100% 101%,100% 100%,0 100%); } to { clip-path: polygon(0 -1%,100% -16%,100% 100%,0 100%); } }
-@keyframes beam-down { from { transform: translateY(-64%); } to { transform: translateY(64%); } }
+.portfolio .print-stage h1.flight-fallback { margin:0; font:500 clamp(38px,8.5vw,116px)/1 var(--serif); }
+.portfolio .has-lettering h1.flight-fallback { visibility:visible; opacity:0; }
+@media(max-width:760px) {
+  .portfolio .hero { display:grid; grid-template-columns:auto 1fr; gap:0 16px; }
+  .portfolio .hero-links { justify-content:flex-end; margin:0; gap:clamp(10px,3vw,19px); }
+  .portfolio .hero-positioning,.portfolio .hero-intro { grid-column:1/-1; }
+}
 @media screen and (min-width: 851px) {
   .chapter-mode .portfolio .hero { padding-block: clamp(14px,3.2vh,38px) clamp(16px,3vh,36px); }
   .chapter-mode .portfolio .print-stage {
-    height: clamp(164px,min(33vw,calc(100dvh - 395px)),474px);
-    margin-block: clamp(10px,2.1vh,22px);
+    height: clamp(174px,min(41vw,calc(100dvh - 374px)),578px);
+    margin-block: clamp(6px,1.45vh,16px);
   }
 }
 @media print {
+.campus-track { display:block !important; overflow:visible !important; }
+.campus-controls { display:none !important; }
   .chapter-sheet { display: contents; }
-  .chapter-rail, .chapter-beam { display: none !important; }
+  .chapter-rail, .chapter-particles { display: none !important; }
 }
+
+@media (max-width:850px) {
+  .portfolio .print-stage { height:clamp(235px,min(69vw,43dvh),420px); }
+}
+.about-images,.campus-gallery { min-width:0; }
+.campus-track {
+  display:flex; overflow-x:auto; scroll-snap-type:x mandatory;
+  overscroll-behavior-x:contain; scrollbar-width:thin; scrollbar-color:var(--line) transparent;
+}
+.js .campus-track { scrollbar-width:none; }
+.campus-slide { flex:0 0 100%; min-width:0; margin:0; scroll-snap-align:start; }
+.campus-slide img { display:block; width:100%; aspect-ratio:3/2; height:auto; object-fit:cover; }
+.campus-slide figcaption { display:grid; gap:3px; margin-top:10px; }
+.campus-slide figcaption strong { color:var(--ink); font:500 clamp(19px,2vw,27px)/1.2 var(--serif); }
+.campus-controls { display:flex; align-items:center; justify-content:flex-end; gap:7px; margin-top:9px; border-top:1px solid var(--line); }
+.campus-count { margin-right:auto; font:11px/1.3 ui-monospace,monospace; color:var(--muted); }
+.campus-controls button { color:var(--ink); background:none; border:0; cursor:pointer; width:44px; height:44px; font-size:22px; }
+.campus-controls button:disabled { color:var(--line); }
+.campus-controls button:enabled:hover { color:var(--accent); }

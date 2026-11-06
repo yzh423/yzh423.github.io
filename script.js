@@ -64,18 +64,56 @@
     themeToggle?.setAttribute('aria-label', root.dataset.theme === 'dark' ? say('Switch to light theme', '切换到浅色主题') : say('Switch to dark theme', '切换到深色主题'));
     document.querySelector('meta[name="theme-color"]')?.setAttribute('content', root.dataset.theme === 'dark' ? '#161715' : '#ffffff');
   }
+  let preference;
+  function finishPreference() {
+    if (!preference) return;
+    const previous=preference;
+    preference=null;
+    previous.commit();
+    previous.effect?.skipTransition?.();
+    previous.effect?.cancel?.();
+    delete root.dataset.preferenceMotion;
+  }
+  // Commit the previous intent before another click reads the current setting.
+  // Keyboard activation participates unless the visitor has reduced motion.
+  function changePreference(kind,apply) {
+    document.dispatchEvent(new Event('site:preference-start'));
+    if (!moving()) { apply(); return; }
+    let committed=false;
+    const state={commit() { if (!committed) { committed=true; apply(); } }};
+    preference=state;
+    root.dataset.preferenceMotion=kind;
+    const done=()=>{
+      if(preference===state) { preference=null; delete root.dataset.preferenceMotion; }
+    };
+    if(document.startViewTransition) {
+      state.effect=document.startViewTransition(state.commit);
+      // Interrupting a pending capture rejects ready even though the content
+      // update commits successfully and finished resolves.
+      state.effect.ready.catch(()=>{});
+      state.effect.finished.then(done,done);
+    } else if(document.body.animate) {
+      state.effect=document.body.animate([{opacity:1},{opacity:.35}],{duration:100,fill:'forwards'});
+      state.effect.finished.then(()=>{
+        if(preference!==state) return;
+        state.commit(); state.effect.cancel();
+        state.effect=document.body.animate([{opacity:.35},{opacity:1}],{duration:180,easing:'ease-out'});
+        state.effect.finished.then(done,done);
+      },done);
+    } else { state.commit(); done(); }
+  }
+  document.addEventListener('site:turn-start',finishPreference);
+  document.addEventListener('site:motion',()=>{if (!moving()) finishPreference();});
   function setTheme(value) {
-    root.classList.add('theme-changing');
-    void root.offsetWidth;
-    root.dataset.theme = value;
+    root.dataset.theme=value;
     themeLabel();
     document.dispatchEvent(new Event('site:theme'));
-    requestAnimationFrame(() => requestAnimationFrame(() => root.classList.remove('theme-changing')));
   }
   themeToggle?.addEventListener('click', () => {
+    finishPreference();
     const theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-    storage.set('zy-theme', theme);
-    setTheme(theme);
+    storage.set('zy-theme',theme);
+    changePreference('theme',()=>setTheme(theme));
   });
   systemDark.addEventListener('change', () => { if (!storage.get('zy-theme')) setTheme(systemDark.matches ? 'dark' : 'light'); });
 
@@ -118,12 +156,25 @@
     document.dispatchEvent(new Event('site:language'));
   }
   document.querySelector('.language-toggle')?.addEventListener('click', () => {
-    const section = document.querySelector('section.is-current');
-    const fraction = section ? (scrollY - section.offsetTop) / section.offsetHeight : 0;
-    setLanguage(language === 'en' ? 'zh' : 'en');
-    storage.set('zy-language', language);
-    // Keep the reader near the selected section when line lengths change.
-    if (section && !window.chapterReader && scrollY > 100) scrollTo({ top: section.offsetTop + section.offsetHeight * fraction, behavior: 'instant' });
+    finishPreference();
+    const next=language==='en'?'zh':'en';
+    storage.set('zy-language',next);
+    changePreference('language',()=>{
+      const section=document.querySelector('section.is-current');
+      const sheet=section?.closest('.chapter-sheet');
+      const top=sheet?.getBoundingClientRect().top ?? (header?.offsetHeight || 0);
+      const anchor=section && [...section.querySelectorAll('h2,h3,p,li,summary,dd')].find(el=>{
+        const r=el.getBoundingClientRect(); return r.height>0 && r.bottom>top+8 && r.top<innerHeight;
+      });
+      const before=anchor?.getBoundingClientRect().top;
+      const hasScrolled=sheet ? sheet.scrollTop>2 : scrollY>top;
+      setLanguage(next);
+      if(anchor && hasScrolled) {
+        const dy=anchor.getBoundingClientRect().top-before;
+        if(sheet) sheet.scrollTop+=dy;
+        else window.scrollBy({top:dy,behavior:'instant'});
+      }
+    });
   });
 
   // The same destinations work without JS; pointer navigation adds a short smooth scroll.
@@ -273,33 +324,4 @@
   }
   setLanguage(language);
   syncScroll();
-  const heading = document.querySelector('.hero-identity h1');
-  if (heading) {
-    function revealIdentity() {
-      const easing = 'cubic-bezier(.19,.8,.27,1)';
-      const words = [...heading.querySelectorAll('.name-word')].map((word, i) => animate(word, [
-        { opacity: 0, transform: 'translateY(.22em)' },
-        { opacity: 1, transform: 'translateY(0)' }
-      ], { duration: 620, delay: i * 125, easing, fill: 'backwards' }));
-      const signature = animate(heading.querySelector('.name-secondary'), [
-        { opacity: 0, clipPath: 'inset(-20% 100% -20% -10%)', transform: 'translateY(.12em)' },
-        { opacity: 1, clipPath: 'inset(-20% -12% -20% -10%)', transform: 'translateY(0)' }
-      ], { duration: 680, delay: 360, easing, fill: 'backwards' });
-      return Promise.allSettled([...words, signature].filter(Boolean).map(a => a.finished));
-    }
-    if (['', '#home', '#hero', '#main-content'].includes(location.hash)) {
-      window.identityReady = revealIdentity();
-    } else if ('IntersectionObserver' in window) {
-      // A direct research link should not spend the entrance offscreen or delay the banner.
-      let away = false;
-      const entrance = new IntersectionObserver(([entry]) => {
-        // The browser can report the top of the document before it jumps to the fragment.
-        if (entry.intersectionRatio < .6) { away = true; return; }
-        if (!away) return;
-        entrance.disconnect();
-        revealIdentity();
-      }, { threshold: .6 });
-      entrance.observe(heading);
-    }
-  }
 })();

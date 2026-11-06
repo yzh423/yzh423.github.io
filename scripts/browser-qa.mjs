@@ -24,9 +24,11 @@ async function screenshot(page, name, fullPage = false) {
 }
 async function language(page, lang) {
   if (await page.locator('html').getAttribute('lang') !== lang) await page.locator('.language-toggle').click();
+  await page.waitForFunction(lang=>document.documentElement.lang===lang && !document.documentElement.dataset.preferenceMotion,lang);
 }
 async function theme(page, value) {
   if (await page.locator('html').getAttribute('data-theme') !== value) await page.locator('.theme-toggle').click();
+  await page.waitForFunction(theme=>document.documentElement.dataset.theme===theme && !document.documentElement.dataset.preferenceMotion,value);
 }
 try {
   const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' });

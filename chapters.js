@@ -18,11 +18,8 @@
     return sheet;
   });
   sheets.at(-1).append(document.querySelector('.site-footer'));
-  const beam = document.createElement('div');
-  beam.className = 'chapter-beam';
-  beam.setAttribute('aria-hidden','true');
-  document.body.append(beam);
-  let active = 0, transition, sweep, incoming, revision = 0, swiping, boundaryTimer = 0;
+  let active = 0, motion = null, swiping;
+  function settleTurn() { motion?.finish(false); }
   const headerHeight = () => header.offsetHeight;
   const offset = sheet => scrollY + sheet.getBoundingClientRect().top - headerHeight();
   const atEdge = (sheet, direction) => direction < 0 ? sheet.scrollTop < 2 :
@@ -38,6 +35,7 @@
   }
   function locate() {
     // Focus, find-in-page and script-driven scrolls may also select a sheet.
+    if (root.dataset.turn) return sections[active];
     const midpoint = headerHeight() + sheets[0].clientHeight/2;
     const index = sheets.findIndex(sheet => {
       const box = sheet.getBoundingClientRect();
@@ -65,48 +63,55 @@
     }
     window.dispatchEvent(new Event('scroll'));
   }
-  function open(target, animate = true, fromBelow = false, updateHash = false) {
-    const section = target.closest('.chapter-sheet')?.firstElementChild || sections[0];
-    const index = sections.indexOf(section);
-    if (index < 0) return;
-    const direction = index < active ? 'up' : 'down';
-    const turn = index !== active && animate && root.dataset.motion === 'running';
-    const ticket = ++revision;
-    transition?.skipTransition();
-    sweep?.cancel();
-    incoming?.cancel();
-    delete root.dataset.turn;
-    const change = () => {
-      if (ticket !== revision) return;
-      if (updateHash) history.replaceState(history.state,'','#' + section.id);
+  function open(target, animate = true, fromBelow = false, updateHash = false, impulse = 0) {
+    settleTurn();
+    const section=target.closest('.chapter-sheet')?.firstElementChild || sections[0];
+    const index=sections.indexOf(section);
+    if(index<0) return;
+    const origin=active, sign=Math.sign(index-origin), originalURL=location.href;
+    const oldPosition=sheets[origin].scrollTop;
+    const change=()=>{
+      if(updateHash) history.replaceState(history.state,'','#'+section.id);
       position(target,index,fromBelow);
     };
-    if (!turn) { change(); return; }
-    if (document.startViewTransition) {
-      const effect = document.startViewTransition(() => {
-        if (ticket !== revision) return;
-        root.dataset.turn = direction;
-        change();
-      });
-      transition = effect;
-      effect.finished.finally(() => {
-        if (ticket === revision) { delete root.dataset.turn; transition = null; }
-      });
-    } else {
-      change();
-      root.dataset.turn = direction;
-      const frames = [{transform:'translateY(-64%)'},{transform:'translateY(64%)'}];
-      incoming = section.animate([
-        {opacity:.55, transform:'translateY('+(direction === 'down' ? 18 : -18)+'px)'},
-        {opacity:1, transform:'translateY(0)'}
-      ],{duration:420,easing:'cubic-bezier(.18,.7,.2,1)'});
-      sweep = beam.animate(direction === 'down' ? frames : frames.reverse(),{duration:460,easing:'cubic-bezier(.3,0,.2,1)'});
-      sweep.finished.then(() => { if (ticket === revision) delete root.dataset.turn; }, () => {});
+    if(!sign || !animate || root.dataset.motion!=='running' || !window.chapterInk) { change(); return; }
+    document.dispatchEvent(new Event('site:turn-start'));
+    root.dataset.turn=sign>0?'down':'up';
+    const ink=window.chapterInk.morph(sheets[origin],sheets[index],sign,change);
+    if(!ink) { delete root.dataset.turn; return; }
+    let progress=0, pressure=Math.min(.12,Math.abs(impulse)/1500), reverse=false;
+    let last=performance.now(), frame=0;
+    function finish(undo) {
+      cancelAnimationFrame(frame);
+      ink.clear();
+      motion=null;
+      if(undo) {
+        history.replaceState(history.state,'',originalURL);
+        position(sections[origin],origin,false);
+        sheets[origin].scrollTop=oldPosition;
+      }
+      delete root.dataset.turn;
     }
+    function draw(now) {
+      const dt=Math.min(50,now-last); last=now;
+      const response=pressure*(1-Math.exp(-dt/46));
+      pressure-=response;
+      progress=Math.max(0,Math.min(1,progress+dt/(reverse?-480:700)+response));
+      ink.paint(progress);
+      if(progress===1 || (reverse && progress===0)) finish(reverse);
+      else frame=requestAnimationFrame(draw);
+    }
+    motion={finish, feed(delta) {
+      const signed=sign*delta;
+      if(Math.abs(signed)>3) reverse=signed<0;
+      pressure=Math.max(-.32,Math.min(.32,pressure+signed/980));
+    }};
+    ink.paint(0);
+    frame=requestAnimationFrame(draw);
   }
-  function step(direction, animate, fromEdge = false) {
-    const target = sections[active+direction];
-    if (target) open(target,animate,fromEdge && direction < 0,true);
+  function step(direction, animate, fromEdge = false, impulse = 0) {
+    const target=sections[active+direction];
+    if(target) open(target,animate,fromEdge && direction<0,true,impulse);
   }
   const interactive = 'input, textarea, select, [contenteditable="true"], video[controls], .menu-open';
   let lastWheel = -Infinity, wheelDirection = 0, distance = 0, consumed = false, turned = false;
@@ -118,7 +123,8 @@
     lastWheel=now; wheelDirection=direction;
     const sheet = sheets[active];
     const pixels = event.deltaY * (event.deltaMode === 1 ? 16 : event.deltaMode === 2 ? sheet.clientHeight : 1);
-    if (turned || (transition && root.dataset.turn) || now < boundaryTimer) { event.preventDefault(); consumed=true; return; }
+    if (motion) { event.preventDefault(); motion.feed(pixels); turned=true; return; }
+    if (turned) { event.preventDefault(); return; }
     if (!atEdge(sheet,direction)) {
       consumed=true;
       if (!sheet.contains(event.target)) { event.preventDefault(); sheet.scrollBy(0,pixels); }
@@ -127,11 +133,10 @@
     event.preventDefault();
     if (consumed) return;
     distance += Math.abs(pixels);
-    if (distance >= 32) {
+    if (distance >= 7) {
       consumed=true;
       turned=true;
-      boundaryTimer=now+320;
-      step(direction,true,true);
+      step(direction,true,true,pixels);
     }
   },{passive:false});
   // The browser owns vertical reading and pinch-to-zoom. Only a fresh swipe
@@ -175,13 +180,15 @@
     open(target,false);
   }
   function resize() {
+    settleTurn();
     root.style.setProperty('--reader-header', headerHeight()+'px');
     window.scrollTo({top:offset(sheets[active]),behavior:'instant'});
   }
   document.addEventListener('site:language',updateRail);
   document.addEventListener('site:motion',() => {
-    if(root.dataset.motion!=='running') { transition?.skipTransition(); sweep?.finish(); incoming?.finish(); }
+    if(root.dataset.motion!=='running') settleTurn();
   });
+  document.addEventListener('site:preference-start',settleTurn);
   window.addEventListener('hashchange',restore);
   window.addEventListener('popstate',restore);
   window.addEventListener('resize',resize);

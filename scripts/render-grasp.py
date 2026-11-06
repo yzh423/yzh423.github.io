@@ -181,6 +181,61 @@ crosshatch = hatch_lines(XX*.88 - YY*.48, 9.2, .95)
 dots = 1 - ramp(.18, .30, dist)
 
 
+def optical_field(t, center, radius):
+    """Project a wireframe workspace behind the tool and register the pickup to it."""
+    plate = Image.new('RGB', (W, H), 'white')
+    pen = ImageDraw.Draw(plate, 'RGBA')
+    blue, teal, iris = (49,94,215), (0,155,174), (127,79,205)
+    u = np.linspace(0, 1, 144)
+    # A family of ruled trajectories. The space between rails twists around a
+    # common path, with moving knots revealing the direction of travel.
+    def rail(s, v):
+        phase = 5.8*s - .20*t
+        x = -100 + 1650*s
+        y = 352 - 159*np.sin(s*math.pi*.97) + 69*np.sin(2*math.pi*s+.36)
+        envelope = 18 + 58*np.sin(math.pi*s)**2
+        return x, y + envelope*v*np.cos(phase) + 25*v*v*np.sin(phase)
+    for i in range(21):
+        s = .18+i*.036
+        v = .38*math.sin(i*.71)
+        facet = [rail(s,v),rail(s+.035,v-.5),rail(s+.035,v+.48)]
+        pen.polygon(facet,fill=(*(teal if i<12 else iris), 17+i%3*5))
+    for k in range(15):
+        v = (k-7)/7
+        x, y = rail(u, v)
+        hue = teal if k < 6 else blue if k < 11 else iris
+        primary = k in (0,7,14)
+        pen.line(list(zip(x,y)),fill=(*hue, 156 if primary else 68),width=3 if primary else 1)
+        if k in (0,5,10,14):
+            pos = (.18*k + t*.045) % 1
+            px,py = rail(pos,v)
+            pen.ellipse((px-2,py-2,px+2,py+2),fill=(*hue,190))
+    for s in np.linspace(.08,.98,74):
+        line = [rail(s,v) for v in np.linspace(-1,1,14)]
+        pen.line(line,fill=(*blue,24),width=1)
+    # Split arcs, calibration ticks and an acquisition pulse follow the real
+    # bushing centre. They remain outside the machined surface.
+    cx,cy = center
+    r = radius*(1.90 - .31*travel(1.36,1.93,t))
+    for factor,hue,arcs in [(1,teal,[(-148,-42),(-23,24),(65,140)]),
+                            (1.10,iris,[(-86,-33),(39,100),(144,171)])]:
+        rr=r*factor
+        for start,end in arcs:
+            a = start + 4*t
+            pen.arc((cx-rr,cy-rr,cx+rr,cy+rr),a,a+end-start,fill=(*hue,157),width=2)
+    for n in range(36):
+        a = math.radians(n*10 + 4*t)
+        if abs(math.sin(a))>.97: continue
+        scale = 1.20 if n%3==0 else 1.16
+        dx,dy = r*math.cos(a),r*math.sin(a)
+        pen.line((cx+1.12*dx,cy+1.12*dy,cx+scale*dx,cy+scale*dy),fill=(*blue,126),width=1)
+    pulse = (t-1.93)/.88
+    if 0 < pulse < 1:
+        rr = r*(1.02+.56*pulse)
+        pen.arc((cx-rr,cy-rr,cx+rr,cy+rr),-171,158,fill=(*teal,int(112*(1-pulse))),width=2)
+    return np.asarray(plate)
+
+
 def frame(t):
     metal, center, radius = arm_plate(t)
     dx, dy = XX-center[0], YY-center[1]
@@ -215,9 +270,12 @@ def frame(t):
     edge_arc = (1-ramp(.035,.087,np.abs(distance/radius-.975))) * (1-ramp(.16+.38*transition,.23+.38*transition,angle))
     soft_edge = np.exp(-((distance/radius-1)/.20)**2)*(1-ramp(.25,.51,angle))
     accent = ramp(1.93,2.19,t)*(.86*edge_arc+.15*soft_edge)
+    backdrop = optical_field(t, center, radius)
+    background_weight = 1 - np.clip(metal*4, 0, 1)
     image = np.empty((H,W,3), dtype='uint8')
     for channel in range(3):
-        layer = PAPER[channel] + paper_grain + (GRAPHITE[channel]-PAPER[channel])*ink
+        paper = PAPER[channel] + (backdrop[:,:,channel].astype('f')-255)*background_weight
+        layer = paper + paper_grain + (GRAPHITE[channel]-paper)*ink
         image[:,:,channel] = np.clip(mix(layer, COPPER[channel], accent), 0, 255)
     return Image.fromarray(image)
 

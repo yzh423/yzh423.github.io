@@ -1,5 +1,9 @@
 # Asset sources
 
+- [centennial.webp](campus/centennial.webp) is a resized WebP of [the original photograph](https://commons.wikimedia.org/wiki/File:HKU_Centennial_Campus_201412.jpg) by Wing1990hk, licensed under [CC BY 3.0](https://creativecommons.org/licenses/by/3.0/).
+- [courtyard.webp](campus/courtyard.webp) is a resized WebP of [the original photograph](https://commons.wikimedia.org/wiki/File:Coutyard_of_the_University_of_Hong_Kong_MainBuilding.jpg) by Adon3465, licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+- [university-hall.webp](campus/university-hall.webp) is a resized WebP of [the original photograph](https://commons.wikimedia.org/wiki/File:University_Hall_Garden.JPG) by ReeveJ, licensed under [CC BY-SA 3.0](https://creativecommons.org/licenses/by-sa/3.0/).
+
 ## Hero photography
 
 - `hku-pokfulam-view.jpg` is a 1280 px web version of ["The University of Hong Kong in Pok Fu Lam 2023 11 part11.jpg"](https://commons.wikimedia.org/wiki/File:The_University_of_Hong_Kong_in_Pok_Fu_Lam_2023_11_part11.jpg) by Qwer132477, licensed [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). The website displays a responsive crop.

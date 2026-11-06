@@ -1228,9 +1228,23 @@ details p {
   }
 }
 
-.theme-changing * {
-  transition:none!important
+/* Preference switches capture old and new paint with the semantic document live. */
+[data-preference-motion]::view-transition { pointer-events: none; }
+[data-preference-motion]::view-transition-group(root) { animation: none; }
+[data-preference-motion]::view-transition-old(root) {
+  z-index: 1; mix-blend-mode: normal;
+  animation: preference-ink-out 350ms cubic-bezier(.32,0,.24,1) both;
 }
+[data-preference-motion]::view-transition-new(root) { mix-blend-mode: normal; animation: none; }
+[data-preference-motion="language"]::view-transition-old(root) {
+  animation: translation-out 240ms cubic-bezier(.24,.02,.2,1) both;
+}
+[data-preference-motion="language"]::view-transition-new(root) {
+  animation: translation-in 260ms cubic-bezier(.2,.75,.23,1) both;
+}
+@keyframes preference-ink-out { to { opacity: 0; } }
+@keyframes translation-out { to { opacity: 0; transform: translateY(-3px); } }
+@keyframes translation-in { from { transform: translateY(3px); } }
 
 .name-line {
   white-space:nowrap

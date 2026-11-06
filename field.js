@@ -221,7 +221,7 @@
       if(visible&&!arrived){needsEntry=true;pointer.active=false;}
       visible=arrived;sync();
     },{threshold:[0,.30]}).observe(stage);
-    Promise.resolve(window.identityReady).then(()=>{intro=true;sync();});
+    intro=true;
     new ResizeObserver(measure).observe(stage);document.fonts.ready.then(measure);
     document.addEventListener('site:theme',()=>{colors();render(0,!enabled());wake();});
     document.addEventListener('site:motion',sync);

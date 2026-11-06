@@ -55,10 +55,42 @@ try {
   await page.mouse.wheel(0,200);
   await page.waitForFunction(()=>document.documentElement.dataset.turn==='down');
   await page.waitForTimeout(120);
+  assert.ok(await page.locator('.chapter-particles').evaluate(c=>{
+    const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+    let grains=0;
+    for(let i=0;i<pixels.length;i+=4) if(pixels[i+3]>12 && Math.abs(pixels[i]-pixels[i+2])>24) grains++;
+    return grains>100;
+  }),'the turn paints coloured grains between the chapter exposures');
   await page.screenshot({path:out+'/chapter-turn.png'});
   for(let i=0;i<8;i++){await page.mouse.wheel(0,22);await page.waitForTimeout(30);}
   await page.waitForFunction(()=>!document.documentElement.dataset.turn);
   assert.equal(await current(),'about','one gesture turns exactly one sheet');
+  const gallery=page.locator('.campus-gallery');
+  assert.equal(await gallery.locator('img').count(),3);
+  await gallery.locator('.campus-next').click();
+  await page.waitForFunction(()=>{const t=document.querySelector('.campus-track');return Math.abs(t.scrollLeft-t.clientWidth)<2;});
+  await gallery.locator('.campus-track').focus();await page.keyboard.press('ArrowRight');
+  assert.equal(await gallery.locator('.campus-count').textContent(),'3 / 3');
+  await page.keyboard.press('ArrowLeft');
+  await gallery.screenshot({path:out+'/campus-gallery.png'});
+  for(const [button,kind] of [['.theme-toggle','theme'],['.language-toggle','language']]) {
+    await page.locator(button).click();
+    await page.waitForFunction(kind=>document.documentElement.dataset.preferenceMotion===kind &&
+      document.getAnimations().some(a=>a.animationName===(kind==='theme'?'preference-ink-out':'translation-out')),kind);
+    await page.waitForFunction(()=>!document.documentElement.dataset.preferenceMotion);
+    assert.equal(await current(),'about');
+  }
+  assert.equal(await page.locator('html').getAttribute('lang'),'zh-CN');
+  assert.equal(await gallery.locator('figure:not([inert]) strong').textContent(),'本部大楼庭院');
+  await page.locator('.theme-toggle').click();await page.waitForFunction(()=>!document.documentElement.dataset.preferenceMotion);
+  await page.locator('.language-toggle').click();await page.waitForFunction(()=>!document.documentElement.dataset.preferenceMotion);
+  // A small, real wheel delta starts a turn. Opposite input unwinds the
+  // same exposure and restores the chapter that was being read.
+  await page.mouse.move(280,240);await page.mouse.wheel(0,-9);
+  await page.waitForFunction(()=>document.documentElement.dataset.turn==='up');
+  await page.mouse.wheel(0,140);
+  await page.waitForFunction(()=>!document.documentElement.dataset.turn);
+  assert.equal(await current(),'about');
   await click('.chapter-next'); assert.equal(await current(),'research');
   const sheet=page.locator('.chapter-sheet:has(> #research)');
   await page.mouse.move(600,475); await page.mouse.wheel(0,280); await page.waitForTimeout(250);
@@ -84,6 +116,13 @@ try {
   await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
   await phone.waitForFunction(()=>window.chapterReader.current().id==='about');
   assert.ok(await phone.evaluate(()=>!document.documentElement.dataset.turn));
+  const track=phone.locator('.campus-track'); await track.scrollIntoViewIfNeeded();
+  const box=await track.boundingBox(), y=box.y+box.height*.42;
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:box.x+box.width*.9,y}]});
+  for(const fraction of [.8,.65,.45,.25,.12]) await cdp.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:box.x+box.width*fraction,y}]});
+  await cdp.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});
+  await phone.waitForFunction(()=>document.querySelector('.campus-track').scrollLeft>80);
+  assert.equal(await phone.evaluate(()=>window.chapterReader.current().id),'about');
   const fallback=await browser.newPage({viewport:{width:1024,height:680}});
   await fallback.addInitScript(()=>Object.defineProperty(document,'startViewTransition',{value:undefined}));
   await fallback.goto(base);
@@ -96,5 +135,5 @@ try {
   await fallback.goForward();
   await fallback.waitForFunction(()=>location.hash==='#project-data' && window.chapterReader.current().id==='projects');
   assert.deepEqual(errors,[]);
-  console.log('PASS contact-synchronised ink, four-colour hover and release, white cover, chapter turns, native reading, backward landing, fragments, keyboard, touch and reduced motion');
+  console.log('PASS ink transfer, reversible wheel turn, animated language and theme, keyboard gallery and horizontal touch, native reading, fragments and reduced motion');
 } finally {await browser.close();}
