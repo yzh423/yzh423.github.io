@@ -15,24 +15,24 @@ try {
   const ids=['home','about','research','projects','publications','news','experience','cv','contact'];
   async function turn(i,j) {
     await page.locator(j>i?'.chapter-next':'.chapter-prev').click();
-    await page.waitForFunction(()=>document.documentElement.dataset.turnStyle==='exposure');
+    await page.waitForFunction(()=>document.documentElement.dataset.turnStyle==='contour');
     await page.waitForTimeout(150);
     const f=await page.locator('.turn-front').evaluate(e=>{
       const style=getComputedStyle(e);
       return {id:e.firstElementChild.id,clip:style.clipPath};
     });
     assert.equal(f.id,ids[Math.max(i,j)]);
-    assert.match(f.clip,/^ellipse\(/);
+    assert.match(f.clip,/^path\(/);
     await page.waitForFunction(()=>!document.documentElement.dataset.turn);
     assert.equal(await page.evaluate(()=>window.chapterReader.current().id),ids[j]);
-    assert.equal(await page.locator('.turn-front,.turn-back,.chapter-exposure').count(),0);
+    assert.equal(await page.locator('.turn-front,.turn-back,.chapter-contour').count(),0);
   }
   for(let i=0;i<8;i++) await turn(i,i+1);
   for(let i=8;i>0;i--) await turn(i,i-1);
   await page.setViewportSize({width:390,height:844});
   for(let i=0;i<8;i++) await turn(i,i+1);
   await page.setViewportSize({width:1360,height:860});
-  console.log('PASS all eight chapter exposures on desktop and mobile, including reverse travel');
+  console.log('PASS all eight contour transitions on desktop and mobile, including reverse travel');
   const preview=new URL('previews/background-studies/',base);
   await page.goto(preview.href);
   await page.locator('.choices').screenshot({path:out+'/background-choices.png'});

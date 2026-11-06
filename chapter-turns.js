@@ -1,91 +1,112 @@
-/* One optical exposure for every chapter. Reversing the wheel samples the
-   same aperture in reverse, even when the reader turns back halfway through. */
+/* An engraved contour separates the two real scrollports. Its geometry
+   is sampled from the same progress in either direction. */
 (() => {
   'use strict';
-  const tau=2*Math.PI;
-  const pigment=['#139aa4','#4268b4','#8867b2'];
-  const nightPigment=['#8be5dd','#a6c4ff','#d1a2ed'];
-  const glyphs='MOTION012';
-  // Stable screen positions avoid sparkling noise between animation frames.
-  const samples=Array.from({length:230},(_,i)=>{
-    const angle=i*2.399963229728653;
-    const phase=((Math.imul(i+3,2654435761)>>>0)/4294967296);
-    return {x:Math.cos(angle),y:Math.sin(angle),depth:phase,channel:i%3,mark:i%9};
-  });
-
-  function drawEdge(ctx,x,y,rx,ry,t,colour) {
-    const weight=Math.sin(Math.PI*t);
-    if(weight<.008) return;
-    // The first pass is a translucent emulsion; the other two are its fine
-    // engraved edges. Most of the screen stays at full reading contrast.
-    ctx.beginPath();ctx.ellipse(x,y,rx,ry,0,0,tau);
-    ctx.strokeStyle=colour[0];ctx.lineWidth=10;ctx.globalAlpha=.12*weight;ctx.stroke();
-    ctx.lineWidth=1.35;ctx.globalAlpha=.85*weight;ctx.stroke();
-    for(let band=0;band<6;band++) {
-      const gap=(band%2?4:10)*weight;
-      const a=band*tau/6 + t*.29;
-      ctx.beginPath();ctx.ellipse(x,y,rx+gap,ry+gap,0,a,a+.70);
-      ctx.strokeStyle=colour[(band+1)%3];ctx.lineWidth=band%2?1.45:.85;
-      ctx.globalAlpha=weight*(band%2?.72:.47);ctx.stroke();
+  const svgNS = 'http://www.w3.org/2000/svg';
+  const plateWidth = 1000;
+  const plateHeight = 150;
+  // Each station gives the upper edge and the spacing to the deepest contour.
+  // Grouped peaks and one broad saddle give the plate its asymmetry.
+  const stations = [
+    [0, 54, 22], [85, 44, 38], [171, 15, 48], [222, 27, 25],
+    [290, 58, 23], [379, 66, 11], [482, 50, 26], [563, 45, 16],
+    [645, 27, 33], [709, 18, 61], [777, 36, 31], [860, 51, 16],
+    [929, 44, 23], [1000, 32, 35]
+  ];
+  function spline(points, xScale = 1, yScale = 1, yOffset = 0) {
+    const coord = ([x, y]) => (x * xScale).toFixed(2) + ' ' + (y * yScale + yOffset).toFixed(2);
+    // Uniform Catmull–Rom tangents expressed as cubic Bézier handles.
+    let d = 'M' + coord(points[0]);
+    for (let i = 1; i < points.length; i++) {
+      const a = points[i-1], b = points[i];
+      const prev = points[Math.max(0, i-2)], next = points[Math.min(points.length-1, i+1)];
+      d += 'C' + coord([a[0]+(b[0]-prev[0])/6, a[1]+(b[1]-prev[1])/6]) + ' ' +
+        coord([b[0]-(next[0]-a[0])/6, b[1]-(next[1]-a[1])/6]) + ' ' + coord(b);
     }
-    ctx.font='7px ui-monospace, monospace';
-    for(const grain of samples) {
-      const gap=(grain.depth-.27)*30*weight;
-      const px=x+(rx+gap)*grain.x,py=y+(ry+gap)*grain.y;
-      ctx.fillStyle=colour[grain.channel];
-      ctx.globalAlpha=weight*(.30+.50*grain.depth);
-      if(grain.mark===1) ctx.fillText(glyphs[grain.channel*3],px,py);
-      else ctx.fillRect(px,py,1.05+grain.depth,1.15);
+    return d;
+  }
+  function lineAt(depth) {
+    return stations.map(([x, y, width]) => {
+      // The middle contours divide around a small closed summit on the right.
+      const nearSummit = Math.exp(-((x-709)**2)/1900);
+      const bank = depth < .45 ? -depth*.42 : (1-depth)*.35;
+      return [
+        x + Math.sin(Math.PI*x/plateWidth)*Math.sin(x*.015)*depth*15,
+        y + (depth + nearSummit*bank)*width
+      ];
+    });
+  }
+  const crest = lineAt(0);
+  function makeBand() {
+    const svg = document.createElementNS(svgNS, 'svg');
+    svg.setAttribute('viewBox', '0 0 1000 150');
+    svg.setAttribute('preserveAspectRatio', 'none');
+    function path(d, kind) {
+      const p = document.createElementNS(svgNS, 'path');
+      p.setAttribute('d', d);
+      p.setAttribute('class', kind);
+      p.setAttribute('vector-effect', 'non-scaling-stroke');
+      svg.append(p);
     }
-    ctx.globalAlpha=1;
+    const base = lineAt(1);
+    path(spline(crest) + spline(base.reverse()).replace('M','L') + 'Z', 'contour-stock');
+    for (let i = 0; i <= 10; i++) {
+      const kind = i === 0 || i === 6 ? 'contour-index' : i === 3 ? 'contour-copper' : 'contour-fine';
+      path(spline(lineAt(i/10)), kind);
+    }
+    path('M668 47C678 44 688 34 701 34C712 33 726 40 742 45C728 45 718 51 706 51C694 52 682 45 668 47Z', 'contour-fine');
+    path('M687 43C694 40 697 37 703 38C711 38 719 42 725 44C717 44 712 48 704 47C698 47 692 43 687 43Z', 'contour-copper');
+    return svg;
   }
 
-  function create(outgoing,incoming,direction,change) {
-    const startY=outgoing.getBoundingClientRect().top;
+  function create(outgoing, incoming, direction, change) {
+    const originalTop = outgoing.getBoundingClientRect().top;
     change();
-    const shift=startY-outgoing.getBoundingClientRect().top;
-    const front=direction>0 ? incoming : outgoing;
-    const back=direction>0 ? outgoing : incoming;
-    const bounds=incoming.getBoundingClientRect();
-    const w=incoming.clientWidth,h=incoming.clientHeight;
-    const x=w*.62,y=h*.49;
-    // Use the farthest corner to close the exposure exactly on any aspect ratio.
-    const extent=Math.hypot(Math.max(x,w-x)/w,Math.max(y,h-y)/h)+.018;
-    const overlay=document.createElement('canvas');
-    const dpr=Math.min(devicePixelRatio||1,1.5);
-    overlay.className='chapter-exposure';
-    overlay.setAttribute('aria-hidden','true');
-    overlay.width=Math.round(w*dpr);overlay.height=Math.round(h*dpr);
-    Object.assign(overlay.style,{top:bounds.top+'px',left:bounds.left+'px',width:w+'px',height:h+'px'});
-    document.body.append(overlay);
-    const ctx=overlay.getContext('2d');
-    ctx?.setTransform(dpr,0,0,dpr,0,0);
-    const colours=document.documentElement.dataset.theme==='dark'?nightPigment:pigment;
+    const shift = originalTop - outgoing.getBoundingClientRect().top;
+    const front = direction > 0 ? incoming : outgoing;
+    const back = direction > 0 ? outgoing : incoming;
+    const bounds = incoming.getBoundingClientRect();
+    const width = bounds.width, height = bounds.height;
+    const bandHeight = Math.min(235, height * .29, width * .28);
+    const seam = document.createElement('div');
+    seam.className = 'chapter-contour';
+    seam.setAttribute('aria-hidden','true');
+    Object.assign(seam.style, {
+      left: bounds.left+'px', top: bounds.top+'px', width: width+'px', height: height+'px'
+    });
+    const band = makeBand();
+    band.style.height = bandHeight+'px';
+    seam.append(band);
+    document.body.append(seam);
     front.classList.add('turn-front');
     back.classList.add('turn-back');
-    document.documentElement.dataset.turnStyle='exposure';
-    // Keep the clipping plane and its diffraction rim on the very same pixels.
-    front.style.transform='translateY('+(front===outgoing?shift:0)+'px)';
+    document.documentElement.dataset.turnStyle = 'contour';
     return {
       paint(progress) {
-        const p=direction>0?progress:1-progress;
-        const t=p*p*(3-2*p);
-        const rx=w*extent*t,ry=h*extent*t;
-        front.style.clipPath='ellipse('+rx.toFixed(2)+'px '+ry.toFixed(2)+'px at '+x.toFixed(2)+'px '+y.toFixed(2)+'px)';
-        const away=(back===outgoing?shift:0)-h*.014*t;
-        back.style.transform='translateY('+away.toFixed(2)+'px) scale('+(1-.012*t).toFixed(5)+')';
-        if(ctx) {
-          ctx.clearRect(0,0,w,h);
-          drawEdge(ctx,x,y,rx,ry,t,colours);
-        }
+        const p = direction > 0 ? progress : 1-progress;
+        const t = p*p*(3-2*p);
+        const spread = Math.sin(Math.PI*t);
+        const baseline = (height+2)*(1-t)-1;
+        const offset = (1-t)*Math.min(66,height*.085);
+        // Local clip coordinates compensate for the moving sheet; the engraved
+        // leading line and the actual page boundary coincide at any progress.
+        const edge = spline(crest, width/plateWidth, spread*bandHeight/plateHeight, baseline-offset);
+        front.style.clipPath = 'path("'+edge+'V'+(height+2)+'H0Z")';
+        front.style.transform = 'translateY('+((front===outgoing ? shift : 0)+offset)+'px)';
+        back.style.transform = 'translateY('+((back===outgoing ? shift : 0)-height*.038*t)+'px)';
+        band.style.transform = 'translateY('+baseline+'px) scaleY('+spread+')';
+        band.style.opacity = Math.min(1, spread*4);
       },
       clear() {
-        overlay.remove();
-        front.classList.remove('turn-front');back.classList.remove('turn-back');
-        front.style.removeProperty('clip-path');front.style.removeProperty('transform');back.style.removeProperty('transform');
+        seam.remove();
+        front.classList.remove('turn-front');
+        back.classList.remove('turn-back');
+        front.style.removeProperty('clip-path');
+        front.style.removeProperty('transform');
+        back.style.removeProperty('transform');
         delete document.documentElement.dataset.turnStyle;
       }
     };
   }
-  window.chapterTurns={create};
+  window.chapterTurns = {create};
 })();

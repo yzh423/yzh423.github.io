@@ -50,8 +50,20 @@
   .chapter-sheet:is(.turn-front,.turn-back) { position:relative; pointer-events:none; will-change:transform; }
   .chapter-sheet:is(.turn-front,.turn-back):not(:has(> #home, > #contact)) { background:var(--paper); }
   .chapter-sheet.turn-back { z-index:1; }
-  .chapter-sheet.turn-front { z-index:2; will-change:clip-path; }
-  .chapter-exposure { position:fixed; z-index:32; pointer-events:none; }
+  .chapter-sheet.turn-front { z-index:2; will-change:clip-path,transform; }
+  .chapter-contour {
+    position:fixed; z-index:32; overflow:hidden; pointer-events:none; contain:strict;
+    --contour-paper:#f1f3e9; --contour-ink:#355e58; --contour-copper:#a66643;
+  }
+  [data-theme="dark"] .chapter-contour {
+    --contour-paper:#1a2b2a; --contour-ink:#a1c9ba; --contour-copper:#e3a278;
+  }
+  .chapter-contour svg { display:block; width:100%; transform-origin:0 0; will-change:transform; }
+  .contour-stock { fill:var(--contour-paper); }
+  .contour-index,.contour-fine,.contour-copper { fill:none; }
+  .contour-index { stroke:var(--contour-ink); stroke-width:1.15; opacity:.88; }
+  .contour-fine { stroke:var(--contour-ink); stroke-width:.7; opacity:.55; }
+  .contour-copper { stroke:var(--contour-copper); stroke-width:1; }
 }
 .portfolio .print-stage h1.flight-fallback { margin:0; font:500 clamp(38px,8.5vw,116px)/1 var(--serif); }
 .portfolio .has-lettering h1.flight-fallback { visibility:visible; opacity:0; }

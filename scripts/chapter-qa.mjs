@@ -75,13 +75,14 @@ try {
   await page.mouse.wheel(0,200);
   await page.waitForFunction(()=>document.documentElement.dataset.turn==='down');
   await page.waitForTimeout(120);
-  assert.equal(await page.locator('html').getAttribute('data-turn-style'),'exposure');
-  assert.ok(await page.locator('.chapter-exposure').evaluate(c=>{
-    const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
-    let ink=0;
-    for(let i=3;i<pixels.length;i+=4) if(pixels[i]>18) ink++;
-    return ink>120 && ink<c.width*c.height*.25;
-  }),'the moving rim should contain ink and leave the reading surfaces clear');
+  assert.equal(await page.locator('html').getAttribute('data-turn-style'),'contour');
+  assert.ok(await page.locator('.chapter-contour').evaluate(seam=>{
+    const lines=seam.querySelectorAll('path:not(.contour-stock)');
+    const ink=seam.querySelector('.contour-stock').getBoundingClientRect();
+    const viewport=seam.getBoundingClientRect();
+    return lines.length>3 && ink.width>=viewport.width-1 && ink.height>3 &&
+      ink.height<viewport.height*.28 && ink.top<viewport.bottom && ink.bottom>viewport.top;
+  }),'the engraved band spans the reading area and stays narrow during a turn');
   await page.screenshot({path:out+'/chapter-turn.png'});
   for(let i=0;i<8;i++){await page.mouse.wheel(0,22);await page.waitForTimeout(30);}
   await page.waitForFunction(()=>!document.documentElement.dataset.turn);
@@ -106,7 +107,7 @@ try {
   await page.locator('.theme-toggle').click();await page.waitForFunction(()=>!document.documentElement.dataset.preferenceMotion);
   await page.locator('.language-toggle').click();await page.waitForFunction(()=>!document.documentElement.dataset.preferenceMotion);
   // A small, real wheel delta starts a turn. Opposite input unwinds the
-  // same exposure and restores the chapter that was being read.
+  // same contours and restores the chapter that was being read.
   await page.mouse.move(280,240);await page.mouse.wheel(0,-9);
   await page.waitForFunction(()=>document.documentElement.dataset.turn==='up');
   await page.mouse.wheel(0,140);
