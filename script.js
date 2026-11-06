@@ -37,11 +37,12 @@
     menuToggle?.setAttribute('aria-label', say('Open navigation', '打开导航'));
     if (returnFocus) menuToggle?.focus();
   }
-  menuToggle?.addEventListener('click', () => {
+  menuToggle?.addEventListener('click', event => {
     if (header.classList.contains('menu-open')) { closeMenu(); return; }
     header.classList.add('menu-open');
     menuToggle.setAttribute('aria-expanded', 'true');
     menuToggle.setAttribute('aria-label', say('Close navigation', '关闭导航'));
+    if (event.detail === 0) nav?.querySelector('a')?.focus({preventScroll: true});
     menuAnimation = animate(nav, [{ opacity: .4, transform: 'translateY(-6px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 180, easing: 'cubic-bezier(.22,1,.36,1)' });
   });
   document.addEventListener('keydown', event => {
@@ -117,11 +118,12 @@
     document.dispatchEvent(new Event('site:language'));
   }
   document.querySelector('.language-toggle')?.addEventListener('click', () => {
-    const y = window.scrollY;
+    const section = document.querySelector('section.is-current');
+    const fraction = section ? (scrollY - section.offsetTop) / section.offsetHeight : 0;
     setLanguage(language === 'en' ? 'zh' : 'en');
     storage.set('zy-language', language);
     // Keep the reader near the selected section when line lengths change.
-    if (y > 100) document.querySelector('section.is-current')?.scrollIntoView({ block: 'start' });
+    if (section && scrollY > 100) scrollTo({ top: section.offsetTop + section.offsetHeight * fraction, behavior: 'instant' });
   });
 
   // The same destinations work without JS; pointer navigation adds a short smooth scroll.
@@ -131,7 +133,7 @@
     const target = document.getElementById(a.hash.slice(1));
     if (!target) return;
     event.preventDefault();
-    history.pushState(null, '', a.hash);
+    if (location.hash !== a.hash) history.pushState(null, '', a.hash);
     closeMenu(false);
     target.scrollIntoView({ behavior: moving() && event.detail > 0 ? 'smooth' : 'instant', block: 'start' });
     if (event.detail === 0) {
@@ -150,7 +152,7 @@
     const max = root.scrollHeight - innerHeight;
     if (progress) progress.style.transform = `scaleX(${max > 0 ? Math.max(0, Math.min(1, scrollY / max)) : 0})`;
     let current = sections[0];
-    const threshold = Math.min(innerHeight * .3, 250);
+    const threshold = innerHeight * .37;
     for (const section of sections) if (section.getBoundingClientRect().top <= threshold) current = section;
     if (max > 0 && scrollY >= max - 3) current = sections.at(-1);
     for (const section of sections) section.classList.toggle('is-current', section === current);
@@ -170,7 +172,18 @@
   let selectedNode = null;
   let previewNode = null;
   let noteAnimation;
+  let dismissTimer;
+  function placeNote(active) {
+    if (!active) return;
+    const field = graph.getBoundingClientRect(), anchor = active.getBoundingClientRect();
+    const left = anchor.left - field.left + (anchor.width - note.offsetWidth) / 2;
+    const below = anchor.bottom - field.top + 3;
+    const room = Math.min(field.bottom, innerHeight) - anchor.bottom;
+    note.style.left = Math.max(0, Math.min(left, field.width - note.offsetWidth)) + 'px';
+    note.style.top = (room >= note.offsetHeight + 4 ? below : Math.max(0, anchor.top - field.top - note.offsetHeight - 3)) + 'px';
+  }
   function showNode(node, transient = false) {
+    clearTimeout(dismissTimer);
     if (!note) return;
     previewNode = transient ? node : null;
     const active = node || selectedNode;
@@ -182,7 +195,9 @@
     const link = note.querySelector('a');
     link.href = active?.dataset.link || '#projects';
     link.textContent = active ? say('Explore this work', '查看相关研究') : say('Explore the work', '查看相关项目');
-    if (!transient) noteAnimation = animate(note.querySelector('div'), [{ opacity: .55, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 180, easing: 'cubic-bezier(.22,1,.36,1)' });
+    note.classList.toggle('is-shown', !!active);
+    placeNote(active);
+    if (!transient && active) noteAnimation = animate(note.querySelector('div'), [{ opacity: .55, transform: 'translateY(4px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 180, easing: 'cubic-bezier(.22,1,.36,1)' });
   }
   for (const node of nodes) {
     node.addEventListener('pointerenter', event => { if (event.pointerType === 'mouse') showNode(node, true); });
@@ -197,42 +212,34 @@
       }
     });
   }
+  for (const node of nodes) node.addEventListener('pointerleave', e => {
+    if (e.pointerType === 'mouse') dismissTimer = setTimeout(() => showNode(selectedNode, true), 180);
+  });
+  note?.addEventListener('pointerenter', () => clearTimeout(dismissTimer));
+  note?.addEventListener('pointerleave', () => showNode(selectedNode, true));
+  graph?.addEventListener('keydown', e => {
+    if (e.key === 'Escape' && note.contains(e.target)) {
+      const previous = selectedNode || previewNode;
+      previous?.focus(); selectedNode = null; showNode(null);
+    }
+    if (e.key === 'Tab' && !e.shiftKey && selectedNode === e.target) {
+      e.preventDefault(); note.querySelector('a').focus();
+    }
+  });
+  if (graph) {
+    document.addEventListener('pointerdown', e => {
+      if (!e.target.closest('.graph-node, .graph-note') && (selectedNode || previewNode)) {
+        selectedNode = null; showNode(null);
+      }
+    }, {passive: true});
+    new ResizeObserver(() => placeNote(previewNode || selectedNode)).observe(graph);
+  }
   graph?.addEventListener('pointerleave', () => showNode(selectedNode, true));
   graph?.addEventListener('focusout', event => { if (!graph.contains(event.relatedTarget)) showNode(selectedNode, true); });
   document.addEventListener('site:language', () => showNode(previewNode || selectedNode, true));
 
-  // Only the labeled introductory preview can play automatically. Full evidence
-  // videos always keep explicit native play controls and never auto-start.
-  const preview = document.querySelector('video[data-preview]');
-  if (preview) {
-    let visible = false;
-    let manuallyPaused = false;
-    let systemPausing = false;
-    let expectedPause = false;
-    let playToken = 0;
-    const canPreview = () => visible && moving() && !navigator.connection?.saveData && !manuallyPaused;
-    function pausePreview() {
-      ++playToken;
-      if (!preview.paused) { expectedPause = true; systemPausing = true; preview.pause(); systemPausing = false; }
-    }
-    function updatePreview() {
-      if (!canPreview()) { pausePreview(); return; }
-      const token = ++playToken;
-      preview.muted = true;
-      const promise = preview.play();
-      promise?.then(() => { if (token !== playToken && !canPreview()) pausePreview(); }, () => { /* Native play remains available when autoplay is blocked. */ });
-    }
-    preview.addEventListener('pause', () => {
-      if (expectedPause) { expectedPause = false; return; }
-      if (!systemPausing && visible && moving()) manuallyPaused = true;
-    });
-    preview.addEventListener('play', () => { manuallyPaused = false; });
-    if ('IntersectionObserver' in window) new IntersectionObserver(entries => {
-      visible = entries[0].intersectionRatio >= .35;
-      updatePreview();
-    }, { threshold: [0, .35] }).observe(preview);
-    document.addEventListener('site:motion', updatePreview);
-    navigator.connection?.addEventListener?.('change', updatePreview);
+  for (const disclosure of document.querySelectorAll('.recording')) {
+    disclosure.addEventListener('toggle', () => { if (!disclosure.open) disclosure.querySelector('video')?.pause(); });
   }
   for (const video of document.querySelectorAll('video:not([data-preview])')) {
     video.addEventListener('play', () => {
@@ -242,94 +249,6 @@
   document.addEventListener('visibilitychange', () => {
     if (document.hidden) for (const video of document.querySelectorAll('video')) video.pause();
   });
-
-  // Bounded particle typography. The actual name stays in the semantic heading.
-  const canvas = document.querySelector('#name-particles');
-  if (canvas) {
-    const ctx = canvas.getContext('2d');
-    if (ctx) {
-      const surface = canvas.closest('.particle-surface');
-      const sample = document.createElement('canvas');
-      const sampleCtx = sample.getContext('2d', { willReadFrequently: true });
-      let points = [], width = 0, height = 0, frame = 0, visible = false;
-      let pointer = null, lastTime = 0, settledFrames = 0;
-      let ink, accent;
-      function colors() {
-        const css = getComputedStyle(root);
-        ink = css.getPropertyValue('--ink').trim(); accent = css.getPropertyValue('--accent').trim();
-      }
-      function draw() {
-        ctx.clearRect(0, 0, width, height);
-        for (const p of points) {
-          ctx.fillStyle = p.accent ? accent : ink;
-          ctx.fillRect(p.x, p.y, 1.3, 1.8);
-        }
-      }
-      function stop() { cancelAnimationFrame(frame); frame = 0; }
-      function tick(time) {
-        frame = 0;
-        if (!moving() || !visible) return;
-        const delta = Math.min(2, (time - lastTime) / 16.67 || 1); lastTime = time;
-        let energy = 0;
-        for (const p of points) {
-          let ax = (p.tx - p.x) * .035, ay = (p.ty - p.y) * .035;
-          if (pointer) {
-            const dx = p.x - pointer.x, dy = p.y - pointer.y;
-            const distance = Math.hypot(dx, dy);
-            if (distance > .1 && distance < 60) { const force = (1 - distance / 60) * 1.5; ax += dx / distance * force; ay += dy / distance * force; }
-          }
-          p.vx = (p.vx + ax * delta) * .8; p.vy = (p.vy + ay * delta) * .8;
-          p.x += p.vx * delta; p.y += p.vy * delta;
-          energy += Math.abs(p.vx) + Math.abs(p.vy);
-        }
-        draw();
-        settledFrames = energy < 1 ? settledFrames + 1 : 0;
-        if (settledFrames < 12 || pointer) frame = requestAnimationFrame(tick);
-      }
-      function start() {
-        if (moving() && visible && !frame) { settledFrames = 0; lastTime = performance.now(); frame = requestAnimationFrame(tick); }
-      }
-      function resize() {
-        stop();
-        const rect = canvas.getBoundingClientRect(); width = rect.width; height = rect.height;
-        if (!width || !height || !sampleCtx) return;
-        const dpr = Math.min(devicePixelRatio || 1, 2);
-        canvas.width = Math.round(width * dpr); canvas.height = Math.round(height * dpr);
-        ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-        sample.width = Math.ceil(width); sample.height = Math.ceil(height);
-        const size = Math.min(66, width / 6.8);
-        sampleCtx.font = `500 ${size}px Newsreader, Georgia, serif`;
-        sampleCtx.textAlign = 'center'; sampleCtx.textBaseline = 'middle';
-        sampleCtx.fillText('Zhenghao YU', width / 2, height * .48);
-        const pixels = sampleCtx.getImageData(0, 0, sample.width, sample.height).data;
-        points = [];
-        const step = width < 350 ? 2 : 2.5;
-        for (let y = 0; y < height; y += step) for (let x = 0; x < width; x += step) {
-          if (pixels[(Math.floor(y) * sample.width + Math.floor(x)) * 4 + 3] < 100) continue;
-          const scatter = moving() ? 20 : 0;
-          points.push({ x: x + (Math.random() - .5) * scatter, y: y + (Math.random() - .5) * scatter, tx: x, ty: y, vx: 0, vy: 0, accent: x > width * .62 });
-        }
-        colors(); draw(); surface.classList.add('particles-ready'); start();
-      }
-      canvas.addEventListener('pointermove', e => {
-        if (e.pointerType !== 'mouse' || !moving()) return;
-        const r = canvas.getBoundingClientRect(); pointer = { x: e.clientX - r.left, y: e.clientY - r.top }; start();
-      }, { passive: true });
-      canvas.addEventListener('pointerleave', () => { pointer = null; start(); });
-      document.addEventListener('site:theme', () => { colors(); draw(); });
-      document.addEventListener('site:motion', () => {
-        if (!moving()) { stop(); for (const p of points) { p.x = p.tx; p.y = p.ty; p.vx = p.vy = 0; } draw(); }
-        else start();
-      });
-      if ('IntersectionObserver' in window) new IntersectionObserver(entries => {
-        visible = entries[0].isIntersecting;
-        if (visible) start(); else stop();
-      }).observe(canvas);
-      else visible = true;
-      new ResizeObserver(resize).observe(canvas);
-      document.fonts.ready.then(resize);
-    }
-  }
 
   // Repeated reading stays still. Entrances run once and never hide default content.
   if ('IntersectionObserver' in window) {
@@ -341,19 +260,13 @@
         animate(entry.target, [{ opacity: .45, transform: 'translateY(12px)' }, { opacity: 1, transform: 'translateY(0)' }], { duration: 420, easing: 'cubic-bezier(.22,1,.36,1)' });
       }
     }, { threshold: .08 });
-    for (const el of document.querySelectorAll('main > section > h2, .section-heading, .publication, .timeline article, .about-essay')) reveal.observe(el);
-    const graphStage = document.querySelector('.graph-stage');
-    if (graphStage) {
-      let graphVisible = false;
-      const syncGraphMotion = () => graphStage.style.setProperty('--graph-play', graphVisible && moving() ? 'running' : 'paused');
-      new IntersectionObserver(entries => { graphVisible = entries[0].isIntersecting; syncGraphMotion(); }).observe(graphStage);
-      document.addEventListener('site:motion', syncGraphMotion);
-    }
+    for (const el of document.querySelectorAll('main > section > h2, .section-heading, .publication, .timeline article, .about-essay, .field-heading, .research-card, .project-feature')) reveal.observe(el);
   }
   setLanguage(language);
   syncScroll();
   if (!location.hash || location.hash === '#home') {
     const name = document.querySelector('.name-line');
-    if (name) animate(name, [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: 760, easing: 'cubic-bezier(.22,1,.36,1)' });
+    const arrival = name && animate(name, [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: 760, easing: 'cubic-bezier(.22,1,.36,1)' });
+    window.identityReady = arrival?.finished.catch(() => {});
   }
 })();

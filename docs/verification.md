@@ -10,7 +10,7 @@ Target: the main `yzh423/yzh423.github.io` site. Baseline: `8220242`. Worktree: 
 - Existing images and recordings are unchanged. No reference-site media, personal content or implementation code is shipped.
 - The original dirty checkout was not changed. Published history and the original working copy were backed up under `E:/YZH123123/website-backups/2026-11-06-before-academic-redesign`.
 
-## Automated and rendered checks
+## Original redesign checks (commit b716b32)
 
 `node --test tests/*.test.mjs`: 10 passing checks for original claim scope, publication metadata, all PDF hashes, anchors, local assets, native H.264 sources, bilingual content and light/dark contrast.
 
@@ -24,11 +24,17 @@ Impeccable detector ran once. Its tiny-text findings prompted larger captions an
 
 Taste source/render checks also ran. Thin separators and Inter are reference commitments, not accidental defaults. Full scholarly titles are retained even when more than two lines on a phone. The eyebrow heuristic misidentified preceding video resource links, figure captions and a news date. The row heuristic identified ordinary research/publication/experience lists as card rows. The near-neutral secondary field is `#f5f4f1`, not a saturated cream theme. Typography findings and the mobile particle-hint collision were passed to an independent finish reviewer for material judgment; the review outcome is recorded below after correction.
 
-## Independent finish review
+## Original redesign finish review
 
 The fresh-context reviewer requested three changes: reserve layout space between the particle action and its instruction, increase sustained research prose to 15px on desktop and phone, and remove the four redundant method labels. All were implemented together. The same desktop/mobile evidence was recaptured and the reviewer scored all three **resolved**, with disposition **ship** at the scope of those fixes. No regression from that batch was observed. Additional 320/390px English/Chinese measurements show a 10px action-to-instruction gap; neither line obscures the other.
 
 The final source preserves 12px dates/credits/compact metadata, while substantial home and detail reading text is 15px. This takes the reviewer's contextual reading-comfort judgment over the generic Taste 16px house floor. Research and paper titles keep their exact wording; their phone line counts are a factual-title exception, not headline copy to shorten.
+
+## Ink-wing interaction revision (6 November 2026)
+
+Measured the live reference's banner in Edge: visible playback, pause when reading Research, restart on return, and rest on the final frame. The new six-second butterfly film and poster are locally generated. Both experiment recordings remain available through closed native disclosures on the home page.
+
+Playwright now compares the lettering and film bounds, checks pointer displacement, advances to the final frame and revisits the banner, measures an SVG edge endpoint against its moving node, exercises scroll highlighting in both directions and opens/closes the actual recordings. Both languages, dark mode, touch, reduced motion and no-JavaScript layouts remain covered. The narrow keyboard menu moves focus into its first link and returns it on Escape. The previous six-viewport layout matrix and all seven PDF hash checks still apply.
 
 ## Deployment
 

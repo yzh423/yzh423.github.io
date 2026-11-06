@@ -15,7 +15,7 @@
 ## November 2026 academic redesign
 
 - Design and interaction reference: [Zhouhu Tan's public homepage](https://tanzhouhu.github.io/#research). No personal copy, code, photographs or video from that site is included here. The particle lettering and accessible research map are original local JavaScript/HTML/CSS implementations.
-- The home banner reuses the unchanged `fold-box-piperx-optimized-mount-complete-trajectories-h264.mp4` with its existing poster and explicit simulation label. Full recordings and provenance remain available below.
+- The homepage butterfly film (`motion/inkwing.mp4`) and web poster (`motion/inkwing.webp`) were procedurally drawn for this site using the original wing shapes and ink marks in `scripts/render-butterfly.py`. The six-second H.264 film has no audio or third-party footage. It is decorative, not simulation evidence. Fold Box and control recordings keep their original files under the corresponding project disclosures.
 - Local Inter variable font and license: [Google Fonts / Inter](https://github.com/google/fonts/tree/main/ofl/inter). Newsreader regular and italic variable fonts and license: [Google Fonts / Newsreader](https://github.com/google/fonts/tree/main/ofl/newsreader). Downloaded from the official Google Fonts repository; locally compressed to WOFF2 with FontTools, preserving the source TTF and OFL license files. Both original and compressed copies are distributed under the SIL Open Font License 1.1.
 - Existing photographs, figures, videos and all seven PDF downloads remain unchanged from published commit `8220242`.
 

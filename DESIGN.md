@@ -8,7 +8,6 @@ colors:
   ink: "#242420"
   muted: "#62625b"
   accent: "#b94513"
-  accent-soft: "#faeee7"
   line: "#deded7"
   dark-paper: "#161715"
   dark-surface: "#20211e"
@@ -16,8 +15,9 @@ colors:
   dark-ink: "#f1f0eb"
   dark-muted: "#b8b8ac"
   dark-accent: "#f5a373"
-  dark-accent-soft: "#33291f"
   dark-line: "#3b3d35"
+  flight-paper: "#ebe8e1"
+  dark-flight-paper: "#222520"
   video-ground: "#242d32"
 typography:
   display:
@@ -76,20 +76,20 @@ typography:
     lineHeight: 1.75
   graph-branch:
     fontFamily: 'Newsreader, "Songti SC", "Noto Serif CJK SC", Georgia, serif'
-    fontSize: "20px"
-    fontWeight: 500
-    lineHeight: 1.3
+    fontSize: "clamp(16px, 1.65vw, 22px)"
+    fontWeight: 580
+    lineHeight: 1.18
 rounded:
   focus: "3px"
   compact: "5px"
   media: "8px"
   banner-mobile: "12px"
-  banner: "18px"
+  banner: "17px"
+  note: "7px"
   pill: "999px"
   circle: "50%"
 spacing:
   small-gap: "8px"
-  particle-row-gap: "10px"
   caption-gap: "12px"
   paragraph-gap: "18px"
   row-padding: "20px"
@@ -128,20 +128,21 @@ components:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     typography: "{typography.button}"
+  flight-banner:
+    backgroundColor: "{colors.flight-paper}"
+    rounded: "{rounded.banner}"
+    height: "clamp(260px, 27.5vw, 345px)"
   research-node:
-    backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
     typography: "{typography.graph-branch}"
-    rounded: "{rounded.compact}"
-    padding: "6px 10px"
+    padding: "0"
   research-node-selected:
-    backgroundColor: "{colors.accent-soft}"
     textColor: "{colors.accent}"
   research-note:
-    backgroundColor: "{colors.surface}"
-    textColor: "{colors.muted}"
-    rounded: "{rounded.media}"
-    padding: "20px 24px"
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.note}"
+    padding: "14px 17px"
   research-row:
     textColor: "{colors.muted}"
     typography: "{typography.body}"
@@ -158,15 +159,15 @@ components:
 
 **Creative North Star: "The connected academic homepage"**
 
-A restrained, personal academic setting makes research, recorded experiments, and their context easy to inspect. The light world pairs white ground, charcoal text, and a warm orange accent; the dark world uses neutral charcoal surfaces with a lighter orange accent. Newsreader brings a scholarly voice to headings while Inter keeps prose and controls direct.
+A real portrait and a two-line name introduce the researcher. Beneath them, an ink butterfly moves behind the same name drawn in particles. Newsreader headings and a muted orange accent carry into the research network, and captions and plain links accompany the evidence.
 
-This records the approved, code-led implementation of the user-pinned [Zhouhu Tan reference](https://tanzhouhu.github.io/#research), as scoped in [PRODUCT.md](PRODUCT.md) and [the surface brief](docs/reference-redesign.md). Thin separators and Inter are explicit reference commitments. A real portrait, a two-line identity, bounded particle lettering, and recorded simulation give the homepage its personal character; the detail page shares the same reading system. The source of truth is the final cascade in both stylesheets, including their closing readability and particle-layout rules.
+The homepage and the manipulation study share neutral paper, thin section rules and Inter reading text in English and Chinese. On the homepage, the butterfly film and diagram respond to the pointer. Scientific recordings belong with the projects they document. [Product context](PRODUCT.md) · [Homepage brief](docs/reference-redesign.md)
 
 **Key Characteristics:**
 
 - Scholarly serif headings and sustained, bilingual sans-serif prose.
 - Flat reading surfaces, thin separators, and restrained orange emphasis.
-- A real portrait, two-line name, particle lettering, and labeled simulation preview.
+- One butterfly-and-particle banner and a research network with visible connections on phones and desktops.
 - Native controls, visible keyboard focus, and usable static fallbacks.
 - Research evidence retains its captions, scope, source links, and downloads.
 
@@ -177,18 +178,18 @@ One warm accent organizes a predominantly neutral reading environment. Frontmatt
 ### Primary
 
 - **Research orange — accent:** Links, current navigation, graph selection, categories, selected metrics, and the brand punctuation.
-- **Soft orange — accent-soft:** The background of hovered, focused, or selected research nodes.
-- **Dark-theme orange:** A lighter accent and subdued accent surface preserve the same roles on dark ground.
+- **Dark-theme orange:** A lighter orange marks the same links, active edges and selected topics on charcoal.
 
 ### Neutral
 
 - **Paper:** The page, sticky navigation, and secondary actions. In dark mode this becomes neutral charcoal.
-- **Surface / surface-deep:** The motion banner, graph note, statistics band, contact area, and hover surfaces.
+- **Surface / surface-deep:** Statistics, contact, and hovered controls.
+- **Flight paper:** The butterfly and particle letters share a warm ground. The film blends by multiplication in light mode and by screening an inverted image in dark mode. The graph note uses ordinary page paper with a fine border.
 - **Ink / muted:** Primary reading text and subordinate prose, metadata, dates, and captions.
 - **Line:** Thin section boundaries, research rows, publication rows, methods, and timeline rules.
 - **Video ground:** The dark player bed. Scientific chart images keep their white image ground in both themes.
 
-**The Reference Continuity Rule.** Keep the user-pinned thin separators and Inter body type; they are part of this approved visual world.
+**The Reference Continuity Rule.** Use Inter body text and thin section rules throughout the academic pages.
 
 ## Typography
 
@@ -197,15 +198,15 @@ One warm accent organizes a predominantly neutral reading environment. Frontmatt
 
 Newsreader regular and italic and Inter variable are self-hosted WOFF2 assets under `assets/fonts/`, with their OFL license files retained. Font display uses swap. Chinese uses the same semantic roles and the available CJK fallbacks.
 
-The frontmatter display, headline, and title roles describe the shared base hierarchy. The hero's surname line is unbroken, with Daniel as a separate block below it. The secondary name is 0.56em on desktop and 0.64em at phone widths. Scholarly project and publication titles may wrap naturally; they are not truncated or forced into the identity's no-wrap behavior.
+The frontmatter display, headline, and title roles describe the shared base hierarchy. The hero's surname line is unbroken, with Daniel in italic as a separate block below it. The secondary name is 0.56em on desktop and 0.64em at phone widths. Scholarly project and publication titles may wrap naturally; they are not truncated or forced into the identity's no-wrap behavior.
 
 Sustained prose is the body role at 15px in both documents and across breakpoints: hero introduction, About, research descriptions, project descriptions and expanded scope, publication summaries, experience descriptions, news, education, contact availability, detail lede, comparison text and qualifications, method paragraphs, and scope. The closing stylesheet rules override earlier 13px/14px values. The body-open role applies to the hero introduction and project prose. The 16px body-base is the inherited desktop default, not the final size of those sustained reading passages.
 
-Metadata and captions remain compact: dates, statuses, categories, resource links, and metric labels generally use 12px; navigation and buttons use 13px. Graph-note text is a short 13px preview, becoming 12px on phones. Supporting section introductions can remain 14px or 13px. These utility roles do not redefine the sustained prose role.
+Metadata and captions remain compact: dates, statuses, categories, resource links, and metric labels generally use 12px; navigation and buttons use 13px. The graph note uses a 17px serif topic title and 13px sans-serif explanation at every width. Supporting section introductions can remain 14px or 13px. These utility roles do not redefine the sustained prose role.
 
-Reading widths are deliberate: About paragraphs reach 68ch; the hero introduction reaches 680px; project titles reach 35ch; detail lede reaches 75ch. The detail heading is smaller than the identity display so a full scientific title can remain intact.
+Reading widths are deliberate: About paragraphs reach 68ch; the hero introduction reaches 56ch; project titles reach 35ch; detail lede reaches 75ch. The detail heading is smaller than the identity display so a full scientific title can remain intact.
 
-**The Reading Size Rule.** Keep sustained prose at the final 15px size on phones and desktops; do not recover superseded smaller declarations as design tokens.
+**The Reading Size Rule.** Keep sustained prose at 15px on phones and desktops.
 
 ## Layout
 
@@ -213,21 +214,21 @@ The shared content maximum is 1120px. Page gutters are 32px above 850px, 24px at
 
 Desktop composition uses open columns: About is 1.7:1; research rows are 0.85:1; featured projects are 0.9:1.1; publications pair a 260px image with flexible text. Project spacing is 48px, reducing to 32px at 1100px. Publication media narrows to 200px at 850px. At 600px, About, research rows, projects, publications, education/skills, and contact stack in reading order; news dates move above the entry and timeline articles become blocks.
 
-The motion banner uses a 1.15:1 grid, becoming one column at 600px. Its particle region reserves 154px for lettering, or 120px at and below 850px. The CTA and hint follow in normal column flow with a 10px gap; the hint is not absolutely positioned. The banner has its own lower space for the pause control.
+The butterfly film, canvas and fallback lettering fill one clipped banner. Its desktop height ranges from 260px to 345px. At 620px and below it ranges from 210px to 260px and the film covers the frame. The research link sits at bottom center, with the motion control at bottom right.
 
-The research network is 420px tall, reducing to 360px at 850px. At 600px it becomes a two-column topic-button layout, hides connecting lines, permits wrapped labels, and removes label drift. Its explanatory note follows the topics.
+The research network uses a wide arrangement between 320px and 416px tall. At 620px and below it switches to a 432px-tall arrangement with wrapped labels around the same central hub. Its connecting lines and cross-links stay visible in both arrangements. A compact note opens beside the active topic.
 
 The detail page keeps the introduction within 900px and the main recording within 820px. Its conclusion and scope columns stack at 850px. Method and evidence grids move from two columns to one at 600px. The statistic band retains three columns. The detail title becomes 38px at 850px and 31px at 600px. The main identity becomes a 32–46px fluid size at 600px, then 30px at 360px; the portrait steps from 104px to 88px, 74px, and 64px at the corresponding widths.
 
 ## Elevation & Depth
 
-The interface has no box-shadow vocabulary. Depth comes from neutral surface changes, thin rules, imagery, and a sticky navigation layer. The motion banner and graph note sit on a surface tone; content rows remain on the page ground. Charts keep their original white grounds so the scientific images remain legible. Hover feedback changes tone or text color, with small movement limited to interactive details.
+The sticky navigation and graph note use opaque page paper and thin borders. The banner layers lettering over the butterfly on warm paper. Research rows sit directly on the page, and scientific charts retain their white grounds in both themes.
 
 **The Flat Reading Rule.** Preserve the flat surfaces and structural rules used by the shipped pages.
 
 ## Shapes
 
-The real portrait is circular. Utility controls use circular bounds. Main actions use pill corners, while media and graph notes use a modest 8px radius. The motion banner has broader 18px corners that reduce to 12px on phones. Graph nodes and scientific image frames use 5px corners. Sections, research rows, and methods use straight separators, with no enclosing card border. Global focus is a 2px accent outline offset by 5px, with a 3px radius.
+Circular utility controls echo the portrait. Main actions use pill corners. Media use 8px corners, scientific image frames 5px and graph notes 7px. The banner uses 17px corners on wide screens and 12px at 620px and below. Research labels have a small paper backing behind the letters so connecting lines remain distinct. A 2px accent outline offset by 5px marks keyboard focus.
 
 ## Components
 
@@ -239,7 +240,7 @@ Utility buttons are 40px square; phone widths reduce their width to 38px while r
 
 ### Navigation and preferences
 
-The top bar contains the serif wordmark, section links, and language/theme controls. Active section links use `aria-current="location"` and a short orange underline; a thin reading-progress line follows scroll position. At 850px the navigation becomes a menu below the main row, with a two-column open state and overflow constrained to the available viewport height. Escape closes the menu and returns focus to its toggle; outside pointer or focus movement dismisses it. Natural tab order is preserved.
+The homepage top bar offers About, Research, Work, Publications, News, Experience, Education and Contact, in that order. The wordmark links to Home, and the language and theme controls sit at the far end. The study page uses its own section links. Active section links use `aria-current="location"` and a short orange underline; a thin reading-progress line follows scroll position. At 850px the navigation becomes a menu below the main row, with a two-column open state and overflow constrained to the available viewport height. Escape closes the menu and returns focus to its toggle; outside pointer or focus movement dismisses it. Natural tab order is preserved.
 
 Both pages switch between English and Chinese, including document language, titles, and supported accessible labels. The chosen language persists across pages. Theme is set before paint, follows the OS until explicitly changed, and then persists. Theme switching suppresses transitional color flashes. Pointer anchor navigation may scroll smoothly; keyboard navigation moves immediately and focuses the destination.
 
@@ -247,23 +248,23 @@ Both pages switch between English and Chinese, including document language, titl
 
 The semantic heading keeps “Zhenghao YU” and “Daniel” on separate lines beside a real portrait. Canvas lettering is decorative and hidden from assistive technology; the semantic identity always remains available. The fallback name stays visible until the particle canvas is ready.
 
-Particle assembly is bounded and settles, with mouse-pointer reaction only when motion is enabled. Rendering stops offscreen and when the document is hidden. The preview uses the existing Fold Box MuJoCo recording, native controls, a poster, and a visible simulation qualification. Only this muted preview may start automatically: it must be at least 35% visible, motion must be enabled, data saver must be off, and the user must not have manually paused it. Full evidence videos always require explicit play.
+The six-second, silent butterfly film and the particle name start together after the identity entrance when at least 30% of the banner is visible. The film plays once and holds its final frame. Dropping below 30% rearms the entrance, so crossing the threshold again restarts it. Pointer or touch movement shifts the butterfly and displaces nearby letter particles, which spring back to their original positions. Native vertical scrolling and pinch zoom remain available.
 
-The persistent pause control stops continuous decorative motion, cancels active entrance animations, and pauses the preview. Reduced-motion preference gives an immediately assembled particle name, removes transitions and drift, and disables the motion toggle with an explanatory label. Data saver prevents automatic preview playback. Hidden documents pause videos. Full recordings retain native manual playback.
+The persistent pause control stops the film, assembles the letters and stills the network. Reduced motion shows the settled composition and labels the disabled control. Data saver suppresses automatic film playback. The poster supplies the butterfly before playback or if the film is unavailable. Hidden documents pause playback and rendering.
 
 ### Research map and note
 
-Topics are native buttons with at least 44px height, `aria-controls`, and `aria-pressed`. Hover or focus previews a topic; click or tap toggles a persistent selection. The note is a polite live status region with a normal destination link. Arrow keys move between topic buttons, and Escape clears selection. The map allows normal vertical touch scrolling.
+The central label connects to four research branches, each with two leaves. Twelve solid SVG lines show these relationships and three faint dashed lines cross between branches. Each 44px-high or larger topic button can be previewed by mouse hover or keyboard focus. Click, Enter, Space or tap toggles a selection. Arrow keys move between topics, and Tab on a selected topic enters the link in its note.
 
-Only the text inside each button drifts, preserving stationary hit targets. The drift runs over eight seconds between minus and plus 3px and pauses for hover, focus, selection, global pause, offscreen state, hidden documents, reduced motion, and the phone layout. Selected edges and labels use the accent; selected labels also gain the soft accent surface.
+Label motion and SVG endpoints share the same coordinates. The labels drift and respond to the pointer while the button hit areas stay fixed. Selection underlines the label, and the active parent edge turns orange. The note names the topic, explains its connection and links to the relevant work. It opens just below the button when space permits, otherwise above, and stays inside the field horizontally. Escape and outside presses dismiss it. The connected geometry remains available when motion is paused.
 
 ### Research rows, projects, and publications
 
-These are reading rows separated by thin rules. Project media remains beside its title, category, prose, metrics, optional native disclosure, and source links until the phone layout stacks them. Publication titles lead their status and author metadata. Long scholarly titles keep their full wording and may wrap. Real scientific images and recordings carry their captions; evidence scope is not removed to simplify a row.
+Thin rules separate the reading rows. Each homepage project opens with still evidence beside its title and description. The path-tracking simulation and the Fold Box trajectory replay each sit in a closed native disclosure under their project image. Opening a disclosure reveals a captioned player with native controls. The reader starts playback explicitly, and closing the disclosure pauses it. Study scope and dataset descriptions have separate disclosures. Publication titles, status, author metadata and resource links wrap in reading order.
 
 ### Methods and evidence
 
-The detail method grid starts each article with its descriptive heading and paragraph. Redundant method labels are absent. Evidence figures retain numbered captions and open their original image through native links. The earlier 112-task validation remains separate from the later five-case, four-controller, three-profile numerical diagnostic; visual grouping and captions preserve that distinction.
+The detail method grid starts each article with its descriptive heading and paragraph. Redundant method labels are absent. The study page presents its main given-path recording directly and puts the matched endpoint-only recording in a disclosure. Both use manual playback. Evidence figures retain numbered captions and open their original image through native links. The earlier 112-task validation remains separate from the later five-case, four-controller, three-profile numerical diagnostic; visual grouping and captions preserve that distinction.
 
 ### Static and reduced-motion reading
 
@@ -276,7 +277,8 @@ Content starts visible. Once-only scroll entrances use a short opacity/12px move
 - **Do** retain the user-pinned thin separators, Inter body text, and Newsreader headings.
 - **Do** preserve the two-line name, real portrait, and full wrapping scholarly titles.
 - **Do** use the final 15px sustained prose size in both languages and at every breakpoint.
-- **Do** keep the particle CTA and hint in separate normal-flow rows with a 10px gap.
+- **Do** keep the butterfly and particle lettering together and the research recordings inside their homepage project disclosures.
+- **Do** keep connected edges and a reachable near-topic note on narrow screens.
 - **Do** preserve native buttons, links, video controls, visible focus, and static reading fallbacks.
 - **Do** retain evidence captions, simulation qualifications, original PDF URLs, and the distinction between validation protocols.
 

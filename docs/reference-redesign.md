@@ -1,26 +1,46 @@
 # Main-site academic redesign
 
-## Direction contract
-Experience / Read. User-pinned reference: https://tanzhouhu.github.io/#research, inspected in a real browser on 6 November 2026. This is a code-led implementation of the requested visual and interaction patterns, not a pixel-identical clone. No generated comp or randomized visual direction replaces the explicit reference.
+## Direction
 
-The opening is a centered personal introduction with portrait, the requested two-line name, concise research positioning and resource links. A wide, restrained banner combines pointer-reactive name particles with a genuine, labeled simulation preview. Top navigation, white ground, orange accents, Newsreader headings and Inter body text follow the reference's academic tone. The visitor proceeds through About, an interactive robotics research map, selected projects and videos, papers, news, experience, education and contact.
+The homepage introduces Zhenghao YU (Daniel) to prospective supervisors and collaborators. The portrait, two-line name, short research introduction and contact links lead into one banner. A monochrome ink butterfly sits behind particle lettering on a shared paper ground. Newsreader headings, Inter body text, thin rules, and an orange accent connect the introduction to the research and publications below. [Design reference](https://tanzhouhu.github.io/#research)
 
-## Interaction contract
-English is the semantic source; Chinese can be selected and persists across pages. Theme follows the OS until explicitly changed. Navigation updates on scroll; only pointer-initiated anchor navigation is smoothed. The mobile menu supports Escape, outside dismissal, focus return and natural tab order. Research-map topics are native buttons with hover/focus previews and click/tap selection; content remains available as ordinary research rows without JavaScript. The map never captures vertical scrolling. Videos use native controls; the muted introductory preview only runs while visible, with motion enabled, no data-saver and no user pause. Full scientific recordings require explicit play.
+## Navigation and reading
 
-The signature motion is a bounded particle-name assembly and gentle reaction to the pointer, alongside the reference-like floating research network. A global pause control stops decorative motion and the preview. Hidden documents and offscreen canvases stop rendering. Reduced-motion users get an immediately readable static composition. Other transitions are short and interruptible; content starts visible and stays readable if enhancement fails.
+The desktop header and mobile menu expose the same eight destinations, in reading order.
 
-## Before / after decisions
-| Before | After | Why |
-| --- | --- | --- |
-| Wide green sidebar, large scenic collage | Compact top navigation and centered identity | Match the explicitly selected reference and give research more horizontal room. |
-| Research themes in equal cards | Connected, keyboard-operable research map plus readable rows | Show connections and let visitors explore the actual topics. |
-| English only | Persistent English/Chinese controls | Explicitly requested in this turn. |
-| Fixed warm theme | White/orange light mode and matching dark mode | Follow the reference's utility and visual vocabulary. |
-| Video deep within a project | Small labeled moving introduction, full recordings in Work | Make experimentation immediately visible while preserving evidence context. |
+| Navigation | Anchor |
+| --- | --- |
+| About | `#about` |
+| Research | `#research` |
+| Work | `#projects` |
+| Publications | `#publications` |
+| News | `#news` |
+| Experience | `#experience` |
+| Education | `#cv` |
+| Contact | `#contact` |
+
+The wordmark returns to Home. The active section has an orange underline. Pointer-initiated anchor navigation can scroll smoothly, and keyboard activation focuses the destination immediately. At 850px and below, the menu opens beneath the header. Escape closes it and returns focus to the toggle. It also closes when focus or a pointer press moves outside the header. English and Chinese selections persist across pages. Theme follows the operating system until the reader selects one.
+
+## Butterfly banner
+
+The silent six-second film and the particle name share the full banner. After the opening identity reveal, reaching 30% visibility starts one pass of the film and the letter assembly. The final butterfly frame holds. Scrolling below 30% and returning starts a new pass. Pointer or touch input gently shifts the film and displaces particles near the contact point. The letters settle back into place. “Explore research” stays at bottom center, and the motion control sits at bottom right.
+
+The pause control and reduced-motion preference provide a settled composition. Backgrounding the page pauses playback, and data saver suppresses automatic film playback. The poster and fallback name are readable before enhancement.
+
+## Research network
+
+Four branches connect the central research label to eight topics. Solid lines join each parent and child, while three dashed lines show related branches and topics. The same SVG connections track the moving labels on desktop and in the taller phone layout. Topic buttons keep fixed hit areas. A visitor can scroll or pinch zoom over the map.
+
+Hover or focus opens a short note beside the topic. Clicking or tapping pins the note, underlines the selected label and highlights its incoming edge. The note opens below or above the button according to available space and has a link to the associated project, research row or publication section. Arrow keys move between topics. Tab from a selected topic reaches its note link. Escape clears the selection. With JavaScript disabled, the research rows provide a linear way to read the material.
+
+## Project recordings
+
+Still figures introduce all three homepage projects. Under the manipulation study and the motion-evaluation project, closed native disclosures hold the path-tracking simulation and the Fold Box trajectory replay. Opening a disclosure exposes the player and caption. The reader presses Play to start the recording, and closing its disclosure pauses it. The separate manipulation study page leads with its given-path player and offers the matched endpoint-only recording on demand. Captions distinguish simulation from hardware and identify the protocol behind each result.
 
 ## Verification
-Both documents, both languages, both themes; 320, 390, 768, 1024 and 1440 widths and short desktop. Menu, focus, Escape, nav highlighting, graph selection, video playback/pausing, local resources, PDFs unchanged, no-JavaScript and reduced-motion behavior. Preserve all scientific qualifications. Source checks for assets/facts, browser assertions for interactions, screenshots for composition, independent finish review and design documentation before publishing.
+
+Check both pages in English and Chinese, in both themes, at 320, 390, 768, 1024 and 1440px and on a short desktop. Check all eight homepage anchors, mobile keyboard navigation and Escape, single playback and re-entry at 30%, project disclosure playback, visible mobile graph edges and near-topic note placement. Verify reduced motion, data saver, no-JavaScript reading and the original PDF URLs.
 
 ## Reference and authorship
-Layout and interaction inspiration: Zhouhu Tan's public homepage. All implementation is authored for this site; no reference-site personal text, photos, videos or code is shipped. Newsreader and Inter come from Google Fonts' public OFL distributions. Existing site assets retain their provenance.
+
+Zhouhu Tan’s public homepage supplied the academic layout and interaction reference. The butterfly film, poster and interactive code were created for this site. Scientific images and recordings retain their evidence captions and provenance. Newsreader and Inter are self-hosted with their OFL licenses.

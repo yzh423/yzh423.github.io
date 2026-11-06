@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-05T18:55:46.789Z",
+  "generatedAt": "2026-11-06T02:20:31.562Z",
   "title": "Design System: Zhenghao YU Academic Homepage",
   "extensions": {
     "colorMeta": {
@@ -86,20 +86,6 @@
           "oklch(72.14% 0.16044 40.05)",
           "oklch(83.57% 0.16044 40.05)",
           "oklch(95% 0.16044 40.05)"
-        ]
-      },
-      "accent-soft": {
-        "role": "primary",
-        "displayName": "Soft research orange",
-        "tonalRamp": [
-          "oklch(15% 0.01606 52.56)",
-          "oklch(26.43% 0.01606 52.56)",
-          "oklch(37.86% 0.01606 52.56)",
-          "oklch(49.29% 0.01606 52.56)",
-          "oklch(60.71% 0.01606 52.56)",
-          "oklch(72.14% 0.01606 52.56)",
-          "oklch(83.57% 0.01606 52.56)",
-          "oklch(95% 0.01606 52.56)"
         ]
       },
       "line": {
@@ -200,20 +186,6 @@
           "oklch(95% 0.11629 50.72)"
         ]
       },
-      "dark-accent-soft": {
-        "role": "primary",
-        "displayName": "Dark-theme soft orange",
-        "tonalRamp": [
-          "oklch(15% 0.02287 66.71)",
-          "oklch(26.43% 0.02287 66.71)",
-          "oklch(37.86% 0.02287 66.71)",
-          "oklch(49.29% 0.02287 66.71)",
-          "oklch(60.71% 0.02287 66.71)",
-          "oklch(72.14% 0.02287 66.71)",
-          "oklch(83.57% 0.02287 66.71)",
-          "oklch(95% 0.02287 66.71)"
-        ]
-      },
       "dark-line": {
         "role": "neutral",
         "displayName": "Dark-theme thin separator",
@@ -240,6 +212,34 @@
           "oklch(72.14% 0.01547 232.34)",
           "oklch(83.57% 0.01547 232.34)",
           "oklch(95% 0.01547 232.34)"
+        ]
+      },
+      "flight-paper": {
+        "role": "neutral",
+        "displayName": "Butterfly paper",
+        "tonalRamp": [
+          "oklch(15% 0.01 85)",
+          "oklch(26.43% 0.01 85)",
+          "oklch(37.86% 0.01 85)",
+          "oklch(49.29% 0.01 85)",
+          "oklch(60.71% 0.01 85)",
+          "oklch(72.14% 0.01 85)",
+          "oklch(83.57% 0.01 85)",
+          "oklch(95% 0.01 85)"
+        ]
+      },
+      "dark-flight-paper": {
+        "role": "neutral",
+        "displayName": "Dark butterfly paper",
+        "tonalRamp": [
+          "oklch(15% 0.009 134)",
+          "oklch(26.43% 0.009 134)",
+          "oklch(37.86% 0.009 134)",
+          "oklch(49.29% 0.009 134)",
+          "oklch(60.71% 0.009 134)",
+          "oklch(72.14% 0.009 134)",
+          "oklch(83.57% 0.009 134)",
+          "oklch(95% 0.009 134)"
         ]
       }
     },
@@ -297,11 +297,6 @@
         "purpose": "Button, navigation, menu, topic-note, reveal, and identity transitions."
       },
       {
-        "name": "ease-in-out",
-        "value": "cubic-bezier(.65,0,.35,1)",
-        "purpose": "Gentle drift of research-node text; hit targets remain stationary."
-      },
-      {
         "name": "utility-feedback",
         "value": "150ms",
         "purpose": "Utility background and pressed-scale feedback."
@@ -322,9 +317,19 @@
         "purpose": "Initial name clip reveal only at the homepage top and only when enhancement is enabled."
       },
       {
-        "name": "research-label-drift",
-        "value": "8s alternate infinite; translate 0 -3px to 0 3px",
-        "purpose": "Visible desktop graph labels only; pauses for focus, hover, selection, global pause, reduced motion, hidden/offscreen state, and the phone layout."
+        "name": "butterfly-film",
+        "value": "6s, one pass per entry at 30% visibility",
+        "purpose": "The silent film holds its last frame. Crossing the threshold again replays it."
+      },
+      {
+        "name": "particle-assembly",
+        "value": "840ms",
+        "purpose": "Particles form the name and return after local pointer displacement."
+      },
+      {
+        "name": "research-network",
+        "value": "requestAnimationFrame",
+        "purpose": "Move labels and their SVG endpoints together on desktop and mobile while the field is visible and motion is enabled."
       }
     ],
     "breakpoints": [
@@ -335,6 +340,10 @@
       {
         "name": "tablet-max",
         "value": "850px"
+      },
+      {
+        "name": "field-narrow-max",
+        "value": "620px"
       },
       {
         "name": "phone-max",
@@ -376,24 +385,24 @@
       "kind": "nav",
       "refersTo": "navigation",
       "description": "Section navigation with a thin current-location underline; the site script manages current location and the mobile menu.",
-      "html": "<nav class=\"ds-nav\" aria-label=\"Primary navigation\"><a href=\"#about\">About</a><a href=\"#research\" aria-current=\"location\">Research</a><a href=\"#projects\">Work</a></nav>",
+      "html": "<nav class=\"ds-nav\" aria-label=\"Primary navigation\"><a href=\"#about\">About</a><a href=\"#research\" aria-current=\"location\">Research</a><a href=\"#projects\">Work</a><a href=\"#publications\">Publications</a><a href=\"#news\">News</a><a href=\"#experience\">Experience</a><a href=\"#cv\">Education</a><a href=\"#contact\">Contact</a></nav>",
       "css": ".ds-nav{display:flex;align-items:center;gap:26px;min-height:76px;border-bottom:1px solid var(--line,#deded7);background:var(--paper,#fff);color:var(--ink,#242420)}.ds-nav a{position:relative;padding:23px 0;color:inherit;font:500 13px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif);text-decoration:none}.ds-nav a::after{content:\"\";position:absolute;height:2px;background:var(--accent,#b94513);left:0;right:0;bottom:15px;transform:scaleX(0);transform-origin:left;transition:transform 180ms cubic-bezier(.22,1,.36,1)}.ds-nav a:hover{color:var(--accent,#b94513)}.ds-nav a:hover::after,.ds-nav a[aria-current=\"location\"]::after{transform:scaleX(1)}.ds-nav a:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:1100px){.ds-nav{gap:17px}.ds-nav a{font-size:12px}}@media(max-width:850px){.ds-nav{min-height:68px;flex-wrap:wrap;gap:0 26px}.ds-nav a{padding:12px 0;font-size:14px}.ds-nav a::after{bottom:8px}}@media(prefers-reduced-motion:reduce){.ds-nav a::after{transition:none}}"
     },
     {
       "name": "Research topic",
       "kind": "button",
       "refersTo": "research-node",
-      "description": "A native research button; the live map supplies aria-controls, selection, focus previews, and arrow-key movement.",
+      "description": "Native topic button with a stationary hit area. Its label and the connected SVG endpoints move together.",
       "html": "<button class=\"ds-node\" type=\"button\" aria-pressed=\"false\"><span>Control &amp; reliability</span></button>",
-      "css": ".ds-node{min-height:44px;padding:6px 10px;border:0;border-radius:5px;background:var(--paper,#fff);color:var(--ink,#242420);font:500 20px/1.3 var(--serif, Newsreader, \"Songti SC\", \"Noto Serif CJK SC\", Georgia, serif);white-space:nowrap;cursor:pointer}.ds-node:hover,.ds-node:focus-visible,.ds-node[aria-pressed=\"true\"]{background:var(--accent-soft,#faeee7);color:var(--accent,#b94513)}.ds-node:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:1100px){.ds-node{font-size:17px}}@media(max-width:850px){.ds-node{font-size:15px;padding-inline:5px}}@media(max-width:600px){.ds-node{min-height:46px;padding:10px;font-size:17px;white-space:normal;background:var(--surface,#f5f4f1)}.ds-node:hover,.ds-node:focus-visible,.ds-node[aria-pressed=\"true\"]{background:var(--accent-soft,#faeee7)}}"
+      "css": ".ds-node{min-height:44px;padding:0;border:0;background:none;color:var(--ink,#242420);font:580 clamp(16px,1.65vw,22px)/1.18 var(--serif,Newsreader,Georgia,serif);cursor:pointer}.ds-node span{display:block;padding:2px 5px;background:var(--paper,#fff);border-radius:3px}.ds-node:is(:hover,:focus-visible,[aria-pressed=\"true\"]){color:var(--accent,#b94513)}.ds-node[aria-pressed=\"true\"] span{text-decoration:underline;text-underline-offset:4px}.ds-node:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:620px){.ds-node{font-size:16px}.ds-node span{text-wrap:balance}}"
     },
     {
       "name": "Research note",
       "kind": "custom",
       "refersTo": "research-note",
-      "description": "A compact, polite status region below the map, with an ordinary research destination link.",
-      "html": "<div class=\"ds-note\" role=\"status\" aria-live=\"polite\"><div><strong>Research is connected.</strong><p>Hover, tap, or tab to a topic to see how it connects to my work.</p></div><a href=\"#projects\">Explore the work</a></div>",
-      "css": ".ds-note{display:flex;align-items:center;justify-content:space-between;gap:26px;min-height:108px;padding:20px 24px;border-radius:8px;background:var(--surface,#f5f4f1);color:var(--ink,#242420)}.ds-note strong{font:500 21px/1.4 var(--serif, Newsreader, \"Songti SC\", \"Noto Serif CJK SC\", Georgia, serif)}.ds-note p{margin:0;max-width:75ch;font:400 13px/1.7 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif);color:var(--muted,#62625b)}.ds-note a{flex:none;color:var(--accent,#b94513);font:400 12px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif);text-underline-offset:.24em;text-decoration-thickness:1px}.ds-note a:hover{color:var(--accent,#b94513)}.ds-note a:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}@media(max-width:600px){.ds-note{display:block;padding:18px;min-height:184px}.ds-note p{margin-top:5px;font-size:12px}.ds-note a{display:inline-block;margin-top:14px}}"
+      "description": "Near-topic note with a link to the relevant work. The map places it above or below the active topic.",
+      "html": "<div class=\"ds-note\" role=\"status\" aria-live=\"polite\"><strong>Control &amp; reliability</strong><p>Nonlinear modeling, torque-aware control, and tests that expose numerical sensitivity.</p><a href=\"#project-control\">Explore this work</a></div>",
+      "css": ".ds-note{width:min(290px,100%);box-sizing:border-box;padding:14px 17px;background:var(--paper,#fff);color:var(--ink,#242420);border:1px solid var(--line,#deded7);border-radius:7px}.ds-note strong{font:500 17px/1.4 var(--serif,Newsreader,Georgia,serif)}.ds-note p{margin:4px 0;font:400 13px/1.5 var(--sans,Inter,sans-serif);color:var(--muted,#62625b)}.ds-note a{display:inline-block;margin-top:5px;font:400 12px/1.75 var(--sans,Inter,sans-serif);color:var(--accent,#b94513);text-underline-offset:.24em}.ds-note a:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px}@media(max-width:620px){.ds-note{width:min(236px,100%)}}"
     },
     {
       "name": "Research reading row",
@@ -417,27 +426,34 @@
       "description": "Optional scientific detail retains native disclosure behavior and sustained 15px project prose.",
       "html": "<details class=\"ds-scope\"><summary>Study scope</summary><p>The 112-task success comparison comes from an earlier held-out validation. The later numerical study used five prespecified cases and four fixed controllers.</p></details>",
       "css": ".ds-scope{margin-top:20px;color:var(--ink,#242420)}.ds-scope summary{cursor:pointer;width:fit-content;padding:8px 0;font:500 13px/1.75 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif)}.ds-scope summary:hover{color:var(--accent,#b94513)}.ds-scope p{margin:0;padding:8px 0 12px;color:var(--muted,#62625b);font:400 15px/1.8 var(--sans, Inter, \"PingFang SC\", \"Microsoft YaHei\", sans-serif)}.ds-scope summary:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px;border-radius:3px}"
+    },
+    {
+      "name": "Project recording disclosure",
+      "kind": "custom",
+      "description": "A closed native disclosure under a project figure. Opening it reveals the captioned, manually playable simulation.",
+      "html": "<details class=\"ds-recording\"><summary>Watch the path-tracking simulation</summary><figure><video controls playsinline preload=\"none\" aria-label=\"Recorded path-tracking simulation\" poster=\"https://yzh423.github.io/assets/manipulation-research/r3-path-poster.jpg\" src=\"https://yzh423.github.io/assets/manipulation-research/r3-path-evidence.mp4\"></video><figcaption>Given-path tracking · four fixed controllers · one selected simulation case.</figcaption></figure></details>",
+      "css": ".ds-recording{margin-top:14px;padding-block:9px;border-block:1px solid var(--line,#deded7);color:var(--ink,#242420)}.ds-recording summary{width:fit-content;cursor:pointer;padding-block:8px;font:550 13px/1.65 var(--sans,Inter,sans-serif)}.ds-recording summary::marker,.ds-recording summary:hover{color:var(--accent,#b94513)}.ds-recording summary:focus-visible{outline:2px solid var(--accent,#b94513);outline-offset:5px}.ds-recording figure{margin:12px 0 0}.ds-recording video{width:100%;border-radius:8px}.ds-recording figcaption{margin-top:12px;color:var(--muted,#62625b);font:400 12px/1.65 var(--sans,Inter,sans-serif)}"
     }
   ],
   "narrative": {
     "northStar": "The connected academic homepage",
-    "overview": "A restrained, personal academic setting makes research, recorded experiments, and their context easy to inspect. The light world pairs white ground, charcoal text, and a warm orange accent; the dark world uses neutral charcoal surfaces with a lighter orange accent. Newsreader brings a scholarly voice to headings while Inter keeps prose and controls direct.\n\nThis records the approved, code-led implementation of the user-pinned [Zhouhu Tan reference](https://tanzhouhu.github.io/#research), as scoped in [PRODUCT.md](PRODUCT.md) and [the surface brief](docs/reference-redesign.md). Thin separators and Inter are explicit reference commitments. A real portrait, a two-line identity, bounded particle lettering, and recorded simulation give the homepage its personal character; the detail page shares the same reading system. The source of truth is the final cascade in both stylesheets, including their closing readability and particle-layout rules.\n",
+    "overview": "A real portrait and a two-line name introduce the researcher. Beneath them, an ink butterfly moves behind the same name drawn in particles. Newsreader headings and a muted orange accent carry into the research network, and captions and plain links accompany the evidence.\n\nThe homepage and the manipulation study share neutral paper, thin section rules and Inter reading text in English and Chinese. On the homepage, the butterfly film and diagram respond to the pointer. Scientific recordings belong with the projects they document. [Product context](PRODUCT.md) · [Homepage brief](docs/reference-redesign.md)",
     "keyCharacteristics": [
       "Scholarly serif headings and sustained, bilingual sans-serif prose.",
       "Flat reading surfaces, thin separators, and restrained orange emphasis.",
-      "A real portrait, two-line name, particle lettering, and labeled simulation preview.",
+      "One butterfly-and-particle banner and a research network with visible connections on phones and desktops.",
       "Native controls, visible keyboard focus, and usable static fallbacks.",
       "Research evidence retains its captions, scope, source links, and downloads."
     ],
     "rules": [
       {
         "name": "The Reference Continuity Rule",
-        "body": "Keep the user-pinned thin separators and Inter body type; they are part of this approved visual world.",
+        "body": "Use Inter body text and thin section rules throughout the academic pages.",
         "section": "colors"
       },
       {
         "name": "The Reading Size Rule",
-        "body": "Keep sustained prose at the final 15px size on phones and desktops; do not recover superseded smaller declarations as design tokens.",
+        "body": "Keep sustained prose at 15px on phones and desktops.",
         "section": "typography"
       },
       {
@@ -450,7 +466,8 @@
       "Do retain the user-pinned thin separators, Inter body text, and Newsreader headings.",
       "Do preserve the two-line name, real portrait, and full wrapping scholarly titles.",
       "Do use the final 15px sustained prose size in both languages and at every breakpoint.",
-      "Do keep the particle CTA and hint in separate normal-flow rows with a 10px gap.",
+      "Do keep the butterfly and particle lettering together and the research recordings inside their homepage project disclosures.",
+      "Do keep connected edges and a reachable near-topic note on narrow screens.",
       "Do preserve native buttons, links, video controls, visible focus, and static reading fallbacks.",
       "Do retain evidence captions, simulation qualifications, original PDF URLs, and the distinction between validation protocols."
     ],

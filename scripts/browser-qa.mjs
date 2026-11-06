@@ -34,14 +34,38 @@ try {
   await page.goto(base); await page.evaluate(() => document.fonts.ready);
   await page.waitForFunction(() => document.querySelector('[data-preview]').currentTime > .2);
   assert.equal(await page.locator('[data-preview]').evaluate(v => v.muted), true);
+  const film=page.locator('.flight-film'), stage=page.locator('.flight-stage'), lettering=page.locator('#flight-lettering');
+  assert.ok((await film.getAttribute('poster')).endsWith('inkwing.webp'));
+  assert.deepEqual(await stage.boundingBox(),await lettering.boundingBox());
+  assert.equal(await stage.locator('video[controls]').count(),0);
+  const box=await stage.boundingBox();
+  await page.waitForTimeout(950);
+  const beforeHover=await lettering.evaluate(c=>c.toDataURL());
+  await page.mouse.move(box.x+box.width*.72,box.y+box.height*.47);
+  await page.waitForFunction(()=>Math.abs(new DOMMatrix(getComputedStyle(document.querySelector('.flight-film')).transform).e)>3);
+  assert.notEqual(beforeHover,await lettering.evaluate(c=>c.toDataURL()),'pointer should displace the lettering as well as the film');
+  record('one shared stage: pointing at the artwork displaces the ink and the butterfly');
   await page.locator('.motion-toggle').click();
   await page.waitForFunction(() => document.querySelector('[data-preview]').paused);
   assert.equal(await page.locator('html').getAttribute('data-motion'), 'paused');
-  assert.equal(await page.locator('.graph-node span').first().evaluate(e => getComputedStyle(e).animationPlayState), 'paused');
+  assert.equal(await page.locator('.flight-film').evaluate(e => e.style.transform), 'translate(0px, 0px) rotate(0deg)');
   await page.locator('.motion-toggle').click();
   await page.waitForFunction(() => !document.querySelector('[data-preview]').paused);
   await page.locator('#research').evaluate(e => e.scrollIntoView({ block: 'start' }));
   await page.waitForFunction(() => document.querySelector('[data-preview]').paused);
+  await page.evaluate(()=>scrollTo(0,0));
+  await page.waitForFunction(()=>{const v=document.querySelector('.flight-film');return !v.paused&&v.currentTime<1;});
+  await film.evaluate(v=>{v.currentTime=v.duration-.28;});
+  await page.waitForFunction(()=>document.querySelector('.flight-film').ended);
+  await page.waitForTimeout(230); assert.equal(await film.evaluate(v=>v.ended),true);
+  await page.locator('#research').evaluate(e=>e.scrollIntoView({block:'start'}));
+  const line=page.locator('[data-edge="control"]');
+  const endpoint=await line.getAttribute('x2');
+  await page.waitForFunction(from=>document.querySelector('[data-edge="control"]').getAttribute('x2')!==from,endpoint);
+  assert.equal(await line.evaluate(l=>{
+    const b=document.querySelector('[data-node="control"] span').getBoundingClientRect(),r=l.ownerSVGElement.getBoundingClientRect();
+    return Math.abs(r.left+l.x2.baseVal.value-(b.left+b.width/2))<2;
+  }),true,'line follows moving label');
   record('preview plays muted only in view; pause/resume controls stop video and decorative motion');
 
   const control = page.locator('[data-node="control"]');
@@ -80,13 +104,13 @@ try {
         await page.evaluate(() => scrollTo(0,0));
         const measure = await page.evaluate(() => {
           const name = document.querySelector('.name-line');
-          const hint = document.querySelector('.particle-hint'), action = document.querySelector('.explore-button');
+          const stage = document.querySelector('.flight-stage'), action = document.querySelector('.flight-action');
           const reading = document.querySelectorAll('.project-copy p:not(.project-category), .research-card p, .publication p:not(.pub-status):not(.authors), .timeline p:not(.meta), .detail-lede, .comparison-copy p, .method-grid p, .detail-scope p');
-          return { w:innerWidth, scrollWidth:document.documentElement.scrollWidth, name: name ? { h:name.getBoundingClientRect().height, line:parseFloat(getComputedStyle(name).lineHeight) } : null, hintGap: hint ? hint.getBoundingClientRect().top - action.getBoundingClientRect().bottom : null, smallestProse: Math.min(...[...reading].map(e=>parseFloat(getComputedStyle(e).fontSize))) };
+          return { w:innerWidth, scrollWidth:document.documentElement.scrollWidth, name: name ? { h:name.getBoundingClientRect().height, line:parseFloat(getComputedStyle(name).lineHeight) } : null, actionGap: stage ? stage.getBoundingClientRect().bottom - action.getBoundingClientRect().bottom : null, smallestProse: Math.min(...[...reading].map(e=>parseFloat(getComputedStyle(e).fontSize))) };
         });
         assert.ok(measure.scrollWidth <= width + 1, `${route} ${lang} ${width}: overflow ${measure.scrollWidth}`);
         if (measure.name) assert.ok(measure.name.h < measure.name.line * 1.3, `name wrapped at ${width}`);
-        if (measure.hintGap !== null) assert.ok(measure.hintGap >= 8, `${lang} ${width}: banner instruction overlaps its action`);
+        if (measure.actionGap !== null) assert.ok(measure.actionGap >= 8, `${lang} ${width}: banner action clipped`);
         assert.ok(measure.smallestProse >= 15, `${route} ${width}: undersized sustained prose`);
       }
     }
@@ -97,6 +121,8 @@ try {
   await language(page,'en'); await theme(page,'light');
   await page.locator('.menu-toggle').focus(); await page.keyboard.press('Enter');
   assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'true');
+  assert.equal(await page.evaluate(()=>document.activeElement.hash),'#about');
+  await page.keyboard.press('Tab'); assert.equal(await page.evaluate(()=>document.activeElement.hash),'#research');
   await screenshot(page,'mobile-menu.png');
   await page.keyboard.press('Escape');
   assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'false');
@@ -111,8 +137,14 @@ try {
   assert.equal(await page.locator('.menu-toggle').getAttribute('aria-expanded'),'false');
   record('mobile menu supports keyboard, Escape/focus return, outside dismissal, links and rapid toggles');
 
-  await page.locator('#project-control details summary').click();
-  assert.equal(await page.locator('#project-control details').evaluate(e=>e.open),true);
+  await page.locator('#project-control .project-copy details summary').click();
+  assert.equal(await page.locator('#project-control .project-copy details').evaluate(e=>e.open),true);
+  for(const id of ['project-control','project-motion']) {
+    const recording=page.locator('#'+id+' .recording');
+    assert.equal(await recording.evaluate(d=>d.open),false);
+    assert.equal(await recording.locator('video').isVisible(),false);
+    await recording.locator('summary').click();
+  }
   const video=page.locator('#project-control video');
   await video.evaluate(async v => { await v.play(); });
   await page.waitForFunction(()=>document.querySelector('#project-control video').currentTime > .2);
@@ -121,19 +153,20 @@ try {
   assert.ok(time>.2);
   await page.locator('#project-motion video').evaluate(async v=>{await v.play()});
   await page.waitForFunction(()=>document.querySelector('#project-motion video').currentTime>.2);
-  await page.locator('#project-motion video').evaluate(v=>v.pause());
+  await page.locator('#project-motion .recording summary').click();
+  await page.waitForFunction(()=>document.querySelector('#project-motion video').paused);
   record('native disclosure and both project H.264 recordings are usable');
 
-  for (const id of ['about','research','projects','publications','experience','contact']) {
+  for (const id of ['about','research','projects','publications','news','experience','cv','contact','cv','experience','news','publications','projects','research','about']) {
     await page.locator(`#${id}`).evaluate(e=>e.scrollIntoView({block:'start'}));
     await page.waitForFunction(id=>document.querySelector(`.primary-navigation a[href="#${id}"][aria-current="location"]`),id);
   }
-  record('navigation follows all six primary destinations including page end');
+  record('navigation follows all eight primary destinations in both scroll directions');
 
   // Capture stable, fully loaded compositions, with motion paused via the real control.
   await page.goto(base);await language(page,'en');await theme(page,'light');
   if(await page.locator('.motion-toggle').getAttribute('aria-pressed')!=='true') await page.locator('.motion-toggle').click();
-  await page.locator('#project-control video').evaluate(async v=>{await v.play();v.pause()});
+  assert.equal(await page.locator('#project-control .recording').evaluate(d=>d.open),false);
   for(const [width,height,label] of [[1440,1000,'desktop'],[390,844,'mobile']]) {
     await page.setViewportSize({width,height});await page.evaluate(()=>scrollTo(0,0));
     await screenshot(page,`${label}.png`,true);await screenshot(page,`${label}-hero.png`);
@@ -161,9 +194,11 @@ try {
   const rp=await reducedContext.newPage();observe(rp);await rp.goto(base);await rp.waitForTimeout(1000);
   assert.equal(await rp.locator('[data-preview]').evaluate(v=>v.paused),true);
   assert.equal(await rp.locator('.motion-toggle').isDisabled(),true);
-  assert.equal(await rp.locator('.graph-node span').first().evaluate(e=>getComputedStyle(e).animationName),'none');
+  await rp.locator('#research').evaluate(e=>e.scrollIntoView());
+  const reducedLine=rp.locator('[data-edge=control]'); const fixed=await reducedLine.getAttribute('x2');
+  await rp.waitForTimeout(300); assert.equal(await reducedLine.getAttribute('x2'),fixed);
   assert.equal(await rp.evaluate(()=>document.getAnimations().filter(a=>a.playState==='running').length),0);
-  await reducedContext.close();record('reduced motion keeps all animations still and preview manually playable');
+  await reducedContext.close();record('reduced motion keeps all animations still and the banner on its still poster');
 
   const plain=await browser.newContext({javaScriptEnabled:false,viewport:{width:320,height:740}});
   const np=await plain.newPage();observe(np);

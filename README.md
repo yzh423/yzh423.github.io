@@ -28,11 +28,11 @@ The browser suite checks both languages, six viewport sizes, menus, keyboard and
 
 - `index.html`: profile, interactive research map, projects, papers, updates, experience, education and contact. English is readable without JavaScript; authored Chinese translations live in `data-zh` attributes.
 - `projects/reliable-robotic-manipulation/`: full research narrative, figures, simulation recordings and experimental qualifications.
-- `styles.css`, `project.css`: responsive typography and both themes. Fonts are served locally as WOFF2 with their OFL licenses.
-- `preferences.js`: applies the saved/system theme before paint. `script.js` enhances navigation, language, particles, research nodes and preview playback.
+- `styles.css`, `project.css`: responsive typography and both themes; the home motion composition lives in `field.css`. Fonts are served locally as WOFF2 with their OFL licenses.
+- `preferences.js`: applies the saved/system theme before paint. `script.js` handles navigation, translations and research selection. `field.js` renders the fused banner and linked research web.
 - `assets/SOURCES.md`: original media provenance and font sources. All existing CV and paper URLs remain valid.
 
-The introductory simulation preview is muted and only plays when visible, with motion enabled and no data-saver preference. The visitor can pause animation; reduced-motion users see a still composition. Full scientific recordings always require explicit play. The particle lettering is decorative and does not represent research data.
+The original butterfly film starts after the name entrance and 30% visibility, rests on its final frame and restarts on return. The pointer displaces the particle name and gently turns the butterfly. Rebuild the film and poster with `python scripts/render-butterfly.py` (NumPy, Pillow, imageio-ffmpeg). The visitor can pause animation; reduced-motion users see a still composition. On the homepage, readers expand a project recording and press Play to watch it. The particle lettering is decorative and does not represent research data.
 
 ## Design and release
 
