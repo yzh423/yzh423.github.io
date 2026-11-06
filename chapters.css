@@ -10,7 +10,7 @@
 @media screen {
   html.chapter-mode { overflow-y: hidden; scroll-padding: var(--reader-header) 0 0; scroll-snap-type: y mandatory; }
   .chapter-mode { --rail-height: calc(45px + env(safe-area-inset-bottom, 0px)); }
-  .chapter-mode main { padding-block: var(--reader-header) var(--rail-height); }
+  .chapter-mode main { padding-block: var(--reader-header) var(--rail-height); overflow-x:clip; }
   .chapter-mode .site-header { position:fixed; inset:0 0 auto; }
   .chapter-sheet {
     height: calc(100vh - var(--reader-header) - var(--rail-height));
@@ -47,10 +47,10 @@
   html.chapter-mode[data-turn] .chapter-sheet .read-pending { opacity: 1 !important; }
   html[data-turn] { scroll-snap-type:none; }
   html[data-turn] .portfolio { background:var(--cover-paper,#fff); }
-  .chapter-sheet.ink-out { position:relative; z-index:2; pointer-events:none; }
-  .chapter-sheet.ink-in { pointer-events:none; }
-  .chapter-particles { pointer-events:none; position:fixed; z-index:32; left:0; right:0;
-    top:var(--reader-header); width:100%; height:calc(100dvh - var(--reader-header) - var(--rail-height)); }
+  .chapter-sheet:is(.turn-front,.turn-back) { position:relative; pointer-events:none; will-change:transform; }
+  .chapter-sheet:is(.turn-front,.turn-back):not(:has(> #home, > #contact)) { background:var(--paper); }
+  .chapter-sheet.turn-back { z-index:1; }
+  .chapter-sheet.turn-front { z-index:2; }
 }
 .portfolio .print-stage h1.flight-fallback { margin:0; font:500 clamp(38px,8.5vw,116px)/1 var(--serif); }
 .portfolio .has-lettering h1.flight-fallback { visibility:visible; opacity:0; }
@@ -70,7 +70,7 @@
 .campus-track { display:block !important; overflow:visible !important; }
 .campus-controls { display:none !important; }
   .chapter-sheet { display: contents; }
-  .chapter-rail, .chapter-particles { display: none !important; }
+  .chapter-rail { display: none !important; }
 }
 
 @media (max-width:850px) {

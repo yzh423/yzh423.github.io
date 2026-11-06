@@ -1,0 +1,25 @@
+@font-face{font-family:Newsreader;src:url('../../assets/fonts/newsreader-variable.woff2') format('woff2');font-weight:200 800;font-display:swap}
+*{box-sizing:border-box}
+body{margin:0;background:white;color:#202923;font:15px/1.55 system-ui,"Microsoft YaHei",sans-serif}
+a{color:inherit}
+a:focus-visible,button:focus-visible{outline:2px solid #0e7771;outline-offset:4px}
+.studies{width:min(1120px,92%);margin:0 auto 40px}
+header,.heading,.selection,.choice-label{display:flex;justify-content:space-between;align-items:center;gap:18px}
+header{border-bottom:1px solid #d7dcd7;padding:17px 0}
+header a:first-child{font:500 25px/1 Newsreader,Georgia,serif;text-decoration:none}
+header a:last-child,.selection a{font-size:13px;text-underline-offset:4px;white-space:nowrap}
+.heading{margin:clamp(18px,3vw,38px) 0 14px}
+h1{font:500 clamp(25px,3.1vw,43px)/1.2 Georgia,"Songti SC","SimSun",serif;letter-spacing:.01em;margin:0}
+button{font:inherit;cursor:pointer;color:inherit;border:1px solid #c7cec9;background:white;border-radius:4px;padding:8px 14px}
+button:hover{background:#f2f6f3}
+.choices{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(6px,1.6vw,22px)}
+.choices a{text-decoration:none;padding:4px 0 8px;border-bottom:2px solid #dadfdc}
+.choices a[aria-current=true]{border-color:#146b5b;color:#105b53}
+.choices video{width:100%;height:auto;display:block;background:white;outline:1px solid #e8ebe7;outline-offset:-1px}
+.choice-label{justify-content:flex-start;gap:10px;margin-top:9px}
+.choice-label>span{font:italic 20px/1 Newsreader,Georgia,serif;color:#69726e}
+.choice-label strong{font-weight:550;font-size:clamp(12px,1.3vw,16px)}
+.selection{margin:15px 0 7px}
+.selection p{margin:0;color:#555f59;line-height:1.5}
+iframe{border:1px solid #dbe0dc;width:100%;height:clamp(260px,37vw,435px);display:block;background:white}
+@media(max-width:560px){.studies{width:94%}.choices video{aspect-ratio:1.55;object-fit:cover;object-position:68% center}.choice-label{gap:4px}.selection{align-items:start}.selection p{font-size:13px}.heading button{font-size:12px;padding-inline:9px}}

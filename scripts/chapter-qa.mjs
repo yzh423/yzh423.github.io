@@ -55,12 +55,11 @@ try {
   await page.mouse.wheel(0,200);
   await page.waitForFunction(()=>document.documentElement.dataset.turn==='down');
   await page.waitForTimeout(120);
-  assert.ok(await page.locator('.chapter-particles').evaluate(c=>{
-    const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
-    let grains=0;
-    for(let i=0;i<pixels.length;i+=4) if(pixels[i+3]>12 && Math.abs(pixels[i]-pixels[i+2])>24) grains++;
-    return grains>100;
-  }),'the turn paints coloured grains between the chapter exposures');
+  assert.equal(await page.locator('html').getAttribute('data-turn-style'),'about');
+  assert.ok(await page.locator('.turn-front').evaluate(sheet=>{
+    const transform=new DOMMatrix(getComputedStyle(sheet).transform);
+    return transform.m42>0 && transform.m42<sheet.clientHeight;
+  }),'the About sheet should be visibly rising into place');
   await page.screenshot({path:out+'/chapter-turn.png'});
   for(let i=0;i<8;i++){await page.mouse.wheel(0,22);await page.waitForTimeout(30);}
   await page.waitForFunction(()=>!document.documentElement.dataset.turn);

@@ -74,16 +74,15 @@
       if(updateHash) history.replaceState(history.state,'','#'+section.id);
       position(target,index,fromBelow);
     };
-    if(!sign || !animate || root.dataset.motion!=='running' || !window.chapterInk) { change(); return; }
+    if(!sign || !animate || root.dataset.motion!=='running' || !window.chapterTurns) { change(); return; }
     document.dispatchEvent(new Event('site:turn-start'));
     root.dataset.turn=sign>0?'down':'up';
-    const ink=window.chapterInk.morph(sheets[origin],sheets[index],sign,change);
-    if(!ink) { delete root.dataset.turn; return; }
+    const exposure=window.chapterTurns.create(sheets[origin],sheets[index],sign,change);
     let progress=0, pressure=Math.min(.12,Math.abs(impulse)/1500), reverse=false;
     let last=performance.now(), frame=0;
     function finish(undo) {
       cancelAnimationFrame(frame);
-      ink.clear();
+      exposure.clear();
       motion=null;
       if(undo) {
         history.replaceState(history.state,'',originalURL);
@@ -97,7 +96,7 @@
       const response=pressure*(1-Math.exp(-dt/46));
       pressure-=response;
       progress=Math.max(0,Math.min(1,progress+dt/(reverse?-480:700)+response));
-      ink.paint(progress);
+      exposure.paint(progress);
       if(progress===1 || (reverse && progress===0)) finish(reverse);
       else frame=requestAnimationFrame(draw);
     }
@@ -106,7 +105,7 @@
       if(Math.abs(signed)>3) reverse=signed<0;
       pressure=Math.max(-.32,Math.min(.32,pressure+signed/980));
     }};
-    ink.paint(0);
+    exposure.paint(0);
     frame=requestAnimationFrame(draw);
   }
   function step(direction, animate, fromEdge = false, impulse = 0) {
