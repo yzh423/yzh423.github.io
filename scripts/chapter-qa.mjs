@@ -34,13 +34,33 @@ try {
       return {total,color};
     });
   }
+  // Measure the cool ink on the upper plate separately from the name canvas.
+  async function plateCoverage() {
+    return film.evaluate(video=>{
+      const plate=document.createElement('canvas');
+      plate.width=360; plate.height=135;
+      const ctx=plate.getContext('2d');
+      ctx.drawImage(video,0,0,plate.width,plate.height);
+      const pixels=ctx.getImageData(0,0,235,52).data;
+      let marks=0;
+      for(let i=0;i<pixels.length;i+=4) {
+        const red=pixels[i];
+        if(red<235 && pixels[i+1]-red>3 && pixels[i+2]-red>5) marks++;
+      }
+      return marks/(pixels.length/4);
+    });
+  }
   await freeze(1.70);
+  const openingPlate=await plateCoverage();
   assert.equal((await ink()).total,0,'no name before the jaws meet');
   assert.equal(await page.locator('#home').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)');
   await freeze(3.25);
+  const developedPlate=await plateCoverage();
+  assert.ok(developedPlate>openingPlate+.08,'the contact exposure develops across the plate');
   const airborne=await ink(); assert.ok(airborne.color>150 && airborne.total>airborne.color);
   await page.screenshot({path:out+'/chapter-transfer.png'});
-  await freeze(5.2);
+  await freeze(5.85);
+  assert.ok(await plateCoverage()<developedPlate-.08,'the field clears as the lettering settles');
   const rest=await ink(); assert.ok(rest.total>3000 && rest.color===0);
   await page.screenshot({path:out+'/chapter-cover.png'});
   const rect=await canvas.boundingBox();
@@ -55,11 +75,13 @@ try {
   await page.mouse.wheel(0,200);
   await page.waitForFunction(()=>document.documentElement.dataset.turn==='down');
   await page.waitForTimeout(120);
-  assert.equal(await page.locator('html').getAttribute('data-turn-style'),'about');
-  assert.ok(await page.locator('.turn-front').evaluate(sheet=>{
-    const transform=new DOMMatrix(getComputedStyle(sheet).transform);
-    return transform.m42>0 && transform.m42<sheet.clientHeight;
-  }),'the About sheet should be visibly rising into place');
+  assert.equal(await page.locator('html').getAttribute('data-turn-style'),'exposure');
+  assert.ok(await page.locator('.chapter-exposure').evaluate(c=>{
+    const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+    let ink=0;
+    for(let i=3;i<pixels.length;i+=4) if(pixels[i]>18) ink++;
+    return ink>120 && ink<c.width*c.height*.25;
+  }),'the moving rim should contain ink and leave the reading surfaces clear');
   await page.screenshot({path:out+'/chapter-turn.png'});
   for(let i=0;i<8;i++){await page.mouse.wheel(0,22);await page.waitForTimeout(30);}
   await page.waitForFunction(()=>!document.documentElement.dataset.turn);

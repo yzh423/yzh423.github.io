@@ -50,7 +50,8 @@
   .chapter-sheet:is(.turn-front,.turn-back) { position:relative; pointer-events:none; will-change:transform; }
   .chapter-sheet:is(.turn-front,.turn-back):not(:has(> #home, > #contact)) { background:var(--paper); }
   .chapter-sheet.turn-back { z-index:1; }
-  .chapter-sheet.turn-front { z-index:2; }
+  .chapter-sheet.turn-front { z-index:2; will-change:clip-path; }
+  .chapter-exposure { position:fixed; z-index:32; pointer-events:none; }
 }
 .portfolio .print-stage h1.flight-fallback { margin:0; font:500 clamp(38px,8.5vw,116px)/1 var(--serif); }
 .portfolio .has-lettering h1.flight-fallback { visibility:visible; opacity:0; }

@@ -31,9 +31,15 @@ async function theme(page, value) {
   await page.waitForFunction(theme=>document.documentElement.dataset.theme===theme && !document.documentElement.dataset.preferenceMotion,value);
 }
 try {
-  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, colorScheme: 'light' });
+  const context = await browser.newContext({ viewport: { width: 1440, height: 1000 }, colorScheme: 'dark',locale:'zh-CN' });
+  await context.addInitScript(()=>{
+    localStorage.setItem('zy-language','zh');
+    localStorage.setItem('zy-theme','dark');
+  });
   const page = await context.newPage(); observe(page);
   await page.goto(base); await page.evaluate(() => document.fonts.ready);
+  assert.equal(await page.locator('html').getAttribute('lang'),'en');
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
   await page.waitForFunction(() => document.querySelector('[data-preview]').currentTime > .2);
   assert.equal(await page.locator('[data-preview]').evaluate(v => v.muted), true);
   const film=page.locator('.flight-film'), stage=page.locator('.flight-stage'), lettering=page.locator('#flight-lettering');
@@ -123,13 +129,16 @@ try {
   await theme(page, 'dark');
   assert.equal(await page.locator('.flight-action').evaluate(e => getComputedStyle(e).color), 'rgb(241, 240, 235)');
   await page.reload();
+  assert.equal(await page.locator('html').getAttribute('lang'),'en');
+  assert.equal(await page.locator('html').getAttribute('data-theme'),'light');
+  await language(page,'zh-CN'); await theme(page,'dark');
+  await page.locator('#project-control .work-title').click();
+  await page.waitForURL(u=>u.pathname.endsWith('/projects/reliable-robotic-manipulation/'));
   assert.equal(await page.locator('html').getAttribute('lang'), 'zh-CN');
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
-  await page.goto(new URL('projects/reliable-robotic-manipulation/', base).href);
-  assert.equal(await page.locator('html').getAttribute('lang'), 'zh-CN');
   assert.match(await page.locator('h1').innerText(), /可靠机器人操作/);
   assert.match(await page.locator('#scope').innerText(), /未启用确认集/);
-  record('language and theme persist across reloads and the research document');
+  record('fresh and refreshed homepage use light English; an internal link carries manual choices to the study');
 
   const dimensions = [[320,740],[390,844],[768,1024],[1024,680],[1440,1000],[1440,620]];
   for (const route of ['', 'projects/reliable-robotic-manipulation/']) {

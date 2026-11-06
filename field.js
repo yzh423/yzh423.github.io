@@ -150,24 +150,35 @@
           let cx=p.x+p.dx,cy=p.y+p.dy,alpha=1;
           if (printStage) {
             if (assembling && (!pose || filmTime < inkMap.contact)) continue;
-            let exposure = 0;
+            let exposure = 0, typeMark = 0;
             if (pose) {
-              const start = inkMap.contact + .04 + p.phase*.72 + (1-p.x/w)*.35;
+              const mark = inkMap.marks[p.mark % inkMap.marks.length];
+              // Adjacent cuts leave the tool in ribbons and settle together.
+              const lane = clamp((mark[1]+1880)/2920,0,1);
+              const start = inkMap.contact + .05 + lane*.43 + p.phase*.26 + (1-p.x/w)*.32;
               const progress = clamp((filmTime - start)/(1.05 + p.span*.42),0,1);
               if (!progress) continue;
-              const ease = smooth(progress);
-              const mark = inkMap.marks[p.mark % inkMap.marks.length];
+              const ease = progress**3*(10+progress*(6*progress-15));
               const fromX = pose.x + mark[0]*pose.radius/1000;
               const fromY = pose.y + mark[1]*pose.radius/1000;
               const bow = 4*ease*(1-ease);
               cx += (fromX-p.x)*(1-ease);
-              cy += (fromY-p.y)*(1-ease) - bow*(.13*h + p.bend*.9);
+              cy += (fromY-p.y)*(1-ease) - bow*h*(.075+.14*lane)
+                + Math.sin(2*Math.PI*ease)*bow*(lane-.5)*h*.12;
               alpha = smooth(clamp(progress/.32,0,1));
               exposure = bow * (.62 + .36*p.phase);
+              typeMark = p.mark%11===0 ? bow : 0;
             }
             const displacement = Math.hypot(p.dx,p.dy);
             const colorStep = Math.round(clamp(Math.max(exposure, displacement/(radius*.17)),0,1)*12);
             ctx.fillStyle = colorStep ? tint[p.pigment][colorStep] : palette[i];
+            if(typeMark>.20) {
+              ctx.globalAlpha=alpha*typeMark*.78;
+              const unit=p.size*(.38+.34*typeMark);
+              ctx.fillRect(cx-unit*1.45,cy-2*unit,unit,4*unit);
+              ctx.fillRect(cx-unit*.45,cy-2*unit,2*unit,unit);
+              ctx.fillRect(cx-unit*.45,cy+(p.mark%2?0:1)*unit,1.6*unit,unit);
+            }
           } else if(!still&&entry<assemblyTime){
             const progress=clamp((entry-p.delay)/p.span,0,1),spread=(1-progress)**3;
             cx+=p.sx*spread;cy+=p.sy*spread+Math.sin(progress*Math.PI)*p.bend*(1-progress);

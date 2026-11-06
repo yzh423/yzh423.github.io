@@ -15,20 +15,17 @@ try {
   const ids=['home','about','research','projects','publications','news','experience','cv','contact'];
   async function turn(i,j) {
     await page.locator(j>i?'.chapter-next':'.chapter-prev').click();
-    await page.waitForFunction(key=>document.documentElement.dataset.turnStyle===key,ids[Math.max(i,j)]);
+    await page.waitForFunction(()=>document.documentElement.dataset.turnStyle==='exposure');
     await page.waitForTimeout(150);
     const f=await page.locator('.turn-front').evaluate(e=>{
       const style=getComputedStyle(e);
-      return {id:e.firstElementChild.id,clip:style.clipPath,mask:style.maskImage,opacity:+style.opacity,transform:style.transform};
+      return {id:e.firstElementChild.id,clip:style.clipPath};
     });
     assert.equal(f.id,ids[Math.max(i,j)]);
-    if(['research','publications','experience','cv'].includes(f.id)) assert.notEqual(f.clip,'none');
-    else if(f.id==='projects') assert.match(f.mask,/gradient/);
-    else if(f.id==='contact') assert.ok(f.opacity>0 && f.opacity<1);
-    else assert.notEqual(f.transform,'none');
+    assert.match(f.clip,/^ellipse\(/);
     await page.waitForFunction(()=>!document.documentElement.dataset.turn);
     assert.equal(await page.evaluate(()=>window.chapterReader.current().id),ids[j]);
-    assert.equal(await page.locator('.turn-front,.turn-back').count(),0);
+    assert.equal(await page.locator('.turn-front,.turn-back,.chapter-exposure').count(),0);
   }
   for(let i=0;i<8;i++) await turn(i,i+1);
   for(let i=8;i>0;i--) await turn(i,i-1);

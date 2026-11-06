@@ -236,6 +236,22 @@ def optical_field(t, center, radius):
     return np.asarray(plate)
 
 
+def developing_screen(t, dx, dy, radius, metal):
+    # Contact exposes a plate of type. The tool masks the first impression;
+    # as the camera pulls back, the type gives way to a finer dot screen.
+    if t <= 1.93 or t >= 5.35:
+        return 0., 0., 0.
+    wave = np.hypot(dx*.88, dy*1.38)
+    front = radius + 1150*travel(1.93, 4.08, t)
+    body = 1-ramp(front-72, front+18, wave)
+    life = travel(1.93, 2.46, t)*(1-travel(3.94, 5.35, t))
+    screen = mix(glyph, dots, travel(3.29,4.71,t))
+    cutout = 1-np.clip(3.4*metal,0,1)
+    density = life*body*cutout*(.10+.58*screen)*(.91+.09*rolloff)
+    rim = np.exp(-((wave-front)/13)**2)*life*cutout
+    return density, rim, life*body
+
+
 def frame(t):
     metal, center, radius = arm_plate(t)
     dx, dy = XX-center[0], YY-center[1]
@@ -272,9 +288,16 @@ def frame(t):
     accent = ramp(1.93,2.19,t)*(.86*edge_arc+.15*soft_edge)
     backdrop = optical_field(t, center, radius)
     background_weight = 1 - np.clip(metal*4, 0, 1)
+    screen, rim_light, exposure = developing_screen(t, dx, dy, radius, metal)
+    ink *= 1 - .62*exposure
+    # A cool proof on white paper, with a narrow violet offset at its edge.
+    spectral_ink = (53, 119, 135)
+    edge_ink = (108, 93, 176)
     image = np.empty((H,W,3), dtype='uint8')
     for channel in range(3):
         paper = PAPER[channel] + (backdrop[:,:,channel].astype('f')-255)*background_weight
+        paper = mix(paper, spectral_ink[channel], screen)
+        paper = mix(paper, edge_ink[channel], .29*rim_light)
         layer = paper + paper_grain + (GRAPHITE[channel]-paper)*ink
         image[:,:,channel] = np.clip(mix(layer, COPPER[channel], accent), 0, 255)
     return Image.fromarray(image)

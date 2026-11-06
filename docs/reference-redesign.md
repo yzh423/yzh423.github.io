@@ -19,7 +19,7 @@ The desktop header and mobile menu expose the same eight destinations, in readin
 | Education | `#cv` |
 | Contact | `#contact` |
 
-The wordmark returns to Home. The active section has an orange underline. Pointer-initiated anchor navigation can scroll smoothly, and keyboard activation focuses the destination immediately. At 850px and below, the menu opens beneath the header. Escape closes it and returns focus to the toggle. It also closes when focus or a pointer press moves outside the header. English and Chinese selections persist across pages. Theme follows the operating system until the reader selects one.
+The wordmark returns to Home. The active section has an orange underline. Pointer-initiated anchor navigation can scroll smoothly, and keyboard activation focuses the destination immediately. At 850px and below, the menu opens beneath the header. Escape closes it and returns focus to the toggle. It also closes when focus or a pointer press moves outside the header. Direct entry and homepage reloads start in English with the light theme. Manual choices carry into the study through its internal link.
 
 ## Robot arm banner
 

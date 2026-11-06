@@ -3,12 +3,11 @@
   const root = document.documentElement;
   const reduced = matchMedia('(prefers-reduced-motion: reduce)');
   const mobile = matchMedia('(max-width: 850px)');
-  const systemDark = matchMedia('(prefers-color-scheme: dark)');
   const storage = {
     get(key) { try { return localStorage.getItem(key); } catch { return null; } },
     set(key, value) { try { localStorage.setItem(key, value); } catch { /* Reading still works without storage. */ } }
   };
-  let language = storage.get('zy-language') === 'zh' ? 'zh' : 'en';
+  let language = root.lang === 'zh-CN' ? 'zh' : 'en';
   let userPaused = storage.get('zy-motion') === 'paused';
   let keyboard = false;
   const animations = new Set();
@@ -112,10 +111,9 @@
   themeToggle?.addEventListener('click', () => {
     finishPreference();
     const theme = root.dataset.theme === 'dark' ? 'light' : 'dark';
-    storage.set('zy-theme',theme);
+    window.siteAppearance?.remember('theme',theme);
     changePreference('theme',()=>setTheme(theme));
   });
-  systemDark.addEventListener('change', () => { if (!storage.get('zy-theme')) setTheme(systemDark.matches ? 'dark' : 'light'); });
 
   const motionToggle = document.querySelector('.motion-toggle');
   function refreshMotion() {
@@ -158,7 +156,7 @@
   document.querySelector('.language-toggle')?.addEventListener('click', () => {
     finishPreference();
     const next=language==='en'?'zh':'en';
-    storage.set('zy-language',next);
+    window.siteAppearance?.remember('language',next);
     changePreference('language',()=>{
       const section=document.querySelector('section.is-current');
       const sheet=section?.closest('.chapter-sheet');
