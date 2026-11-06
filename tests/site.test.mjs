@@ -55,7 +55,7 @@ test('recorded videos are H.264; evidence videos stay manually playable', async 
     const url = new URL(path, root), html = await readFile(url, 'utf8');
     for (const [video] of html.matchAll(/<video\b[\s\S]*?<\/video>/g)) {
       if (video.includes('data-preview')) {
-        assert.match(video, /assets\/motion\/inkwing\.mp4/);
+        assert.match(video, /assets\/motion\/grasp-study\.mp4/);
         assert.match(video, /aria-hidden="true"/); assert.match(video, /\bmuted\b/);
         assert.doesNotMatch(video, /\bloop\b/); assert.ok(home.includes('class="motion-toggle"'));
       } else assert.match(video, /\bcontrols(?:[\s=])/); assert.match(video, /\bplaysinline(?:[\s=])/); assert.match(video, /preload="none"/);

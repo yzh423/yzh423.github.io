@@ -2,7 +2,7 @@
 
 ## Direction
 
-The homepage introduces Zhenghao YU (Daniel) to prospective supervisors and collaborators. The portrait, two-line name, short research introduction and contact links lead into one banner. An original butterfly film moves from ink on warm paper to a sage field of microtype and a halftone specimen. Independent particle lettering stays in front. Newsreader headings, Inter body text, thin rules, and an orange accent connect the introduction to the research and publications below. [Design reference](https://tanzhouhu.github.io/#research)
+The homepage introduces Zhenghao YU (Daniel) to prospective supervisors and collaborators. The portrait, two-line name, short research introduction and contact links lead into one banner. An original robot arm film moves from ink on warm paper to a sage field of microtype and a halftone specimen. Independent particle lettering stays in front. Newsreader headings, Inter body text, thin rules, and an orange accent connect the introduction to the research and publications below. [Design reference](https://tanzhouhu.github.io/#research)
 
 ## Navigation and reading
 
@@ -21,7 +21,7 @@ The desktop header and mobile menu expose the same eight destinations, in readin
 
 The wordmark returns to Home. The active section has an orange underline. Pointer-initiated anchor navigation can scroll smoothly, and keyboard activation focuses the destination immediately. At 850px and below, the menu opens beneath the header. Escape closes it and returns focus to the toggle. It also closes when focus or a pointer press moves outside the header. English and Chinese selections persist across pages. Theme follows the operating system until the reader selects one.
 
-## Butterfly banner
+## Robot arm banner
 
 The silent six-second film and the particle name share the full banner. After the opening identity reveal, reaching 30% visibility starts one pass of the film and the letter assembly. The final halftone holds. A Replay button appears to start the film and type entrance again. Scrolling below 30% and returning starts a new pass. Pointer or touch input gently shifts the film and pushes nearby grains; quick strokes leave a short directional wake. The letters settle back into place. “Explore research” stays at bottom center, and the motion control sits at bottom right.
 
@@ -47,4 +47,4 @@ Check both pages in English and Chinese, in both themes, at 320, 390, 768, 1024 
 
 ## Reference and authorship
 
-Zhouhu Tan’s public homepage supplied the academic layout and interaction reference. The butterfly film, poster and interactive code were created for this site. Scientific images and recordings retain their evidence captions and provenance. Newsreader and Inter are self-hosted with their OFL licenses.
+Zhouhu Tan’s public homepage supplied the academic layout and interaction reference. The robot arm film, poster and interactive code were created for this site. Scientific images and recordings retain their evidence captions and provenance. Newsreader and Inter are self-hosted with their OFL licenses.

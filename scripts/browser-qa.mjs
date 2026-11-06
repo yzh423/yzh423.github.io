@@ -35,8 +35,8 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-preview]').currentTime > .2);
   assert.equal(await page.locator('[data-preview]').evaluate(v => v.muted), true);
   const film=page.locator('.flight-film'), stage=page.locator('.flight-stage'), lettering=page.locator('#flight-lettering');
-  assert.ok((await film.getAttribute('poster')).endsWith('inkwing-opening.webp'));
-  // An off-centre sample distinguishes the full-frame sage print from a butterfly moving on flat paper.
+  assert.ok((await film.getAttribute('poster')).endsWith('grasp-study-opening.webp'));
+  // An off-centre sample distinguishes the full-frame sage print from an arm moving on flat paper.
   function cornerTone(v) {
     const c=document.createElement('canvas');c.width=32;c.height=24;const g=c.getContext('2d');
     g.drawImage(v,0,0,v.videoWidth*.13,v.videoHeight*.14,0,0,32,24);
@@ -52,7 +52,7 @@ try {
   await page.mouse.move(box.x+box.width*.72,box.y+box.height*.47);
   await page.waitForFunction(()=>Math.abs(new DOMMatrix(getComputedStyle(document.querySelector('.flight-film')).transform).e)>3);
   assert.notEqual(beforeHover,await lettering.evaluate(c=>c.toDataURL()),'pointer should displace the lettering as well as the film');
-  record('one shared stage: pointing at the artwork displaces the ink and the butterfly');
+  record('one shared stage: pointing at the artwork displaces the ink and the robot arm');
   await page.locator('.motion-toggle').click();
   await page.waitForFunction(() => document.querySelector('[data-preview]').paused);
   assert.equal(await page.locator('html').getAttribute('data-motion'), 'paused');
@@ -245,8 +245,12 @@ try {
 
   const touchContext=await browser.newContext({viewport:{width:390,height:844},isMobile:true,hasTouch:true});
   const tp=await touchContext.newPage();observe(tp);await tp.goto(base);
-  await tp.locator('#research').evaluate(e=>e.scrollIntoView({block:'start'}));
-  await tp.locator('[data-node="dataset"]').tap(); await tp.waitForURL(u=>u.hash==='#project-data');
+  const touchTopic=tp.locator('[data-node="dataset"]');
+  await touchTopic.evaluate(e => {
+    const r=e.getBoundingClientRect();
+    scrollTo({top:scrollY+r.y+r.height/2-innerHeight+22,behavior:'instant'});
+  });
+  await touchTopic.tap(); await tp.waitForURL(u=>u.hash==='#project-data');
   const touchRow=tp.locator('#theme-autonomy');
   await touchRow.evaluate(e=>e.scrollIntoView({behavior:'instant',block:'center'}));
   const desc=await touchRow.locator('p').boundingBox(); await tp.touchscreen.tap(desc.x+desc.width/2,desc.y+desc.height/2);

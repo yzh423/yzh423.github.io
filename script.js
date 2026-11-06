@@ -202,7 +202,9 @@
   for (const node of nodes) {
     node.addEventListener('pointerenter', e => { if (e.pointerType !== 'touch') preview(node); });
     node.addEventListener('pointerleave', e => { if (e.pointerType !== 'touch') dismissSoon(); });
-    node.addEventListener('focus', () => preview(node));
+    // A finger already chose this link. Opening a floating card between
+    // touchend and the synthesized click can steal the tap near a screen edge.
+    node.addEventListener('focus', () => { if (keyboard || node.matches(':focus-visible')) preview(node); });
     node.addEventListener('keydown', e => {
       if (['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].includes(e.key) && !e.altKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault();

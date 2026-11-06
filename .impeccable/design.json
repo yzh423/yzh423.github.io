@@ -216,7 +216,7 @@
       },
       "flight-paper": {
         "role": "neutral",
-        "displayName": "Butterfly paper",
+        "displayName": "Print paper",
         "tonalRamp": [
           "oklch(15% 0.01 85)",
           "oklch(26.43% 0.01 85)",
@@ -230,7 +230,7 @@
       },
       "dark-flight-paper": {
         "role": "neutral",
-        "displayName": "Dark butterfly paper",
+        "displayName": "Dark print paper",
         "tonalRamp": [
           "oklch(15% 0.009 134)",
           "oklch(26.43% 0.009 134)",
@@ -317,9 +317,9 @@
         "purpose": "Initial name clip reveal only at the homepage top and only when enhancement is enabled."
       },
       {
-        "name": "butterfly-film",
+        "name": "grasp-film",
         "value": "6s, one pass per entry at 30% visibility",
-        "purpose": "The ink butterfly becomes a sage microtype close-up and then a halftone. Replay or a fresh entry starts another pass."
+        "purpose": "Ink jaws close on a bushing; its rim blooms into sage microtype before the camera pulls back into a halftone. Replay or a fresh entry starts another pass."
       },
       {
         "name": "particle-assembly",
@@ -437,11 +437,11 @@
   ],
   "narrative": {
     "northStar": "The connected academic homepage",
-    "overview": "A real portrait and a two-line name introduce the researcher. Beneath them, an ink butterfly moves behind the same name drawn in particles. Newsreader headings and a muted orange accent carry into the research network, and captions and plain links accompany the evidence.\n\nThe homepage and the manipulation study share neutral paper, thin section rules and Inter reading text in English and Chinese. On the homepage, the butterfly film and diagram respond to the pointer. Scientific recordings belong with the projects they document. [Product context](PRODUCT.md) · [Homepage brief](docs/reference-redesign.md)",
+    "overview": "A real portrait and a two-line name introduce the researcher. Beneath them, an ink drawing of a robot arm moves behind the same name drawn in particles. Newsreader headings and a muted orange accent carry into the research network, and captions and plain links accompany the evidence.\n\nThe homepage and the manipulation study share neutral paper, thin section rules and Inter reading text in English and Chinese. On the homepage, the robot arm film and diagram respond to the pointer. Scientific recordings belong with the projects they document. [Product context](PRODUCT.md) · [Homepage brief](docs/reference-redesign.md)",
     "keyCharacteristics": [
       "Scholarly serif headings and sustained, bilingual sans-serif prose.",
       "Flat reading surfaces, thin separators, and restrained orange emphasis.",
-      "One butterfly-and-particle banner and a research network with visible connections on phones and desktops.",
+      "One gripper-and-particle banner and a research network with visible connections on phones and desktops.",
       "Native controls, visible keyboard focus, and usable static fallbacks.",
       "Research evidence retains its captions, scope, source links, and downloads."
     ],
@@ -466,7 +466,7 @@
       "Do retain the user-pinned thin separators, Inter body text, and Newsreader headings.",
       "Do preserve the two-line name, real portrait, and full wrapping scholarly titles.",
       "Do use the final 15px sustained prose size in both languages and at every breakpoint.",
-      "Do keep the butterfly and particle lettering together and the research recordings inside their homepage project disclosures.",
+      "Do keep the robot arm and particle lettering together and the research recordings inside their homepage project disclosures.",
       "Do keep connected edges and a reachable near-topic note on narrow screens.",
       "Do preserve native buttons, links, video controls, visible focus, and static reading fallbacks.",
       "Do retain evidence captions, simulation qualifications, original PDF URLs, and the distinction between validation protocols."
