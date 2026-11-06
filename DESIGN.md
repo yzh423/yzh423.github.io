@@ -131,7 +131,7 @@ components:
   flight-banner:
     backgroundColor: "{colors.flight-paper}"
     rounded: "{rounded.banner}"
-    height: "clamp(260px, 32vw, 420px)"
+    height: "clamp(290px, 33vw, 474px)"
   research-node:
     textColor: "{colors.ink}"
     typography: "{typography.graph-branch}"
@@ -214,7 +214,7 @@ The shared content maximum is 1120px. Page gutters are 32px above 850px, 24px at
 
 Desktop composition uses open columns: About is 1.7:1; research rows use a 76px illustrated margin beside a title and description; featured projects are 0.9:1.1; publications pair a 260px image with flexible text. Project spacing is 48px, reducing to 32px at 1100px. Publication media narrows to 200px at 850px. At 600px, About, projects, publications, education/skills, and contact stack in reading order; news dates move above the entry and timeline articles become blocks.
 
-The robot arm film, canvas and fallback lettering fill one clipped banner. Its desktop height ranges from 260px to 420px. At 620px and below it ranges from 210px to 260px and the film covers the frame. The research link sits at bottom center, with the motion control at bottom right.
+The robot arm film, canvas and fallback lettering fill one clipped banner. It shares warm stock with the portrait, signature and contact links above and the research introduction below. Its desktop height ranges from 290px to 474px. At 760px and below it ranges from 214px to 355px. The research link moves from the left margin to bottom center on phones.
 
 The research network uses a wide arrangement between 320px and 416px tall. At 620px and below it switches to a 432px-tall arrangement with wrapped labels around the same central hub. Its connecting lines and cross-links stay visible in both arrangements. A compact note opens beside the active topic.
 
@@ -222,7 +222,7 @@ The detail page keeps the introduction within 900px and the main recording withi
 
 ## Elevation & Depth
 
-The sticky navigation and graph note use opaque page paper and thin borders. The banner layers lettering over a six-second transition from warm paper to sage microtype and halftone. Research rows sit directly on the page, and scientific charts retain their white grounds in both themes.
+The sticky navigation and graph note use opaque page paper and thin borders. The banner layers lettering over a six-second graphite engraving with copper contact marks and a fine outline left at the original seat. Research rows sit directly on the page, and scientific charts retain their white grounds in both themes.
 
 **The Flat Reading Rule.** Preserve the flat surfaces and structural rules used by the shipped pages.
 

@@ -10,8 +10,9 @@
 <link href="assets/favicon.svg" rel="icon" type="image/svg+xml"/>
 <link href="styles.css?v=research-rows-1" rel="stylesheet"/>
 <link href="field.css?v=ink-flow-2" rel="stylesheet"/>
+<link rel="stylesheet" href="folio.css?v=impression-1"/>
 <script src="preferences.js"></script></head>
-<body>
+<body class="portfolio">
 <a class="skip-link" data-zh="跳至主要内容" href="#main-content">Skip to main content</a>
 <header class="site-header"><div class="nav-inner">
 <a aria-label="Zhenghao YU — home" class="brand" href="#home">Zhenghao YU<span aria-hidden="true">.</span></a>
@@ -25,17 +26,18 @@
   <span class="name-line"><span class="name-word">Zhenghao</span> <span class="name-word">YU</span></span>
   <span class="name-secondary">Daniel</span>
 </h1></div>
-<p class="hero-positioning" data-zh="机器人控制、运动规划与真实世界数据">Robot control, motion planning &amp; real-world data.</p>
-<p class="hero-intro" data-zh="我在香港大学学习计算机工程。我的研究关注一个问题：机器人何时能可靠地完成计划中的动作？">I study Computer Engineering at the University of Hong Kong. My research asks when a robot can reliably carry out a planned motion.</p>
 <div class="hero-links"><a data-zh="联系邮箱" href="mailto:Zhenghao@connect.hku.hk">Email</a><a href="https://github.com/yzh423?tab=repositories" rel="noreferrer" target="_blank">GitHub</a><a data-zh="下载简历" download="" href="assets/Zhenghao_Yu_Resume.pdf">Curriculum Vitae</a></div>
-<div class="flight-stage">
-  <video class="flight-film" data-preview muted playsinline preload="none" aria-hidden="true" tabindex="-1" disablepictureinpicture width="1440" height="540" data-opening-poster="assets/motion/grasp-study-opening.webp?v=pickup-2" poster="assets/motion/grasp-study.webp?v=pickup-2"><source src="assets/motion/grasp-study.mp4?v=pickup-2" type="video/mp4"/></video>
+<div class="flight-stage print-stage">
+  <video class="flight-film" data-preview muted playsinline preload="none" aria-hidden="true" tabindex="-1" disablepictureinpicture width="1440" height="540" data-opening-poster="assets/motion/grasp-study-opening.webp?v=impression-1" poster="assets/motion/grasp-study.webp?v=impression-1"><source src="assets/motion/grasp-study.mp4?v=impression-1" type="video/mp4"/></video>
   <p aria-hidden="true" class="flight-fallback">Zhenghao YU</p>
   <canvas id="flight-lettering" aria-hidden="true"></canvas>
   <a class="button flight-action" href="#research"><span data-zh="探索研究">Explore research</span><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></svg></a>
   <button hidden class="flight-replay" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M4 10a8 8 0 1 1 1 8M4 4v6h6"/></svg><span data-zh="重播">Replay</span></button>
   <button class="motion-toggle" aria-pressed="false" type="button"><svg aria-hidden="true" viewBox="0 0 24 24"><path d="M8 5v14M16 5v14"/></svg><span data-zh="暂停动效">Pause motion</span></button>
-</div></section><section class="section about-section" id="about">
+</div>
+<p class="hero-positioning" data-zh="机器人控制、运动规划与&lt;em class=&quot;hero-em&quot;&gt;真实世界数据&lt;/em&gt;">Robot control, motion planning &amp; <em class="hero-em">real-world data.</em></p>
+<p class="hero-intro" data-zh="我在香港大学学习计算机工程。我的研究关注一个问题：机器人何时能可靠地完成计划中的动作？">I study Computer Engineering at the University of Hong Kong. My research asks when a robot can reliably carry out a planned motion.</p>
+</section><section class="section about-section" id="about">
 <div class="about-layout"><div class="about-essay reveal">
 <h2 data-zh="探索机器人如何感知、行动与适应。">Curious about how robots work.</h2>
 <p data-zh="我是 Zhenghao YU（Daniel），目前在&lt;strong&gt;香港大学&lt;/strong&gt;攻读计算机工程学士。我的工作涉及机器人设计与控制、自动驾驶、嵌入式系统和人机交互，关注系统在非理想测试条件下的表现。">I’m Zhenghao YU, a Computer Engineering undergraduate at <strong>The University of Hong Kong</strong>. My work spans robot design and control, autonomous driving, embedded systems, and human-computer interaction. Across these areas, I focus on how systems behave beyond ideal test conditions.</p>
@@ -97,10 +99,16 @@
 </div>
 </section>
 <section class="section projects-section" id="projects">
-<div class="section-heading reveal"><h2 data-zh="精选项目">Selected work</h2><p data-zh="一项独立机器人控制研究，以及来自 Ragtime Lab 的两项机器人项目。">An independent manipulation-control study and two robotics projects from Ragtime Lab.</p></div>
+<div class="section-heading reveal"><h2 data-zh="精选&lt;em&gt;项目&lt;/em&gt;">Selected <em>work</em></h2><p data-zh="一项独立机器人控制研究，以及来自 Ragtime Lab 的两项机器人项目。">An independent manipulation-control study and two robotics projects from Ragtime Lab.</p></div>
 <article class="project-feature research-feature reveal" id="project-control">
 <div class="project-media">
-<figure><a class="work-image" href="projects/reliable-robotic-manipulation/" tabindex="-1" aria-labelledby="project-control-title"><img src="assets/manipulation-research/r3-paired-timestep-stability.png" alt="Paired stability outcomes under plant-only and whole-loop time-step refinement." width="2098" height="1035" loading="lazy"/></a><figcaption data-zh="不同时间步细化方式下的配对比较。">Paired comparisons under time-step refinement.</figcaption></figure>
+<figure class="control-plate">
+  <a class="work-image path-pair" href="projects/reliable-robotic-manipulation/" tabindex="-1" aria-labelledby="project-control-title">
+    <span class="path-panel"><span data-zh="手动调参 PID">Manual PID</span><img src="assets/folio/path-manual.webp" alt="Manual PID arm and tool path approaching the target" width="342" height="415" loading="lazy"/></span>
+    <span class="path-panel"><span data-zh="研究版 PID">Research PID</span><img src="assets/folio/path-research.webp" alt="Research PID arm and tool path for the same command at the same instant" width="342" height="415" loading="lazy"/></span>
+  </a>
+  <figcaption data-zh="同一条给定路径，仿真时间 2.670 秒。两幅图比例相同，星号为目标点。">One commanded path at 2.670 s of simulation time. Both views share a scale. The star marks the target.</figcaption>
+</figure>
 <details class="recording"><summary data-zh="观看路径跟踪仿真">Watch the path-tracking simulation</summary><figure><video aria-label="Recorded nonlinear two-link simulation with four fixed controllers" controls="" data-zh-label="已记录的机器人仿真视频" height="1440" playsinline="" poster="assets/manipulation-research/r3-path-poster.jpg" preload="none" width="2560"><source src="assets/manipulation-research/r3-path-evidence.mp4" type="video/mp4"/><a data-zh="下载仿真视频" href="assets/manipulation-research/r3-path-evidence.mp4">Download simulation</a></video><figcaption data-zh="给定路径跟踪 · 四个固定控制器 · 一项选定仿真工况。">Given-path tracking · four fixed controllers · one selected simulation case.</figcaption></figure></details></div>
 <div class="project-copy">
 
@@ -113,13 +121,16 @@
 </div>
 </article>
 <article class="project-feature reveal" id="project-data">
-<figure class="project-media">
-<div class="image-frame"><a class="work-image" href="https://yzh423.github.io/factory-dataset/" target="_blank" rel="noreferrer" tabindex="-1" aria-labelledby="project-data-title"><img alt="Industrial inspection scene from the factory manipulation dataset" height="544" loading="lazy" src="assets/factory-dataset-inspection.jpg" width="960"/></a></div>
-<figcaption data-zh="真实工厂与实验室操作任务">Real factory and laboratory manipulation</figcaption>
-<a class="work-image" href="https://yzh423.github.io/factory-dataset/" target="_blank" rel="noreferrer" tabindex="-1" aria-labelledby="project-data-title"><img alt="Dual-arm towel-folding task from the manipulation dataset" class="gallery-inset" height="360" loading="lazy" src="assets/factory-dataset-towel-folding.jpg" width="640"/></a>
+<header class="factory-heading"><h3 id="project-data-title"><a class="work-title" href="https://yzh423.github.io/factory-dataset/" target="_blank" rel="noreferrer" data-zh="工厂操作数据集">Factory Manipulation <em>Dataset</em></a></h3><p class="project-category" data-zh="数据基础设施">Data infrastructure</p></header>
+<figure class="project-media factory-sequence">
+  <a class="work-image" href="https://yzh423.github.io/factory-dataset/" target="_blank" rel="noreferrer" tabindex="-1" aria-labelledby="project-data-title">
+    <span><img src="assets/folio/fold-1.webp" alt="Operator at the packaging line during the Fold Box demonstration" width="960" height="540" loading="lazy"/><time datetime="PT1.5S">00:01.5</time></span>
+    <span><img src="assets/folio/fold-2.webp" alt="Detail of hands and recording tools around the carton" width="512" height="512" loading="lazy"/><time datetime="PT5S">00:05.0</time></span>
+    <span><img src="assets/folio/fold-3.webp" alt="The same workstation four seconds later in the demonstration" width="512" height="512" loading="lazy"/><time datetime="PT9S">00:09.0</time></span>
+  </a>
+  <figcaption data-zh="折纸箱 · 同一段工厂示范录像的三个瞬间。">Fold Box · Three moments from one factory demonstration.</figcaption>
 </figure>
-<div class="project-copy">
-<h3 id="project-data-title"><a class="work-title" href="https://yzh423.github.io/factory-dataset/" target="_blank" rel="noreferrer" data-zh="工厂操作数据集">Factory Manipulation<br/>Dataset</a></h3><p class="project-category" data-zh="数据基础设施">Data infrastructure</p>
+<div class="project-copy factory-copy">
 <p data-zh="整理真实工厂与实验室操作任务，保留原始文件、同步观测和任务说明，支持后续分析与基准评估。">A documented collection of real factory and lab manipulation tasks. Original files, synchronized observations, and task notes remain available for analysis and benchmarking.</p>
 <dl class="project-metrics"><div><dt>33</dt><dd data-zh="项任务">tasks</dd></div><div><dt>2,016</dt><dd data-zh="个源文件">source files</dd></div><div><dt>10.198 GiB</dt><dd data-zh="保留数据">preserved data</dd></div></dl>
 <details><summary data-zh="数据集详情">Inside the dataset</summary><p data-zh="数据集涵盖 23 个归档中的 33 项任务，包括 13 组 UMI 数据、58 段示范和 42,223 帧。原始文件与来源信息、任务说明及 LeRobot v3 数据一并保留。">The collection covers 33 tasks in 23 archives, including 13 UMI collections with 58 episodes and 42,223 frames. It keeps the original source files and provenance alongside task notes and LeRobot v3 data.</p></details>
@@ -202,6 +213,6 @@
 </main>
 <footer class="site-footer"><div>© 2026 Zhenghao YU<span data-zh="更新于 2026 年 11 月">Updated November 2026</span></div></footer>
 <script src="script.js?v=grasp-1"></script>
-<script src="field.js?v=ink-flow-2"></script>
+<script src="field.js?v=impression-1"></script>
 </body>
 </html>

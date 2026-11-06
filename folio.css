@@ -1,0 +1,117 @@
+/* The cover is one sheet. Navigation, the artwork and the colophon use its edges. */
+.portfolio {
+  --width: 1200px;
+  --paper: #fcfaf5;
+  --stock: #f4f0e5;
+  --surface: #f1eee6;
+  --line: #d6d1c5;
+  --ink: #292c27;
+  --muted: #5c6057;
+  --accent: #a4492d;
+  --gutter: clamp(20px, 4.4vw, 72px);
+}
+[data-theme="dark"] .portfolio {
+  --paper: #161715; --stock: #211c17; --surface: #23251f; --line: #3f4138;
+  --ink: #f1f0eb; --muted: #b8b8ac; --accent: #f5a373;
+}
+.portfolio .hero {
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.17fr .83fr;
+  gap: 0 clamp(26px, 6vw, 92px);
+  padding: clamp(28px, 3.4vw, 54px) max(var(--gutter), calc((100% - var(--width))/2)) clamp(34px, 4vw, 60px);
+  background: var(--stock);
+}
+.portfolio .hero-identity { justify-content: start; gap: 16px; }
+.portfolio .hero-portrait { width: 68px; height: 68px; }
+.portfolio .hero h1 { font-size: clamp(34px, 3.3vw, 48px); line-height: 1.04; letter-spacing: -.014em; }
+.portfolio .hero .name-secondary { font-size: .60em; line-height: 1; margin-top: 5px; }
+.portfolio .hero-links { margin: 0; justify-content: flex-end; align-self: center; gap: clamp(13px, 2vw, 32px); }
+.portfolio .hero-links a { text-underline-offset: .35em; text-decoration-color: var(--muted); }
+.portfolio .print-stage {
+  grid-column: 1 / -1; margin: clamp(18px, 2vw, 30px) 0 clamp(22px, 2.3vw, 36px);
+  background: var(--stock); border-radius: 0;
+  box-shadow: 0 -1px var(--line), 0 1px var(--line);
+  height: clamp(290px, 33vw, 474px);
+}
+.portfolio .print-stage .flight-action {
+  left: 5.2%; bottom: 14px; translate: 0; padding: 0; min-height: 44px;
+  border-radius: 0; background: transparent; color: var(--ink);
+  text-decoration: underline; text-decoration-color: var(--muted); text-underline-offset: .38em;
+}
+.print-stage .flight-action:hover { color: var(--accent); }
+.print-stage .flight-replay { left: auto; right: 148px; }
+.print-stage :is(.flight-replay,.motion-toggle) { background: var(--stock); }
+.portfolio .hero-positioning { margin: 0; text-align: start; font-size: clamp(27px, 3vw, 45px); line-height: 1.08; letter-spacing: -.012em; text-wrap: balance; }
+.hero-em { color: var(--accent); font-weight: inherit; }
+.portfolio .hero-intro { margin: 0; align-self: center; text-align: start; max-width: 48ch; }
+.print-stage .flight-fallback { justify-items: start; padding-inline-start: 5.2%; }
+
+.portfolio .section-heading h2, .portfolio .field-heading h2 {
+  font-size: clamp(40px, 4.9vw, 72px); line-height: 1.04; letter-spacing: -.022em;
+}
+.portfolio .section-heading h2 em { font-weight: inherit; color: var(--accent); }
+.graph-lines .is-active { stroke: inherit; opacity: .85; }
+.graph-lines .map-ink { opacity: 0; stroke: var(--accent); stroke-width: 1.75; pointer-events: none; }
+.graph-lines .is-active + .map-ink { opacity: 1; }
+@media (prefers-reduced-motion: no-preference) {
+  [data-motion="running"] .is-active + .map-ink { stroke-dasharray: 1 1; animation: print-line .24s cubic-bezier(.25,.7,.3,1) both; }
+  [data-motion="running"] .is-active + .leaf-ink { animation-delay: .16s; }
+}
+@keyframes print-line { from { stroke-dashoffset: 1; } to { stroke-dashoffset: 0; } }
+
+.portfolio .projects-section .section-heading { margin-bottom: clamp(28px, 4.6vw, 68px); }
+.portfolio .project-feature { padding-block: clamp(44px, 6vw, 85px); column-gap: clamp(28px, 4.8vw, 75px); }
+.portfolio .research-feature { padding-top: 0; grid-template-columns: 1.03fr .97fr; }
+.portfolio .project-copy h3, .factory-heading h3 { font-size: clamp(28px, 3.05vw, 45px); line-height: 1.12; max-width: 30ch; letter-spacing: -.015em; }
+.portfolio .project-media img { border-radius: 0; }
+.control-plate { border-top: 1px solid var(--ink); }
+.path-pair { display: grid; grid-template-columns: 1fr 1fr; background: #eff4fa; color: #29343f; text-decoration: none; }
+.path-panel { display: grid; grid-template-rows: auto 1fr; padding: clamp(10px, 1.7vw, 26px); gap: clamp(10px, 1.5vw, 23px); }
+.path-panel + .path-panel { border-left: 1px solid #cbd4dc; }
+.path-panel > span { font: 500 clamp(18px, 1.8vw, 27px)/1.1 var(--serif); }
+.path-panel img { display: block; width: min(100%,210px); height: auto; justify-self: center; }
+.portfolio .project-media figcaption { font-size: 13px; margin-top: 10px; max-width: 65ch; }
+.portfolio #project-data { display: block; }
+.factory-heading { display: flex; align-items: baseline; justify-content: space-between; gap: 14px 32px; margin: 0 0 20px; }
+.factory-heading h3,.factory-heading p { margin: 0; }
+.factory-heading h3 em { font-weight: inherit; font-style: italic; }
+.factory-sequence { margin: 0; }
+.factory-sequence .work-image { display: grid; grid-template-columns: 1.78fr 1fr 1fr; gap: 4px; background: var(--stock); }
+.factory-sequence .work-image > span { position: relative; min-width: 0; }
+.factory-sequence img { height: 100%; width: 100%; object-fit: cover; }
+.factory-sequence time { position: absolute; left: 10px; bottom: 9px; padding: 0 5px; background: #262a25; color: #fff; font: 500 12px/1.7 var(--sans); font-variant-numeric: tabular-nums; }
+.factory-copy { display: grid; grid-template-columns: 1fr 1fr; gap: 0 clamp(25px, 7vw, 100px); align-items: start; margin-top: clamp(22px, 3vw, 42px); }
+.factory-copy > p, .factory-copy > details { grid-column: 1; }
+.factory-copy .project-metrics { grid-column: 2; grid-row: 1; margin: 0; }
+.factory-copy .resource-links { grid-column: 2; grid-row: 2; align-self: center; }
+@media(min-width:761px) {
+  .portfolio .research-feature .project-copy { grid-column: 1; grid-row: 1; }
+  .portfolio .research-feature .project-media { grid-column: 2; grid-row: 1; }
+}
+@media(max-width:760px) {
+  .portfolio .hero { grid-template-columns: 1fr; gap: 0; padding-top: 29px; }
+  .portfolio .hero-links { justify-content: start; margin-top: 14px; gap: 19px; }
+  .portfolio .hero-identity { gap: 13px; }
+  .portfolio .hero-portrait { width: 54px; height: 54px; }
+  .portfolio .hero h1 { font-size: 33px; }
+  .portfolio .print-stage { margin: 20px 0 22px; height: clamp(214px,56vw,355px); }
+  .portfolio .print-stage .flight-film { object-position: 71% center; }
+  .portfolio .hero-positioning { max-width: 32ch; }
+  .portfolio .hero-intro { margin-top: 10px; }
+  .portfolio .research-feature { grid-template-columns: 1fr; }
+  .factory-heading { display: block; }
+  .factory-heading .project-category { margin-top: 6px; }
+  .factory-sequence .work-image { grid-template-columns: 1fr 1fr; }
+  .factory-sequence .work-image > span:first-child { grid-column: 1 / -1; }
+  .factory-sequence .work-image > span:not(:first-child) { aspect-ratio: 1.5; }
+  .factory-copy { display: block; }
+  .factory-copy .project-metrics { margin-block: 20px; }
+}
+@media(max-width:620px) {
+  .portfolio .print-stage .flight-action { left: 50%; translate: -50% 0; bottom: 9px; }
+  .print-stage .flight-replay { right: auto; left: 4px; }
+}
+@media(max-width:500px) {
+  .print-stage .flight-fallback { justify-items: center; padding: 12% 6% 0 0; }
+}

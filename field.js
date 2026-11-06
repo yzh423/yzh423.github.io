@@ -25,13 +25,14 @@
     const film=stage.querySelector('video'), canvas=stage.querySelector('canvas'), replay=stage.querySelector('.flight-replay');
     const ctx=canvas.getContext('2d'), mask=document.createElement('canvas'), sampler=mask.getContext('2d',{willReadFrequently:true});
     const stillPoster=film.getAttribute('poster'), assemblyTime=1.52;
+    const printStage=stage.classList.contains('print-stage');
     let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
     const pointer=pointerFor(stage,wake);
     const smooth=n=>n*n*(3-2*n);
     function colors(){
       const dark=document.documentElement.dataset.theme==='dark';
-      const a=dark?[251,244,225]:[44,43,34],b=dark?[255,171,109]:[170,65,20];
+      const a=dark?[251,244,225]:[44,43,34],b=printStage ? (dark?[224,227,205]:[49,58,51]) : (dark?[255,171,109]:[170,65,20]);
       palette=Array.from({length:18},(_,i)=>'rgb('+a.map((c,j)=>Math.round(c+(b[j]-c)*i/17)).join(',')+')');
     }
     function measure(){
@@ -42,10 +43,14 @@
       mask.width=Math.ceil(w);mask.height=Math.ceil(h);
       const family='Newsreader, Georgia, serif',text='Zhenghao YU';
       sampler.textAlign='center';sampler.textBaseline='alphabetic';sampler.font='500 100px '+family;
-      const size=Math.min(w*(w<500?.88:.75)*100/sampler.measureText(text).width,h*.47);
+      const narrow=w<500;
+      const widthFraction=printStage ? (narrow?.82:.64) : (narrow?.88:.75);
+      const size=Math.min(w*widthFraction*100/sampler.measureText(text).width,h*.47);
       sampler.font='500 '+size+'px '+family;
       const metric=sampler.measureText(text);
-      sampler.fillText(text,w*.5,h*.49+(metric.actualBoundingBoxAscent-metric.actualBoundingBoxDescent)*.5);
+      const anchorX=printStage ? (narrow?.46:.36) : .5;
+      const anchorY=printStage && narrow ? .60 : .49;
+      sampler.fillText(text,w*anchorX,h*anchorY+(metric.actualBoundingBoxAscent-metric.actualBoundingBoxDescent)*.5);
       const pixels=sampler.getImageData(0,0,mask.width,mask.height).data;
       const step=clamp(w/368,1.52,3.15);
       grain=step*(w<500?.87:.75);
@@ -186,7 +191,18 @@
       const line=document.createElementNS('http://www.w3.org/2000/svg','line');
       line.dataset.from=a;
       if(faint)line.classList.add('thread');else line.dataset.edge=b;
-      svg.append(line);edges.push({a:byKey[a],b:byKey[b],line});
+      svg.append(line);
+      if (!faint) {
+        // The copy follows the live geometry of the base line, even mid-stroke.
+        line.id='map-edge-'+b;
+        line.setAttribute('pathLength', '1');
+        const ink=document.createElementNS(svg.namespaceURI,'use');
+        ink.setAttribute('href','#'+line.id);
+        ink.classList.add('map-ink');
+        if(a!=='root') ink.classList.add('leaf-ink');
+        svg.append(ink);
+      }
+      edges.push({a:byKey[a],b:byKey[b],line});
     }
     items.filter(n=>n.L[0]).forEach(n=>edge(n.L[0],n.key));
     edge('robustness','autonomy',true);edge('motion','interaction',true);edge('control','data',true);

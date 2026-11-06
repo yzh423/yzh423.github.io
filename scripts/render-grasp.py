@@ -78,8 +78,8 @@ def arm_plate(t):
     push = travel(.77, 3.78, t)
     pullback = travel(3.78, 5.90, t)
     closeup = push * (1 - pullback)
-    zoom = math.exp(math.log(1.29) + math.log(3.45/1.29)*push + math.log(1.34/3.45)*pullback)
-    center = mix(np.array([672., 269.]), part + [-49., -21.], closeup)
+    zoom = math.exp(math.log(1.29) + math.log(3.45/1.29)*push + math.log(1.59/3.45)*pullback)
+    center = mix(np.array([563., 270.]), part + [-98., -20.], closeup)
     def screen(p): return (np.asarray(p)-center)*zoom + [W/2,H/2]
     img = Image.new('L',(W,H))
     pen = ImageDraw.Draw(img)
@@ -157,42 +157,62 @@ def arm_plate(t):
         circle(p,3.1,61);circle(p,2.0,0)
     return np.asarray(img).astype('f')/255, screen(part), PART_RADIUS*zoom
 
-PAPER=np.array([237,234,226],dtype='f')
-INK=np.array([66,67,53],dtype='f')
-SAGE=np.array([176,187,158],dtype='f')
-PALE=np.array([239,239,225],dtype='f')
-GREEN=np.array([151,166,133],dtype='f')
+PAPER = np.array([244, 240, 229])
+GRAPHITE = np.array([70, 82, 76])
+COPPER = np.array([179, 83, 48])
+random = np.random.default_rng(1942)
+stock = Image.fromarray(random.normal(128, 28, (90, 240)).astype('uint8')).resize((W,H), Image.Resampling.BILINEAR)
+paper_grain = (np.asarray(stock).astype('f')-128)*.035 + random.normal(0,.52,(H,W)).astype('f')
+
+
+def hatch_lines(coordinate, spacing, width):
+    distance = np.abs((coordinate/spacing + .5) % 1 - .5)*spacing
+    return np.clip(width - distance, 0, 1)
+
+
+hatch = hatch_lines(XX*.36 + YY*.93, 6.7, 1.05)
+crosshatch = hatch_lines(XX*.88 - YY*.48, 9.2, .95)
+dots = 1 - ramp(.18, .30, dist)
+
+
 def frame(t):
-    plate, center, radius = arm_plate(t)
-    # The impression starts after pickup so contact and the emerging gap read on paper first.
-    # During the return to a wider view the screen itself stays fixed to the page.
-    if t < 2.52: impression=0.
-    elif t >= 3.90: impression=1.
-    else:
-        distance=np.hypot(XX-center[0], YY-center[1])-radius
-        front=mix(-150,1500,ramp(2.52,3.90,t))
-        impression=ramp(-95,95,front-distance+(V-.5)*28)
-    dots=ramp(4.12,5.65,t-.18*(U-.5))
-    coverage=ramp(.0,1.,plate)
-    # Positive-print passages are made from the same alphabet as the ground.
-    ink=plate*(.24+.76*glyph)
-    bg_light=np.clip(glyph*(.6+.08*rolloff)+.029*rolloff,0,1)
-    negative=coverage*(.82+.18*plate)
-    light=mix(bg_light,.98,negative)
-    # In the final exposure, the screen angle changes, revealing a halftone drawing.
-    dot_radius=.435*(1-.91*coverage)+.012*rolloff
-    print_dot=1-ramp(dot_radius-.056,dot_radius+.056,dist)
-    image=np.empty((H,W,3),dtype='uint8')
-    for j in range(3):
-        start=mix(PAPER[j],INK[j],ink)
-        field=mix(SAGE[j],PALE[j],light)
-        dot_field=mix(PALE[j],GREEN[j],print_dot*.93)
-        image[:,:,j]=np.clip(mix(mix(start,field,impression),dot_field,dots),0,255)
+    metal, center, radius = arm_plate(t)
+    dx, dy = XX-center[0], YY-center[1]
+    distance = np.hypot(dx, dy)
+    # Keep the silhouette and the relief of the metal visible at every exposure.
+    vertical = np.abs(metal - np.roll(metal, 1, axis=0))
+    horizontal = np.abs(metal - np.roll(metal, 1, axis=1))
+    vertical[0,:] = 0
+    horizontal[:,0] = 0
+    edges = np.clip(2.5*np.maximum(vertical, horizontal), 0, 1)
+    cut = metal*(.14 + .77*hatch + .34*crosshatch*metal)
+    printed = metal*(.10 + .52*glyph + .30*dots)
+    transition = ramp(2.25, 3.74, t)
+    impression = (1-ramp(.2*radius, 3.8*radius, distance))*transition
+
+    # Leave the outline of the bushing at its original seat during the lift.
+    _, position, _ = pose(t)
+    seat = center + (PART_SEAT-position)*(radius/PART_RADIUS)
+    seat_dx, seat_dy = XX-seat[0], YY-seat[1]
+    rim = 1-ramp(.4, 1.65, np.abs(np.hypot(seat_dx,seat_dy)-radius))
+    broken_line = .32+.68*(np.cos(np.arctan2(seat_dy,seat_dx)*64)>0)
+    original_rim = rim*broken_line*ramp(2.4,3.25,t)
+    ink = np.clip(mix(cut,printed,impression)+.62*edges+.22*original_rim,0,.85)
+
+    # Print two arcs around the physical contacts, after the jaws close.
+    angle = np.arcsin(np.abs(np.sin(np.arctan2(dy, dx))))
+    edge_arc = (1-ramp(.035,.087,np.abs(distance/radius-.975))) * (1-ramp(.16+.38*transition,.23+.38*transition,angle))
+    soft_edge = np.exp(-((distance/radius-1)/.20)**2)*(1-ramp(.25,.51,angle))
+    accent = ramp(1.93,2.19,t)*(.86*edge_arc+.15*soft_edge)
+    image = np.empty((H,W,3), dtype='uint8')
+    for channel in range(3):
+        layer = PAPER[channel] + paper_grain + (GRAPHITE[channel]-PAPER[channel])*ink
+        image[:,:,channel] = np.clip(mix(layer, COPPER[channel], accent), 0, 255)
     return Image.fromarray(image)
 
 if __name__=='__main__':
     OUT.mkdir(exist_ok=True)
-    frame(5.99).save(OUT/'grasp-study.webp','WEBP',lossless=True,method=6)
+    frame(5.99).save(OUT/'grasp-study.webp','WEBP',quality=92,method=6)
     frame(0).save(OUT/'grasp-study-opening.webp','WEBP',quality=90,method=6)
     cmd=[imageio_ffmpeg.get_ffmpeg_exe(),'-hide_banner','-loglevel','error','-y','-f','rawvideo',
          '-pix_fmt','rgb24','-s',f'{W}x{H}','-r',str(FPS),'-i','-','-an','-c:v','libx264',

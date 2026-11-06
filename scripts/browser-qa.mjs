@@ -36,20 +36,25 @@ try {
   assert.equal(await page.locator('[data-preview]').evaluate(v => v.muted), true);
   const film=page.locator('.flight-film'), stage=page.locator('.flight-stage'), lettering=page.locator('#flight-lettering');
   assert.equal(new URL(await film.evaluate(video => video.poster)).pathname, '/assets/motion/grasp-study-opening.webp');
-  // An off-centre sample distinguishes the full-frame sage print from an arm moving on flat paper.
-  function cornerTone(v) {
-    const c=document.createElement('canvas');c.width=32;c.height=24;const g=c.getContext('2d');
-    g.drawImage(v,0,0,v.videoWidth*.13,v.videoHeight*.14,0,0,32,24);
-    const a=g.getImageData(0,0,32,24).data;
-    return [0,1,2].map(ch=>{let sum=0;for(let i=ch;i<a.length;i+=4)sum+=a[i];return sum/(32*24);});
+  function countCopper(video) {
+    const canvas=document.createElement('canvas');
+    canvas.width=480; canvas.height=180;
+    const ctx=canvas.getContext('2d');
+    ctx.drawImage(video,0,0,480,180);
+    const pixels=ctx.getImageData(0,0,480,180).data;
+    let count=0;
+    for(let i=0;i<pixels.length;i+=4) {
+      if(pixels[i]-pixels[i+1]>34 && pixels[i+1]-pixels[i+2]>9) count++;
+    }
+    return count;
   }
-  const openingTone=await film.evaluate(cornerTone);
+  const openingCopper=await film.evaluate(countCopper);
   assert.deepEqual(await stage.boundingBox(),await lettering.boundingBox());
   assert.equal(await stage.locator('video[controls]').count(),0);
   const box=await stage.boundingBox();
   await page.waitForTimeout(1550);
   const beforeHover=await lettering.evaluate(c=>c.toDataURL());
-  await page.mouse.move(box.x+box.width*.72,box.y+box.height*.47);
+  await page.mouse.move(box.x+box.width*.22,box.y+box.height*.47);
   await page.waitForFunction(()=>Math.abs(new DOMMatrix(getComputedStyle(document.querySelector('.flight-film')).transform).e)>3);
   assert.notEqual(beforeHover,await lettering.evaluate(c=>c.toDataURL()),'pointer should displace the lettering as well as the film');
   record('one shared stage: pointing at the artwork displaces the ink and the robot arm');
@@ -66,8 +71,8 @@ try {
   await film.evaluate(v=>{v.currentTime=v.duration-.28;});
   await page.waitForFunction(()=>document.querySelector('.flight-film').ended);
   await page.waitForTimeout(230); assert.equal(await film.evaluate(v=>v.ended),true);
-  const finalTone=await film.evaluate(cornerTone);
-  assert.ok(openingTone[0]-finalTone[0]>15 && finalTone[1]-finalTone[2]>12,'film moves from bare paper into a full sage print');
+  assert.ok(openingCopper < 3 && await film.evaluate(countCopper) > 9,
+    'copper appears at the gripper contacts once the part is held');
   await page.locator('.flight-replay').focus(); await page.keyboard.press('Enter');
   await page.waitForFunction(()=>{const v=document.querySelector('.flight-film');return !v.paused&&v.currentTime>.05&&v.currentTime<1;});
   assert.equal(await page.locator('.motion-toggle').evaluate(e=>document.activeElement===e),true);
@@ -114,7 +119,7 @@ try {
   record('illustrated research rows reveal on hover and lead keyboard readers to the matching evidence');
 
   await theme(page, 'dark');
-  assert.equal(await page.locator('.button').first().evaluate(e => getComputedStyle(e).backgroundColor), 'rgb(22, 23, 21)');
+  assert.equal(await page.locator('.flight-action').evaluate(e => getComputedStyle(e).color), 'rgb(241, 240, 235)');
   await page.reload();
   assert.equal(await page.locator('html').getAttribute('lang'), 'zh-CN');
   assert.equal(await page.locator('html').getAttribute('data-theme'), 'dark');
