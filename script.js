@@ -123,7 +123,7 @@
     setLanguage(language === 'en' ? 'zh' : 'en');
     storage.set('zy-language', language);
     // Keep the reader near the selected section when line lengths change.
-    if (section && scrollY > 100) scrollTo({ top: section.offsetTop + section.offsetHeight * fraction, behavior: 'instant' });
+    if (section && !window.chapterReader && scrollY > 100) scrollTo({ top: section.offsetTop + section.offsetHeight * fraction, behavior: 'instant' });
   });
 
   // The same destinations work without JS; pointer navigation adds a short smooth scroll.
@@ -135,7 +135,8 @@
     event.preventDefault();
     if (location.hash !== a.hash) history.pushState(null, '', a.hash);
     closeMenu(false);
-    target.scrollIntoView({ behavior: moving() && event.detail > 0 ? 'smooth' : 'instant', block: 'start' });
+    if (window.chapterReader) window.chapterReader.open(target, event.detail > 0);
+    else target.scrollIntoView({ behavior: moving() && event.detail > 0 ? 'smooth' : 'instant', block: 'start' });
     if (event.detail === 0) {
       const hadTabindex = target.hasAttribute('tabindex');
       if (!hadTabindex) target.setAttribute('tabindex', '-1');
@@ -155,6 +156,7 @@
     const threshold = innerHeight * .37;
     for (const section of sections) if (section.getBoundingClientRect().top <= threshold) current = section;
     if (max > 0 && scrollY >= max - 3) current = sections.at(-1);
+    if (window.chapterReader) current = window.chapterReader.current();
     for (const section of sections) section.classList.toggle('is-current', section === current);
     for (const a of navLinks) {
       if (a.hash === `#${current?.id}`) a.setAttribute('aria-current', 'location');
@@ -257,7 +259,7 @@
         if (!entry.isIntersecting) continue;
         reveal.unobserve(entry.target);
         entry.target.classList.remove('read-pending');
-        if (entry.target.matches(':focus-within')) continue;
+        if (root.dataset.turn || entry.target.matches(':focus-within')) continue;
         animate(entry.target, [{ opacity: 0, translate: '0 16px' }, { opacity: 1, translate: '0 0' }], {
           duration: 760, delay: Math.min(order++, 3) * 45, easing: 'cubic-bezier(.22,.74,.24,1)', fill: 'backwards'
         });

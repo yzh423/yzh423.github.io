@@ -184,7 +184,7 @@ One warm accent organizes a predominantly neutral reading environment. Frontmatt
 
 - **Paper:** The page, sticky navigation, and secondary actions. In dark mode this becomes neutral charcoal.
 - **Surface / surface-deep:** Statistics, contact, and hovered controls.
-- **Flight paper:** The robot arm and particle letters share a warm ground. The film blends by multiplication in light mode and by screening an inverted image in dark mode. The graph note uses ordinary page paper with a fine border.
+- **Flight paper:** White in light mode and charcoal in dark mode. Colour appears in the travelling particles. The graph note uses ordinary page paper with a fine border.
 - **Ink / muted:** Primary reading text and subordinate prose, metadata, dates, and captions.
 - **Line:** Thin section boundaries, research rows, publication rows, methods, and timeline rules.
 - **Video ground:** The dark player bed. Scientific chart images keep their white image ground in both themes.
@@ -214,7 +214,7 @@ The shared content maximum is 1120px. Page gutters are 32px above 850px, 24px at
 
 Desktop composition uses open columns: About is 1.7:1; research rows use a 76px illustrated margin beside a title and description; featured projects are 0.9:1.1; publications pair a 260px image with flexible text. Project spacing is 48px, reducing to 32px at 1100px. Publication media narrows to 200px at 850px. At 600px, About, projects, publications, education/skills, and contact stack in reading order; news dates move above the entry and timeline articles become blocks.
 
-The robot arm film, canvas and fallback lettering fill one clipped banner. It shares warm stock with the portrait, signature and contact links above and the research introduction below. Its desktop height ranges from 290px to 474px. At 760px and below it ranges from 214px to 355px. The research link moves from the left margin to bottom center on phones.
+The cover brings the portrait, signature, contact links and research introduction onto the same paper as the mechanical engraving. The artwork fits the available desktop viewport. On narrow screens the research link sits at the bottom centre.
 
 The research network uses a wide arrangement between 320px and 416px tall. At 620px and below it switches to a 432px-tall arrangement with wrapped labels around the same central hub. Its connecting lines and cross-links stay visible in both arrangements. A compact note opens beside the active topic.
 
@@ -248,7 +248,7 @@ Both pages switch between English and Chinese, including document language, titl
 
 The semantic heading keeps “Zhenghao YU” and “Daniel” on separate lines beside a real portrait. Canvas lettering is decorative and hidden from assistive technology; the semantic identity always remains available. The fallback name stays visible until the particle canvas is ready.
 
-The six-second, silent robot arm film and the particle name start together after the identity entrance when at least 30% of the banner is visible. The film plays once and holds its final frame. A Replay button appears at completion. Dropping below 30% rearms the entrance, so crossing the threshold again restarts it. The name assembles from a seeded scatter over about 1.5 seconds. Pointer or touch movement shifts the film and displaces nearby letter particles; a fast pass parts the nearest grains immediately, with a short directional wake. A damped return settles them back into type. The camera follows the bushing through the pickup; the character field spreads from the part before the camera pulls back. Native vertical scrolling and pinch zoom remain available.
+The six-second pickup starts when the identity has appeared and the banner is in view. At 1.93 seconds the gripper closes. Engraved marks sampled from the jaws and bushing travel into the name, following the position of the tool throughout the camera move. Colour returns under the pointer and fades as the grains settle. Replay repeats the sequence. Each homepage section occupies a separate viewport. A fresh wheel gesture or swipe at the reading edge turns one chapter. Reduced motion shows the finished name and turns chapters immediately.
 
 The persistent pause control stops the film, assembles the letters and stills the network. Reduced motion shows the settled composition and labels the disabled control. Data saver suppresses automatic film playback. The poster supplies the arm before playback or if the film is unavailable. Hidden documents pause playback and rendering.
 

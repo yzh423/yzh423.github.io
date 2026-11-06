@@ -3,6 +3,7 @@ Run: python scripts/render-grasp.py (NumPy, Pillow, imageio-ffmpeg).
 This is artwork, not a measurement or experiment recording.
 """
 from pathlib import Path
+import json
 import math
 import subprocess
 import numpy as np
@@ -61,6 +62,15 @@ def pose(t):
     return wrist, PART_SEAT + offset, mix(57, PART_RADIUS, close)
 
 
+def projection(t):
+    _, part, _ = pose(t)
+    push = travel(.77, 3.78, t)
+    pullback = travel(3.78, 5.90, t)
+    zoom = math.exp(math.log(1.29) + math.log(3.45/1.29)*push + math.log(1.59/3.45)*pullback)
+    center = mix(np.array([563., 270.]), part + [-98., -20.], push * (1 - pullback))
+    return center, zoom
+
+
 def arm_plate(t):
     wrist, part, gap = pose(t)
     shoulder = np.array([500.,366.])
@@ -75,11 +85,7 @@ def arm_plate(t):
 
     # Keep the fixture visible at pickup. On the lift, frame the gripper a
     # little right of centre, leaving room for the name on narrow screens.
-    push = travel(.77, 3.78, t)
-    pullback = travel(3.78, 5.90, t)
-    closeup = push * (1 - pullback)
-    zoom = math.exp(math.log(1.29) + math.log(3.45/1.29)*push + math.log(1.59/3.45)*pullback)
-    center = mix(np.array([563., 270.]), part + [-98., -20.], closeup)
+    center, zoom = projection(t)
     def screen(p): return (np.asarray(p)-center)*zoom + [W/2,H/2]
     img = Image.new('L',(W,H))
     pen = ImageDraw.Draw(img)
@@ -157,7 +163,7 @@ def arm_plate(t):
         circle(p,3.1,61);circle(p,2.0,0)
     return np.asarray(img).astype('f')/255, screen(part), PART_RADIUS*zoom
 
-PAPER = np.array([244, 240, 229])
+PAPER = np.array([255, 255, 255])
 GRAPHITE = np.array([70, 82, 76])
 COPPER = np.array([179, 83, 48])
 random = np.random.default_rng(1942)
@@ -199,6 +205,11 @@ def frame(t):
     original_rim = rim*broken_line*ramp(2.4,3.25,t)
     ink = np.clip(mix(cut,printed,impression)+.62*edges+.22*original_rim,0,.85)
 
+    # As the name lifts away, the cut marks around the jaws give up their ink.
+    # The outline remains legible and regains its weight when the camera pulls back.
+    transfer = travel(2.00, 3.64, t) * (1-travel(4.22, 5.65, t))
+    ink *= 1 - .62 * transfer * (1-ramp(radius*.8, radius*2.8, distance))
+
     # Print two arcs around the physical contacts, after the jaws close.
     angle = np.arcsin(np.abs(np.sin(np.arctan2(dy, dx))))
     edge_arc = (1-ramp(.035,.087,np.abs(distance/radius-.975))) * (1-ramp(.16+.38*transition,.23+.38*transition,angle))
@@ -210,8 +221,31 @@ def frame(t):
         image[:,:,channel] = np.clip(mix(layer, COPPER[channel], accent), 0, 255)
     return Image.fromarray(image)
 
+def write_ink_map():
+    # Origins are actual engraved pixels, in units of the bushing radius.
+    contact = 1.93
+    _, center, radius = arm_plate(contact)
+    ink = np.asarray(frame(contact))[:,:,1]
+    local_x, local_y = (XX-center[0])/radius, (YY-center[1])/radius
+    jaws = (np.abs(local_x)<1.4) & (local_y> -1.89) & (local_y<1.04)
+    ys, xs = np.nonzero(jaws & (ink<185))
+    sample = np.random.default_rng(423).choice(len(xs), 384, replace=False)
+    origins = np.column_stack([local_x[ys[sample],xs[sample]],local_y[ys[sample],xs[sample]]])
+    rate = 12
+    poses = []
+    for i in range(SECONDS*rate+1):
+        t = i/rate
+        _, part, _ = pose(t)
+        view, zoom = projection(t)
+        x,y = (part-view)*zoom + [W/2,H/2]
+        poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
+    data = dict(contact=contact, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
+
+
 if __name__=='__main__':
     OUT.mkdir(exist_ok=True)
+    write_ink_map()
     frame(5.99).save(OUT/'grasp-study.webp','WEBP',quality=92,method=6)
     frame(0).save(OUT/'grasp-study-opening.webp','WEBP',quality=90,method=6)
     cmd=[imageio_ffmpeg.get_ffmpeg_exe(),'-hide_banner','-loglevel','error','-y','-f','rawvideo',

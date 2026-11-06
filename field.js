@@ -28,16 +28,42 @@
     const printStage=stage.classList.contains('print-stage');
     let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
+    let inkMap, filmUnavailable = false, tint = [], filmAlignment = .5;
+    // Use coordinates exported by the engraving renderer. Their origin is the
+    // centre of the part, so they stay on the tool throughout the camera move.
+    if (film.dataset.inkMap) {
+      fetch(film.dataset.inkMap).then(response => {
+        if (!response.ok) throw Error('Missing ink map');
+        return response.json();
+      }).then(map => { inkMap = map; wake(); }).catch(() => { filmUnavailable = true; wake(); });
+    }
     const pointer=pointerFor(stage,wake);
     const smooth=n=>n*n*(3-2*n);
+    function projectionAt(time) {
+      const index = clamp(time * inkMap.fps, 0, inkMap.poses.length - 1);
+      const a = inkMap.poses[Math.floor(index)], b = inkMap.poses[Math.ceil(index)];
+      const lerp = slot => a[slot] + (b[slot] - a[slot]) * (index % 1);
+      const scale = Math.max(w / 1440, h / 540);
+      return {
+        x: lerp(0)*scale + (w - 1440*scale)*filmAlignment,
+        y: lerp(1)*scale + (h - 540*scale)/2,
+        radius: lerp(2)*scale
+      };
+    }
     function colors(){
       const dark=document.documentElement.dataset.theme==='dark';
       const a=dark?[251,244,225]:[44,43,34],b=printStage ? (dark?[224,227,205]:[49,58,51]) : (dark?[255,171,109]:[170,65,20]);
+      const pigments = dark ? [[87,222,248],[126,161,255],[199,147,255],[255,142,130]] :
+        [[0,141,176],[41,88,213],[129,64,207],[209,68,78]];
+      tint = pigments.map(color => Array.from({length:13}, (_,step) =>
+        'rgb('+a.map((v,i) => Math.round(v + (color[i]-v)*step/12)).join(',')+')'));
       palette=Array.from({length:18},(_,i)=>'rgb('+a.map((c,j)=>Math.round(c+(b[j]-c)*i/17)).join(',')+')');
     }
     function measure(){
       if(!ctx||!sampler)return;
       w=stage.clientWidth;h=stage.clientHeight;if(!w||!h)return;
+      filmAlignment = parseFloat(getComputedStyle(film).objectPosition)/100;
+      if (!Number.isFinite(filmAlignment)) filmAlignment = .5;
       const dpr=Math.min(devicePixelRatio||1,2);
       canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
       mask.width=Math.ceil(w);mask.height=Math.ceil(h);
@@ -64,6 +90,7 @@
         const sx=w*.5+Math.cos(angle)*w*(.32+.23*depth)-x, sy=h*.46+Math.sin(angle)*h*(.32+.25*depth)-y;
         const bin=clamp(Math.round(17*((x/w-.10)/.80+(s-.5)*.14)),0,17);
         groups[bin].push({x,y,sx,sy,bend:sign*(8+17*rand())*depth,delay:.17*s+.14*x/w,
+          mark:Math.floor(rand()*384), phase:rand(), pigment:clamp(Math.floor((x/w + .10*(s-.5))*5),0,3),
           span:.89+.28*depth,size:grain*(.84+.28*rand()),depth,dx:0,dy:0,vx:0,vy:0});
       }
       ready=groups.some(g=>g.length);if(ready)stage.classList.add('has-lettering');
@@ -73,22 +100,29 @@
       if(!ready)return false;
       ctx.clearRect(0,0,w,h);
       if(!intro&&!still)return false;
+      // The media clock also freezes on a network stall. A blocked video or
+      // data-saving visit gets the finished signature without a timed blank.
+      const transfer = printStage && !still && !filmUnavailable && !navigator.connection?.saveData;
+      const filmTime = film.currentTime;
+      const pose = transfer && inkMap && filmTime < 4.9 ? projectionAt(filmTime) : null;
+      const assembling = transfer && filmTime < 4.9;
       const r=stage.getBoundingClientRect(),px=pointer.cx-r.left,py=pointer.cy-r.top,act=pointer.active&&!still;
-      const kFollow=1-Math.exp(-dt*42),kTrail=1-Math.exp(-dt*13);
+      const kFollow=1-Math.exp(-dt*22),kTrail=1-Math.exp(-dt*9);
       if(act&&strength<.002){mx=px;my=py;}
       const moveX=act?(px-mx)*kFollow:0,moveY=act?(py-my)*kFollow:0;
       mx+=moveX;my+=moveY;
       flowX+=(clamp(moveX/Math.max(.001,dt),-1100,1100)-flowX)*kTrail;
       flowY+=(clamp(moveY/Math.max(.001,dt),-1100,1100)-flowY)*kTrail;
-      strength+=((act?1:0)-strength)*(1-Math.exp(-dt*46));
-      const tx=act?clamp(px/w-.5,-.5,.5)*Math.min(w*.055,29):0,ty=act?clamp(py/h-.5,-.5,.5)*15:0;
+      strength+=((act?1:0)-strength)*(1-Math.exp(-dt*14));
+      const canTilt=act&&!assembling;
+      const tx=canTilt?clamp(px/w-.5,-.5,.5)*Math.min(w*.055,29):0,ty=canTilt?clamp(py/h-.5,-.5,.5)*15:0;
       fx+=(tx-fx)*kTrail;fy+=(ty-fy)*kTrail;
       if(still)fx=fy=strength=flowX=flowY=0;
       film.style.transform='translate('+fx.toFixed(2)+'px,'+fy.toFixed(2)+'px) rotate('+(fx*.049).toFixed(3)+'deg)';
       let movingInk=false;
-      const radius=clamp(w*.107,47,116), invRadius=1/radius;
+      const radius=clamp(w*.132,54,142), invRadius=1/radius;
       const vx=flowX*.018,vy=flowY*.018,stroke2=moveX*moveX+moveY*moveY;
-      const attack=44,release=24,attackDecay=Math.exp(-dt*attack),releaseDecay=Math.exp(-dt*release);
+      const attack=21,release=10,attackDecay=Math.exp(-dt*attack),releaseDecay=Math.exp(-dt*release);
       for(let i=0;i<groups.length;i++){
         ctx.fillStyle=palette[i];
         for(const p of groups[i]){
@@ -98,14 +132,14 @@
           const along=stroke2>1?clamp(-(tipX*moveX+tipY*moveY)/stroke2,0,1):0;
           const ax=tipX+along*moveX,ay=tipY+along*moveY,d2=ax*ax+ay*ay;
           let destX=0,destY=0;
-          if(act&&d2<radius*radius){
+          if(act&&!assembling&&d2<radius*radius){
             const dist=Math.sqrt(d2),s=1-clamp(dist*invRadius,0,1);
             const gain=strength*radius*.46*s*s*(.78+.22*p.depth)*(1-.24*along)/Math.sqrt(d2+25);
             const tail=strength*.41*s*s;
             destX=ax*gain+vx*tail;destY=ay*gain+vy*tail;
           }
-          // Attack quickly, then let each grain release on its own critically
-          // damped spring. There is no second slow fade multiplying the return.
+          // The return is slower than the outward movement. Critical damping
+          // settles a grain onto its letter without a bounce.
           const advancing=destX*destX+destY*destY>p.dx*p.dx+p.dy*p.dy;
           const stiffness=advancing?attack:release,decay=advancing?attackDecay:releaseDecay;
           const x=p.dx-destX,y=p.dy-destY,qx=(p.vx+stiffness*x)*dt,qy=(p.vy+stiffness*y)*dt;
@@ -114,7 +148,27 @@
           if(Math.abs(p.dx-destX)+Math.abs(p.dy-destY)>.025||Math.abs(p.vx)+Math.abs(p.vy)>.45)movingInk=true;
           else {p.dx=destX;p.dy=destY;p.vx=p.vy=0;}
           let cx=p.x+p.dx,cy=p.y+p.dy,alpha=1;
-          if(!still&&entry<assemblyTime){
+          if (printStage) {
+            if (assembling && (!pose || filmTime < inkMap.contact)) continue;
+            let exposure = 0;
+            if (pose) {
+              const start = inkMap.contact + .04 + p.phase*.72 + (1-p.x/w)*.35;
+              const progress = clamp((filmTime - start)/(1.05 + p.span*.42),0,1);
+              if (!progress) continue;
+              const ease = smooth(progress);
+              const mark = inkMap.marks[p.mark % inkMap.marks.length];
+              const fromX = pose.x + mark[0]*pose.radius/1000;
+              const fromY = pose.y + mark[1]*pose.radius/1000;
+              const bow = 4*ease*(1-ease);
+              cx += (fromX-p.x)*(1-ease);
+              cy += (fromY-p.y)*(1-ease) - bow*(.13*h + p.bend*.9);
+              alpha = smooth(clamp(progress/.32,0,1));
+              exposure = bow * (.62 + .36*p.phase);
+            }
+            const displacement = Math.hypot(p.dx,p.dy);
+            const colorStep = Math.round(clamp(Math.max(exposure, displacement/(radius*.17)),0,1)*12);
+            ctx.fillStyle = colorStep ? tint[p.pigment][colorStep] : palette[i];
+          } else if(!still&&entry<assemblyTime){
             const progress=clamp((entry-p.delay)/p.span,0,1),spread=(1-progress)**3;
             cx+=p.sx*spread;cy+=p.sy*spread+Math.sin(progress*Math.PI)*p.bend*(1-progress);
             alpha=.18+.82*smooth(progress);
@@ -124,7 +178,7 @@
         }
       }
       ctx.globalAlpha=1;
-      return !still&&(entry<assemblyTime||movingInk||Math.abs(tx-fx)+Math.abs(ty-fy)>.035
+      return !still&&((printStage ? assembling : entry<assemblyTime)||movingInk||Math.abs(tx-fx)+Math.abs(ty-fy)>.035
         || Math.abs(flowX)+Math.abs(flowY)>1||Math.abs((act?1:0)-strength)>.001);
     }
     function tick(t){
@@ -148,10 +202,15 @@
       if(needsEntry){entry=0;played=false;needsEntry=false;}
       if(allowFilm&&(!played||(film.paused&&!film.ended))){
         if(!played)film.currentTime=0;
-        played=true;film.play().catch(()=>{}); // Poster and lettering survive blocked autoplay.
+        played=true;
+        film.play().then(() => { filmUnavailable=false; wake(); }).catch(error => {
+          if (error.name !== 'AbortError') { filmUnavailable=true; wake(); }
+        });
       }
       wake();
     }
+    film.addEventListener('error', () => { filmUnavailable=true; wake(); });
+    film.querySelector('source')?.addEventListener('error', () => { filmUnavailable=true; wake(); });
     replay.addEventListener('click',event=>{
       if(event.detail===0)stage.querySelector('.motion-toggle').focus({preventScroll:true});
       needsEntry=true;sync();
