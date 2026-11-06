@@ -264,9 +264,33 @@
   }
   setLanguage(language);
   syncScroll();
-  if (!location.hash || location.hash === '#home') {
-    const name = document.querySelector('.name-line');
-    const arrival = name && animate(name, [{ clipPath: 'inset(0 100% 0 0)' }, { clipPath: 'inset(0 0 0 0)' }], { duration: 760, easing: 'cubic-bezier(.22,1,.36,1)' });
-    window.identityReady = arrival?.finished.catch(() => {});
+  const heading = document.querySelector('.hero-identity h1');
+  if (heading) {
+    function revealIdentity() {
+      const easing = 'cubic-bezier(.19,.8,.27,1)';
+      const words = [...heading.querySelectorAll('.name-word')].map((word, i) => animate(word, [
+        { opacity: 0, transform: 'translateY(.22em)' },
+        { opacity: 1, transform: 'translateY(0)' }
+      ], { duration: 620, delay: i * 125, easing, fill: 'backwards' }));
+      const signature = animate(heading.querySelector('.name-secondary'), [
+        { opacity: 0, clipPath: 'inset(-20% 100% -20% -10%)', transform: 'translateY(.12em)' },
+        { opacity: 1, clipPath: 'inset(-20% -12% -20% -10%)', transform: 'translateY(0)' }
+      ], { duration: 680, delay: 360, easing, fill: 'backwards' });
+      return Promise.allSettled([...words, signature].filter(Boolean).map(a => a.finished));
+    }
+    if (['', '#home', '#hero', '#main-content'].includes(location.hash)) {
+      window.identityReady = revealIdentity();
+    } else if ('IntersectionObserver' in window) {
+      // A direct research link should not spend the entrance offscreen or delay the banner.
+      let away = false;
+      const entrance = new IntersectionObserver(([entry]) => {
+        // The browser can report the top of the document before it jumps to the fragment.
+        if (entry.intersectionRatio < .6) { away = true; return; }
+        if (!away) return;
+        entrance.disconnect();
+        revealIdentity();
+      }, { threshold: .6 });
+      entrance.observe(heading);
+    }
   }
 })();
