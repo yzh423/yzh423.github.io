@@ -35,7 +35,7 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-preview]').currentTime > .2);
   assert.equal(await page.locator('[data-preview]').evaluate(v => v.muted), true);
   const film=page.locator('.flight-film'), stage=page.locator('.flight-stage'), lettering=page.locator('#flight-lettering');
-  assert.ok((await film.getAttribute('poster')).endsWith('grasp-study-opening.webp'));
+  assert.equal(new URL(await film.evaluate(video => video.poster)).pathname, '/assets/motion/grasp-study-opening.webp');
   // An off-centre sample distinguishes the full-frame sage print from an arm moving on flat paper.
   function cornerTone(v) {
     const c=document.createElement('canvas');c.width=32;c.height=24;const g=c.getContext('2d');

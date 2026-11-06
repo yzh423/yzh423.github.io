@@ -37,15 +37,29 @@ glyph*=pressure
 dist=np.hypot(((XX*.94+YY*.34)/5.9)%1-.5, ((YY*.94-XX*.34)/5.9)%1-.5)
 rolloff=(.7*np.sin(U*7+V*3)+.3*np.sin(V*11-U*4)).astype('f')
 
+def travel(start, end, time):
+    # Quintic motion gives zero velocity and acceleration at both stops.
+    fraction = float(np.clip((time - start) / (end - start), 0, 1))
+    return fraction**3 * (10 + fraction * (-15 + 6*fraction))
+
+
+PART_RADIUS = 32.
+PART_SEAT = np.array([843., 337.])
+
+
 def pose(t):
-    """Wrist and part share a pose only after the jaws close on the bushing."""
-    reach = ramp(0, 1.22, t)
-    lift = ramp(1.72, 3.08, t)
-    carry = ramp(2.45, 4.90, t)
-    grip = ramp(1.12, 1.66, t)
-    wrist = np.array([mix(803, 843, reach) - 49*carry, mix(170, 250, reach) - 88*lift])
-    part = np.array([843 - 49*carry, 337 - 88*lift])
-    return wrist, part, mix(57, 32, grip)
+    align = travel(0, .93, t)
+    descend = travel(.24, 1.35, t)
+    close = travel(1.36, 1.93, t)
+    lift = travel(2.16, 3.55, t)
+    carry = travel(2.95, 4.85, t)
+
+    # A level approach ends directly above the V-block. Both fingers reach
+    # the OD before the first lifting frame. Only then does the load follow.
+    offset = np.array([-57 * carry, -98 * lift])
+    wrist = np.array([mix(756, PART_SEAT[0], align), mix(171, 250, descend)]) + offset
+    return wrist, PART_SEAT + offset, mix(57, PART_RADIUS, close)
+
 
 def arm_plate(t):
     wrist, part, gap = pose(t)
@@ -59,11 +73,13 @@ def arm_plate(t):
     s = (length**2+a*a-b*b)/(2*length)
     elbow = shoulder + s*u - math.sqrt(max(0,a*a-s*s))*normal
 
-    push = ramp(.70,3.44,t)
-    back = ramp(3.44,5.83,t)
-    macro = push*(1-back)
-    zoom = math.exp(math.log(3.3)*push + math.log(1.14/3.3)*back)
-    center = np.array([687.,265.])*(1-macro) + (part+[-8,-28])*macro
+    # Keep the fixture visible at pickup. On the lift, frame the gripper a
+    # little right of centre, leaving room for the name on narrow screens.
+    push = travel(.77, 3.78, t)
+    pullback = travel(3.78, 5.90, t)
+    closeup = push * (1 - pullback)
+    zoom = math.exp(math.log(1.29) + math.log(3.45/1.29)*push + math.log(1.34/3.45)*pullback)
+    center = mix(np.array([672., 269.]), part + [-49., -21.], closeup)
     def screen(p): return (np.asarray(p)-center)*zoom + [W/2,H/2]
     img = Image.new('L',(W,H))
     pen = ImageDraw.Draw(img)
@@ -89,25 +105,49 @@ def arm_plate(t):
         bar(p+(q-p)*.05,q-(q-p)*.05,r1*.80,r2*.77,135)
         bar(p+(q-p)*.16,q-(q-p)*.17,r1*.41,r2*.39,74)
         line([p+(q-p)*.17,q-(q-p)*.18],185,2)
-    # Bolted plinth and the part's small fixture on the work surface.
+    def cable(start, bend1, bend2, end):
+        u = np.linspace(0, 1, 42)[:, None]
+        points = (1-u)**3*start + 3*(1-u)**2*u*bend1 + 3*(1-u)*u**2*bend2 + u**3*end
+        line(points, 178, 5.0)
+        line(points, 72, 1.7)
+
+    # The top faces of the V are tangent to the 64-unit OD. The visible
+    # air gap between the lifted part and this fixed seat shows load transfer.
+    seat_x, seat_y = PART_SEAT
+    v_bottom = seat_y + PART_RADIUS * math.sqrt(2)
+    seat = np.array([seat_x, v_bottom])
+    polygon(seat + [(-37,-28),(-28,-28),(0,0),(28,-28),(37,-28),(37,7),(-37,7)], 162)
+    line(seat + [(-28,-28),(0,0),(28,-28)], 230, 2.4)
+    line(seat + [(-50,9),(50,9)], 192, 4)
+    for x in (-31,31): circle(seat + [x,1], 2.4, 68)
+
     polygon([(447,425),(457,410),(475,405),(482,368),(518,368),(527,405),(547,410),(555,425)],181)
     line([(448,426),(555,426)],230,4)
     for x in [464,538]: circle([x,415],3.1,69)
-    line([(793,377),(893,377)],119,4)
-    for x in [815,871]:
-        polygon([(x-5,376),(x-5,367),(x+2,361),(x+5,362),(x+5,376)],152)
+    cable(shoulder+[-17,8], shoulder+[-55,-45], elbow+[-33,41], elbow+[-13,-8])
+    cable(elbow+[-13,-8], elbow+[7,-54], wrist+[-67,-39], wrist+[-4,-6])
     casting(shoulder,elbow,31,24);casting(elbow,wrist,25,16)
     joint(shoulder,36);joint(elbow,30);joint(wrist,18)
-    # Flange, cross slide, and mirrored L-shaped parallel fingers.
-    def rel(points): return np.asarray(points)+wrist
-    polygon(rel([(-11,11),(11,11),(11,26),(-11,26)]),170)
-    polygon(rel([(-53,23),(53,23),(58,29),(58,46),(53,51),(-53,51),(-58,46),(-58,28)]),225)
-    polygon(rel([(-50,29),(50,29),(50,42),(-50,42)]),110)
-    for sign in [-1,1]:
-        finger=np.array([(gap-5,42),(gap+12,42),(gap+12,90),(gap+5,99),(gap,99),(gap,78),(gap+3,76),(gap+3,53),(gap-5,53)])
-        finger[:,0]*=sign
-        polygon(rel(finger),232)
-        line(rel([(sign*(gap+8),54),(sign*(gap+8),85)]),104,2)
+
+    def rel(points): return np.asarray(points) + wrist
+    polygon(rel([(-12,11),(12,11),(12,25),(-12,25)]),170)
+    line(rel([(-16,21),(16,21)]), 230, 3)
+    polygon(rel([(-66,24),(66,24),(71,30),(71,45),(64,51),(-64,51),(-71,45),(-71,30)]),223)
+    polygon(rel([(-63,30),(63,30),(63,43),(-63,43)]),83)
+    line(rel([(-61,34),(61,34)]), 175, 2)
+
+    for side in (-1, 1):
+        def on_jaw(points):
+            return rel([(side*(gap+x), y) for x,y in points])
+        # Rail carriages and serrated pads travel together. The paler face
+        # and dark edge keep both jaws legible through the halftone exposure.
+        polygon(on_jaw([(-8,37),(11,37),(13,41),(13,53),(-8,53)]), 190)
+        polygon(on_jaw([(3,50),(13,50),(13,87),(8,95),(0,95),(0,79),(4,76)]), 226)
+        polygon(on_jaw([(0,80),(4,77),(5,91),(0,94)]), 157)
+        line(on_jaw([(9,55),(9,84)]), 98, 2)
+        for height in (82,86,90):
+            line(on_jaw([(0,height),(3,height-1)]), 70, 1.2)
+        circle(on_jaw([(2,44)])[0], 2.6, 61)
     # Machined bushing: through bore, two concentric shoulders and six drilled holes.
     for rad,val in [(32,233),(30,110),(27.7,201),(20.5,167),(17.2,237),(14.8,93),(12.8,0)]:
         circle(part,rad,val)
@@ -115,7 +155,7 @@ def arm_plate(t):
         ang=(i+.5)*math.tau/6
         p=part+23.5*np.array([math.cos(ang),math.sin(ang)])
         circle(p,3.1,61);circle(p,2.0,0)
-    return np.asarray(img).astype('f')/255, screen(part), 32*zoom
+    return np.asarray(img).astype('f')/255, screen(part), PART_RADIUS*zoom
 
 PAPER=np.array([237,234,226],dtype='f')
 INK=np.array([66,67,53],dtype='f')
@@ -124,18 +164,18 @@ PALE=np.array([239,239,225],dtype='f')
 GREEN=np.array([151,166,133],dtype='f')
 def frame(t):
     plate, center, radius = arm_plate(t)
-    # The impression starts at contact and spreads past the contour of the part.
+    # The impression starts after pickup so contact and the emerging gap read on paper first.
     # During the return to a wider view the screen itself stays fixed to the page.
-    if t < 1.46: impression=0.
-    elif t >= 3.32: impression=1.
+    if t < 2.52: impression=0.
+    elif t >= 3.90: impression=1.
     else:
         distance=np.hypot(XX-center[0], YY-center[1])-radius
-        front=mix(-150,1500,ramp(1.46,3.32,t))
+        front=mix(-150,1500,ramp(2.52,3.90,t))
         impression=ramp(-95,95,front-distance+(V-.5)*28)
-    dots=ramp(3.65,5.35,t-.18*(U-.5))
+    dots=ramp(4.12,5.65,t-.18*(U-.5))
     coverage=ramp(.0,1.,plate)
     # Positive-print passages are made from the same alphabet as the ground.
-    ink=plate*(.095+.905*glyph)
+    ink=plate*(.24+.76*glyph)
     bg_light=np.clip(glyph*(.6+.08*rolloff)+.029*rolloff,0,1)
     negative=coverage*(.82+.18*plate)
     light=mix(bg_light,.98,negative)
@@ -156,7 +196,7 @@ if __name__=='__main__':
     frame(0).save(OUT/'grasp-study-opening.webp','WEBP',quality=90,method=6)
     cmd=[imageio_ffmpeg.get_ffmpeg_exe(),'-hide_banner','-loglevel','error','-y','-f','rawvideo',
          '-pix_fmt','rgb24','-s',f'{W}x{H}','-r',str(FPS),'-i','-','-an','-c:v','libx264',
-         '-preset','slow','-crf','20','-pix_fmt','yuv420p','-movflags','+faststart',str(OUT/'grasp-study.mp4')]
+         '-preset','slow','-crf','22','-pix_fmt','yuv420p','-movflags','+faststart',str(OUT/'grasp-study.mp4')]
     with subprocess.Popen(cmd,stdin=subprocess.PIPE) as encoder:
         for i in range(FPS*SECONDS): encoder.stdin.write(frame(i/FPS).tobytes())
         encoder.stdin.close()

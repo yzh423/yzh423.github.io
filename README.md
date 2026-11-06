@@ -13,6 +13,8 @@ npm test
 
 Open `http://127.0.0.1:8782/`. The preview server supports byte-range video requests. `PORT` can select another port.
 
+GitHub Pages continues to publish the repository's existing main-branch configuration. No framework, build step or external runtime service is required. The independent `YUzhenghao-s-web` portfolio is a separate repository.
+
 Browser verification uses Playwright with Microsoft Edge:
 
 ```sh
@@ -33,9 +35,3 @@ The browser suite checks both languages, six viewport sizes, menus, keyboard and
 - `assets/SOURCES.md`: original media provenance and font sources. All existing CV and paper URLs remain valid.
 
 The original robot arm film starts after the name entrance and 30% visibility, shows a parallel gripper closing on a machined bushing. The camera follows the lift as sage lettering spreads from the part, then pulls back and holds the final halftone. Replay runs it again without scrolling; returning to the banner also restarts it. A fast pointer stroke pushes nearby grains and leaves a short directional wake. Nearby grains part along the path of the pointer and spring back as soon as it passes. Rebuild the film and both posters with `python scripts/render-grasp.py` (NumPy, Pillow, imageio-ffmpeg). The visitor can pause animation; reduced-motion users see a still composition. On the homepage, readers expand a project recording and press Play to watch it. The particle lettering is decorative and does not represent research data.
-
-## Design and release
-
-The November 2026 redesign follows the academic composition and interaction patterns of [Zhouhu Tan's homepage](https://tanzhouhu.github.io/#research), with original implementation and Zhenghao's own research content and media. See `PRODUCT.md`, `DESIGN.md` and `docs/reference-redesign.md` for constraints and rationale.
-
-GitHub Pages continues to publish the repository's existing main-branch configuration. No framework, build step or external runtime service is required. The independent `YUzhenghao-s-web` portfolio is a separate repository.
