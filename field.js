@@ -252,6 +252,6 @@
     document.addEventListener('site:motion',sync);
     size();
   }
-  flight(document.querySelector('.flight-stage'));
-  web(document.querySelector('.graph-stage'));
+  document.querySelectorAll('.flight-stage').forEach(flight);
+  document.querySelectorAll('.graph-stage').forEach(web);
 })();

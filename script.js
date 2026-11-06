@@ -111,7 +111,7 @@
       toggle.setAttribute('aria-label', value === 'zh' ? 'Switch to English' : '切换为中文');
     }
     const isDetail = document.body.classList.contains('research-detail');
-    document.title = isDetail ? say('Reliable Robotic Manipulation | Zhenghao YU', '可靠机器人操作研究 | Zhenghao YU') : say('Zhenghao YU | Robotics, AI, Autonomous Systems', 'Zhenghao YU · Daniel | 机器人与人工智能');
+    if (!document.querySelector('title[data-zh]')) document.title = isDetail ? say('Reliable Robotic Manipulation | Zhenghao YU', '可靠机器人操作研究 | Zhenghao YU') : say('Zhenghao YU | Robotics, AI, Autonomous Systems', 'Zhenghao YU · Daniel | 机器人与人工智能');
     menuToggle?.setAttribute('aria-label', header?.classList.contains('menu-open') ? say('Close navigation','关闭导航') : say('Open navigation','打开导航'));
     themeLabel();
     refreshMotion();

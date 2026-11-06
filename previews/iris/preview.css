@@ -1,0 +1,11 @@
+.study {
+  width: min(var(--width), calc(100% - var(--gutter)*2));
+  margin: clamp(32px, 6vh, 76px) auto 40px;
+}
+.study .section-index { margin: 0 0 12px; }
+.study h1 { margin: 0; font: 450 clamp(40px, 5vw, 70px)/1.08 var(--serif); letter-spacing: -.012em; }
+.study .flight-stage { margin-top: clamp(22px, 3.5vw, 38px); }
+.study-caption { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 8px 26px; margin: 16px 0 0; }
+.study-caption p { margin: 0; color: var(--muted); font-size: 15px; }
+.study-caption a { color: var(--ink); font-size: 14px; text-underline-offset: .24em; }
+.study-caption a:hover { color: var(--accent); }
