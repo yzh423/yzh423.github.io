@@ -9,7 +9,7 @@
   function pointerFor(el, wake) {
     const p = { active: false, cx: 0, cy: 0 };
     const sample = e => {
-      if (e.target.closest('a, .motion-toggle')) { clear(); return; }
+      if (e.target.closest('a, .motion-toggle, .flight-replay')) { clear(); return; }
       p.active = true; p.cx = e.clientX; p.cy = e.clientY; wake();
     };
     const clear = () => { p.active = false; wake(); };
@@ -22,107 +22,139 @@
   }
 
   function flight(stage) {
-    const film = stage.querySelector('video'), canvas = stage.querySelector('canvas');
-    const ctx = canvas.getContext('2d'), mask = document.createElement('canvas');
-    const sampler = mask.getContext('2d', {willReadFrequently: true});
-    let w=0,h=0,groups=[],palette=[],frame=0,last=0,visible=false,intro=false,played=false;
-    let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0;
-    const pointer = pointerFor(stage, wake);
-    function colors() {
+    const film=stage.querySelector('video'), canvas=stage.querySelector('canvas'), replay=stage.querySelector('.flight-replay');
+    const ctx=canvas.getContext('2d'), mask=document.createElement('canvas'), sampler=mask.getContext('2d',{willReadFrequently:true});
+    const stillPoster=film.getAttribute('poster'), assemblyTime=1.52;
+    let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
+    let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
+    const pointer=pointerFor(stage,wake);
+    const smooth=n=>n*n*(3-2*n);
+    function colors(){
       const dark=document.documentElement.dataset.theme==='dark';
-      const a=dark?[243,236,221]:[50,47,40], b=dark?[248,169,112]:[171,68,26];
-      palette=Array.from({length:12},(_,i)=>'rgb('+a.map((c,j)=>Math.round(c+(b[j]-c)*i/11)).join(',')+')');
+      const a=dark?[251,244,225]:[44,43,34],b=dark?[255,171,109]:[170,65,20];
+      palette=Array.from({length:18},(_,i)=>'rgb('+a.map((c,j)=>Math.round(c+(b[j]-c)*i/17)).join(',')+')');
     }
-    function measure() {
-      if (!ctx || !sampler) return;
-      w=stage.clientWidth;h=stage.clientHeight;if(!w || !h) return;
+    function measure(){
+      if(!ctx||!sampler)return;
+      w=stage.clientWidth;h=stage.clientHeight;if(!w||!h)return;
       const dpr=Math.min(devicePixelRatio||1,2);
       canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
       mask.width=Math.ceil(w);mask.height=Math.ceil(h);
-      const family='Newsreader, Georgia, serif', text='Zhenghao YU';
-      sampler.font='500 100px '+family;
-      const size=Math.min(w*(w<500?.89:.77)*100/sampler.measureText(text).width,h*.46);
-      sampler.font='500 '+size+'px '+family;sampler.textAlign='center';sampler.textBaseline='alphabetic';
+      const family='Newsreader, Georgia, serif',text='Zhenghao YU';
+      sampler.textAlign='center';sampler.textBaseline='alphabetic';sampler.font='500 100px '+family;
+      const size=Math.min(w*(w<500?.88:.75)*100/sampler.measureText(text).width,h*.47);
+      sampler.font='500 '+size+'px '+family;
       const metric=sampler.measureText(text);
-      sampler.fillText(text,w*.5,h*.485+(metric.actualBoundingBoxAscent-metric.actualBoundingBoxDescent)*.5);
+      sampler.fillText(text,w*.5,h*.49+(metric.actualBoundingBoxAscent-metric.actualBoundingBoxDescent)*.5);
       const pixels=sampler.getImageData(0,0,mask.width,mask.height).data;
-      const step=clamp(w/370,1.55,3.1);
-      groups=Array.from({length:12},()=>[]);
-      for(let y=1;y<h;y+=step) for(let x=1+(Math.round(y/step)%2)*step*.28;x<w;x+=step) {
-        if(pixels[(Math.floor(y)*mask.width+Math.floor(x))*4+3]<99)continue;
-        const phase=x*.021+y*.031, bin=clamp(Math.floor(x/w*13-.5+Math.sin(phase)*.62),0,11);
-        groups[bin].push({x,y,dx:0,dy:0,vx:0,vy:0,phase});
+      const step=clamp(w/368,1.52,3.15);
+      grain=step*(w<500?.87:.75);
+      groups=Array.from({length:18},()=>[]);
+      // Derive each grain from its cell: resize/replay cannot shuffle the letter shapes.
+      let seed=0x629cee73;
+      const rand=()=>{seed=(Math.imul(seed,1664525)+1013904223)>>>0;return seed/4294967296;};
+      for(let y=1;y<h;y+=step)for(let x=1+(Math.round(y/step)%2)*step*.22;x<w;x+=step){
+        if(pixels[(Math.floor(y)*mask.width+Math.floor(x))*4+3]<94)continue;
+        const s=rand(), depth=.65+.68*rand(), angle=2*Math.PI*rand(), sign=s<.5?-1:1;
+        const sx=w*.5+Math.cos(angle)*w*(.32+.23*depth)-x, sy=h*.46+Math.sin(angle)*h*(.32+.25*depth)-y;
+        const bin=clamp(Math.round(17*((x/w-.10)/.80+(s-.5)*.14)),0,17);
+        groups[bin].push({x,y,sx,sy,bend:sign*(8+17*rand())*depth,delay:.17*s+.14*x/w,
+          span:.89+.28*depth,size:grain*(.84+.28*rand()),depth,dx:0,dy:0,vx:0,vy:0});
       }
-      canvas.dataset.radius=(step*(w<500?.51:.38)).toFixed(2);
-      ready=groups.some(group=>group.length);
-      if(ready)stage.classList.add('has-lettering');
-      colors();render(0,true);wake();
+      ready=groups.some(g=>g.length);if(ready)stage.classList.add('has-lettering');
+      colors();render(0,!enabled());wake();
     }
-    function render(dt,still=false) {
+    function render(dt,still=false){
       if(!ready)return false;
-      const r=stage.getBoundingClientRect(), px=pointer.cx-r.left,py=pointer.cy-r.top;
-      const gain=1-Math.exp(-dt*12), act=pointer.active&&!still;
-      if(act && strength<.005){mx=px;my=py;}
-      mx+=(px-mx)*gain;my+=(py-my)*gain;
-      strength+=((act?1:0)-strength)*gain;
-      const tx=act?clamp(px/w-.5,-.5,.5)*32:0, ty=act?clamp(py/h-.5,-.5,.5)*20:0;
-      fx+=(tx-fx)*gain;fy+=(ty-fy)*gain;
-      if(still)fx=fy=strength=0;
-      film.style.transform='translate('+fx.toFixed(2)+'px,'+fy.toFixed(2)+'px) rotate('+(fx*.085).toFixed(3)+'deg)';
-      const radius=clamp(w*.12,49,112),dot=Number(canvas.dataset.radius);
-      let settling=false;
       ctx.clearRect(0,0,w,h);
-      const reveal=still?0:(1-Math.min(1,entry/.84))**3;
+      if(!intro&&!still)return false;
+      const r=stage.getBoundingClientRect(),px=pointer.cx-r.left,py=pointer.cy-r.top,act=pointer.active&&!still;
+      const kFollow=1-Math.exp(-dt*21),kTrail=1-Math.exp(-dt*9);
+      if(act&&strength<.002){mx=px;my=py;}
+      const moveX=act?(px-mx)*kFollow:0,moveY=act?(py-my)*kFollow:0;
+      mx+=moveX;my+=moveY;
+      flowX+=(clamp(moveX/Math.max(.001,dt),-1100,1100)-flowX)*kTrail;
+      flowY+=(clamp(moveY/Math.max(.001,dt),-1100,1100)-flowY)*kTrail;
+      strength+=((act?1:0)-strength)*(1-Math.exp(-dt*(act?18:8)));
+      const tx=act?clamp(px/w-.5,-.5,.5)*Math.min(w*.055,29):0,ty=act?clamp(py/h-.5,-.5,.5)*15:0;
+      fx+=(tx-fx)*kTrail;fy+=(ty-fy)*kTrail;
+      if(still)fx=fy=strength=flowX=flowY=0;
+      film.style.transform='translate('+fx.toFixed(2)+'px,'+fy.toFixed(2)+'px) rotate('+(fx*.049).toFixed(3)+'deg)';
+      let movingInk=false;
+      const radius=clamp(w*.105,47,112), invRadius=1/radius, stiffness=16,decay=Math.exp(-dt*stiffness);
+      const vx=flowX*.028,vy=flowY*.028;
       for(let i=0;i<groups.length;i++){
-        ctx.fillStyle=palette[i];ctx.beginPath();
+        ctx.fillStyle=palette[i];
         for(const p of groups[i]){
-          const ax=p.x-mx,ay=p.y-my,d=Math.max(.1,Math.hypot(ax,ay));
-          const push=strength*radius*.65*Math.max(0,1-d/radius)**2;
-          // Exact critically damped spring step: stable on 30/60/120 Hz screens.
-          const k=13,decay=Math.exp(-k*dt);
-          const x=p.dx-ax/d*push,y=p.dy-ay/d*push;
-          const qx=(p.vx+k*x)*dt,qy=(p.vy+k*y)*dt;
-          p.dx=still?0:(x+qx)*decay+ax/d*push;p.dy=still?0:(y+qy)*decay+ay/d*push;
-          p.vx=still?0:(p.vx-k*qx)*decay;p.vy=still?0:(p.vy-k*qy)*decay;
-          if(Math.abs(p.dx)+Math.abs(p.dy)>.07)settling=true;
-          const cx=p.x+p.dx+((w*.5-p.x)*.28+Math.cos(p.phase)*14)*reveal;
-          const cy=p.y+p.dy+Math.sin(p.phase*1.3)*24*reveal;
-          ctx.moveTo(cx+dot,cy);ctx.arc(cx,cy,dot,0,Math.PI*2);
+          // A compact lens separates nearby grains; a short directional wake follows a fast stroke.
+          const ax=p.x-mx,ay=p.y-my,d2=ax*ax+ay*ay;
+          let destX=0,destY=0;
+          if(!still&&strength>.001&&d2<radius*radius*2.56){
+            const dist=Math.sqrt(d2),s=1-clamp(dist*invRadius,0,1);
+            const gain=strength*radius*.58*s*s*p.depth/Math.max(2,dist);
+            const tailX=ax+vx*.95,tailY=ay+vy*.95;
+            const tail=strength*.54*Math.max(0,1-Math.hypot(tailX,tailY)*invRadius)**2;
+            destX=ax*gain+vx*tail;destY=ay*gain+vy*tail;
+          }
+          const x=p.dx-destX,y=p.dy-destY,qx=(p.vx+stiffness*x)*dt,qy=(p.vy+stiffness*y)*dt;
+          p.dx=still?0:destX+(x+qx)*decay;p.dy=still?0:destY+(y+qy)*decay;
+          p.vx=still?0:(p.vx-stiffness*qx)*decay;p.vy=still?0:(p.vy-stiffness*qy)*decay;
+          if(Math.abs(p.dx-destX)+Math.abs(p.dy-destY)>.06)movingInk=true;
+          let cx=p.x+p.dx,cy=p.y+p.dy,alpha=1;
+          if(!still&&entry<assemblyTime){
+            const progress=clamp((entry-p.delay)/p.span,0,1),spread=(1-progress)**3;
+            cx+=p.sx*spread;cy+=p.sy*spread+Math.sin(progress*Math.PI)*p.bend*(1-progress);
+            alpha=.18+.82*smooth(progress);
+          }
+          ctx.globalAlpha=alpha;
+          ctx.fillRect(cx-p.size*.5,cy-p.size*.49,p.size,p.size*.98);
         }
-        ctx.fill();
       }
-      return settling || strength>.005 || Math.abs(fx)+Math.abs(fy)>.08 || reveal>.0001;
+      ctx.globalAlpha=1;
+      return !still&&(entry<assemblyTime||movingInk||Math.abs(tx-fx)+Math.abs(ty-fy)>.035
+        || Math.abs(flowX)+Math.abs(flowY)>1||Math.abs((act?1:0)-strength)>.001);
     }
     function tick(t){
       frame=0;if(!visible||!intro||!enabled())return;
-      const dt=last?clamp((t-last)/1000,.001,.048):1/60;last=t;entry+=dt;
+      const dt=last?clamp((t-last)/1000,.001,.05):1/60;last=t;entry+=dt;
       if(render(dt))frame=request(tick);else last=0;
     }
     function wake(){if(visible&&intro&&enabled()&&ready&&!frame)frame=request(tick);}
     function sync(){
+      const allowFilm=enabled()&&!navigator.connection?.saveData;
+      if(!played){
+        const poster=allowFilm?film.dataset.openingPoster:stillPoster;
+        if(film.getAttribute('poster')!==poster)film.setAttribute('poster',poster);
+      }
+      replay.hidden=!(visible&&allowFilm&&film.ended&&!needsEntry);
       if(!visible||!intro||!enabled()){
         cancelAnimationFrame(frame);frame=last=0;film.pause();
-        if(!enabled()){entry=1;render(0,true);}
+        if(!enabled()){entry=assemblyTime;render(0,true);}
         return;
       }
       if(needsEntry){entry=0;played=false;needsEntry=false;}
-      if(!navigator.connection?.saveData && (!played || (film.paused&&!film.ended))){
+      if(allowFilm&&(!played||(film.paused&&!film.ended))){
         if(!played)film.currentTime=0;
-        played=true;film.play().catch(()=>{}); // The authored poster is always available.
+        played=true;film.play().catch(()=>{}); // Poster and lettering survive blocked autoplay.
       }
       wake();
     }
+    replay.addEventListener('click',event=>{
+      if(event.detail===0)stage.querySelector('.motion-toggle').focus({preventScroll:true});
+      needsEntry=true;sync();
+    });
+    film.addEventListener('ended',()=>{replay.hidden=!(visible&&enabled()&&!navigator.connection?.saveData);});
     new IntersectionObserver(([e])=>{
-      const arrived=e.isIntersecting && e.intersectionRatio>=.30;
+      const arrived=e.isIntersecting&&e.intersectionRatio>=.30;
       if(visible&&!arrived){needsEntry=true;pointer.active=false;}
       visible=arrived;sync();
     },{threshold:[0,.30]}).observe(stage);
     Promise.resolve(window.identityReady).then(()=>{intro=true;sync();});
-    new ResizeObserver(measure).observe(stage);
-    document.fonts.ready.then(measure);
+    new ResizeObserver(measure).observe(stage);document.fonts.ready.then(measure);
     document.addEventListener('site:theme',()=>{colors();render(0,!enabled());wake();});
     document.addEventListener('site:motion',sync);
     navigator.connection?.addEventListener?.('change',()=>{if(navigator.connection.saveData)film.pause();sync();});
+    sync();
   }
 
   function web(stage) {

@@ -32,7 +32,7 @@ The browser suite checks both languages, six viewport sizes, menus, keyboard and
 - `preferences.js`: applies the saved/system theme before paint. `script.js` handles navigation, translations and research selection. `field.js` renders the fused banner and linked research web.
 - `assets/SOURCES.md`: original media provenance and font sources. All existing CV and paper URLs remain valid.
 
-The original butterfly film starts after the name entrance and 30% visibility, rests on its final frame and restarts on return. The pointer displaces the particle name and gently turns the butterfly. Rebuild the film and poster with `python scripts/render-butterfly.py` (NumPy, Pillow, imageio-ffmpeg). The visitor can pause animation; reduced-motion users see a still composition. On the homepage, readers expand a project recording and press Play to watch it. The particle lettering is decorative and does not represent research data.
+The original butterfly film starts after the name entrance and 30% visibility, moves from ink on paper through a sage microtype close-up to a halftone, then holds. Replay runs it again without scrolling; returning to the banner also restarts it. A fast pointer stroke pushes nearby grains and leaves a short directional wake. The lettering springs back after release. Rebuild the film and both posters with `python scripts/render-butterfly.py` (NumPy, Pillow, imageio-ffmpeg). The visitor can pause animation; reduced-motion users see a still composition. On the homepage, readers expand a project recording and press Play to watch it. The particle lettering is decorative and does not represent research data.
 
 ## Design and release
 

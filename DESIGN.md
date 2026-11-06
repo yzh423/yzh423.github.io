@@ -131,7 +131,7 @@ components:
   flight-banner:
     backgroundColor: "{colors.flight-paper}"
     rounded: "{rounded.banner}"
-    height: "clamp(260px, 27.5vw, 345px)"
+    height: "clamp(260px, 32vw, 420px)"
   research-node:
     textColor: "{colors.ink}"
     typography: "{typography.graph-branch}"
@@ -214,7 +214,7 @@ The shared content maximum is 1120px. Page gutters are 32px above 850px, 24px at
 
 Desktop composition uses open columns: About is 1.7:1; research rows use a 76px illustrated margin beside a title and description; featured projects are 0.9:1.1; publications pair a 260px image with flexible text. Project spacing is 48px, reducing to 32px at 1100px. Publication media narrows to 200px at 850px. At 600px, About, projects, publications, education/skills, and contact stack in reading order; news dates move above the entry and timeline articles become blocks.
 
-The butterfly film, canvas and fallback lettering fill one clipped banner. Its desktop height ranges from 260px to 345px. At 620px and below it ranges from 210px to 260px and the film covers the frame. The research link sits at bottom center, with the motion control at bottom right.
+The butterfly film, canvas and fallback lettering fill one clipped banner. Its desktop height ranges from 260px to 420px. At 620px and below it ranges from 210px to 260px and the film covers the frame. The research link sits at bottom center, with the motion control at bottom right.
 
 The research network uses a wide arrangement between 320px and 416px tall. At 620px and below it switches to a 432px-tall arrangement with wrapped labels around the same central hub. Its connecting lines and cross-links stay visible in both arrangements. A compact note opens beside the active topic.
 
@@ -222,7 +222,7 @@ The detail page keeps the introduction within 900px and the main recording withi
 
 ## Elevation & Depth
 
-The sticky navigation and graph note use opaque page paper and thin borders. The banner layers lettering over the butterfly on warm paper. Research rows sit directly on the page, and scientific charts retain their white grounds in both themes.
+The sticky navigation and graph note use opaque page paper and thin borders. The banner layers lettering over a six-second transition from warm paper to sage microtype and halftone. Research rows sit directly on the page, and scientific charts retain their white grounds in both themes.
 
 **The Flat Reading Rule.** Preserve the flat surfaces and structural rules used by the shipped pages.
 
@@ -248,7 +248,7 @@ Both pages switch between English and Chinese, including document language, titl
 
 The semantic heading keeps “Zhenghao YU” and “Daniel” on separate lines beside a real portrait. Canvas lettering is decorative and hidden from assistive technology; the semantic identity always remains available. The fallback name stays visible until the particle canvas is ready.
 
-The six-second, silent butterfly film and the particle name start together after the identity entrance when at least 30% of the banner is visible. The film plays once and holds its final frame. Dropping below 30% rearms the entrance, so crossing the threshold again restarts it. Pointer or touch movement shifts the butterfly and displaces nearby letter particles, which spring back to their original positions. Native vertical scrolling and pinch zoom remain available.
+The six-second, silent butterfly film and the particle name start together after the identity entrance when at least 30% of the banner is visible. The film plays once and holds its final frame. A Replay button appears at completion. Dropping below 30% rearms the entrance, so crossing the threshold again restarts it. The name assembles from a seeded scatter over about 1.5 seconds. Pointer or touch movement shifts the film and displaces nearby letter particles; a fast pass leaves a directional wake that settles back into type. Native vertical scrolling and pinch zoom remain available.
 
 The persistent pause control stops the film, assembles the letters and stills the network. Reduced motion shows the settled composition and labels the disabled control. Data saver suppresses automatic film playback. The poster supplies the butterfly before playback or if the film is unavailable. Hidden documents pause playback and rendering.
 

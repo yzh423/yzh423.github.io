@@ -4,7 +4,7 @@
   position: relative;
   isolation: isolate;
   overflow: hidden;
-  height: clamp(260px, 27.5vw, 345px);
+  height: clamp(260px, 32vw, 420px);
   margin-top: clamp(28px, 3vw, 42px);
   border-radius: 17px;
   background: var(--stage-paper);
@@ -19,17 +19,14 @@
 }
 .flight-film {
   border-radius: 0;
-  object-fit: contain;
+  object-fit: cover;
   background: var(--stage-paper);
-  mix-blend-mode: multiply;
-  /* Luminance normalisation keeps the neutral film edge invisible on paper. */
-  filter: grayscale(1) brightness(1.105);
+  /* Overscan keeps the print running to the edge even as the pointer banks it. */
+  scale: 1.08;
 }
 [data-theme="dark"] .flight-stage { --stage-paper: #222520; }
 [data-theme="dark"] .flight-film {
-  background: #ebe8e1;
-  filter: grayscale(1) brightness(1.105) invert(1) brightness(1.55);
-  mix-blend-mode: screen;
+  filter: invert(.94) hue-rotate(174deg) saturate(.72);
 }
 .flight-fallback {
   margin: 0;
@@ -48,7 +45,17 @@
   translate: -50% 0;
   white-space: nowrap;
 }
-.flight-stage .motion-toggle { left: auto; right: 13px; bottom: 12px; z-index: 1; }
+.flight-stage .motion-toggle, .flight-replay {
+  position: absolute; bottom: 12px; z-index: 1;
+  border-radius: 30px; background: var(--paper); color: var(--ink);
+}
+.flight-stage .motion-toggle { left: auto; right: 13px; }
+.flight-replay {
+  left: 13px; display: inline-flex; align-items: center; justify-content: center;
+  gap: 6px; min-height: 36px; padding: 5px 11px; font: 500 12px/1.2 var(--sans);
+}
+.flight-replay[hidden] { display: none; }
+.flight-replay svg { width: 13px; height: 13px; }
 .name-word { display: inline-block; }
 .name-secondary { width: fit-content; font-style: italic; }
 .hero-intro { max-width: 56ch; text-wrap: pretty; }
@@ -84,7 +91,8 @@
   .flight-stage { height: clamp(210px, 57vw, 260px); border-radius: 12px; }
   .flight-action { bottom: 15px; min-height: 38px; padding-block: 7px; }
   .flight-stage .motion-toggle { width: 40px; height: 40px; right: 5px; bottom: 12px; justify-content: center; }
-  .motion-toggle span { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
+  .flight-replay { width: 40px; height: 40px; left: 5px; }
+  .motion-toggle span, .flight-replay span { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); }
   .field-heading > p:last-child { max-width: 37ch; }
   .graph-stage { height: 432px; margin-block: 12px; }
   .graph-node { width: 42%; font-size: 16px; }

@@ -319,12 +319,12 @@
       {
         "name": "butterfly-film",
         "value": "6s, one pass per entry at 30% visibility",
-        "purpose": "The silent film holds its last frame. Crossing the threshold again replays it."
+        "purpose": "The ink butterfly becomes a sage microtype close-up and then a halftone. Replay or a fresh entry starts another pass."
       },
       {
         "name": "particle-assembly",
-        "value": "840ms",
-        "purpose": "Particles form the name and return after local pointer displacement."
+        "value": "1520ms",
+        "purpose": "Seeded grains assemble into the name; the pointer sweeps a short wake and displacements decay to rest."
       },
       {
         "name": "research-network",

@@ -35,11 +35,19 @@ try {
   await page.waitForFunction(() => document.querySelector('[data-preview]').currentTime > .2);
   assert.equal(await page.locator('[data-preview]').evaluate(v => v.muted), true);
   const film=page.locator('.flight-film'), stage=page.locator('.flight-stage'), lettering=page.locator('#flight-lettering');
-  assert.ok((await film.getAttribute('poster')).endsWith('inkwing.webp'));
+  assert.ok((await film.getAttribute('poster')).endsWith('inkwing-opening.webp'));
+  // An off-centre sample distinguishes the full-frame sage print from a butterfly moving on flat paper.
+  function cornerTone(v) {
+    const c=document.createElement('canvas');c.width=32;c.height=24;const g=c.getContext('2d');
+    g.drawImage(v,0,0,v.videoWidth*.13,v.videoHeight*.14,0,0,32,24);
+    const a=g.getImageData(0,0,32,24).data;
+    return [0,1,2].map(ch=>{let sum=0;for(let i=ch;i<a.length;i+=4)sum+=a[i];return sum/(32*24);});
+  }
+  const openingTone=await film.evaluate(cornerTone);
   assert.deepEqual(await stage.boundingBox(),await lettering.boundingBox());
   assert.equal(await stage.locator('video[controls]').count(),0);
   const box=await stage.boundingBox();
-  await page.waitForTimeout(950);
+  await page.waitForTimeout(1550);
   const beforeHover=await lettering.evaluate(c=>c.toDataURL());
   await page.mouse.move(box.x+box.width*.72,box.y+box.height*.47);
   await page.waitForFunction(()=>Math.abs(new DOMMatrix(getComputedStyle(document.querySelector('.flight-film')).transform).e)>3);
@@ -58,6 +66,11 @@ try {
   await film.evaluate(v=>{v.currentTime=v.duration-.28;});
   await page.waitForFunction(()=>document.querySelector('.flight-film').ended);
   await page.waitForTimeout(230); assert.equal(await film.evaluate(v=>v.ended),true);
+  const finalTone=await film.evaluate(cornerTone);
+  assert.ok(openingTone[0]-finalTone[0]>15 && finalTone[1]-finalTone[2]>12,'film moves from bare paper into a full sage print');
+  await page.locator('.flight-replay').focus(); await page.keyboard.press('Enter');
+  await page.waitForFunction(()=>{const v=document.querySelector('.flight-film');return !v.paused&&v.currentTime>.05&&v.currentTime<1;});
+  assert.equal(await page.locator('.motion-toggle').evaluate(e=>document.activeElement===e),true);
   await page.locator('#research').evaluate(e=>e.scrollIntoView({block:'start'}));
   const line=page.locator('[data-edge="control"]');
   const endpoint=await line.getAttribute('x2');

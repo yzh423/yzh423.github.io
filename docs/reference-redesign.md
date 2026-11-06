@@ -2,7 +2,7 @@
 
 ## Direction
 
-The homepage introduces Zhenghao YU (Daniel) to prospective supervisors and collaborators. The portrait, two-line name, short research introduction and contact links lead into one banner. A monochrome ink butterfly sits behind particle lettering on a shared paper ground. Newsreader headings, Inter body text, thin rules, and an orange accent connect the introduction to the research and publications below. [Design reference](https://tanzhouhu.github.io/#research)
+The homepage introduces Zhenghao YU (Daniel) to prospective supervisors and collaborators. The portrait, two-line name, short research introduction and contact links lead into one banner. An original butterfly film moves from ink on warm paper to a sage field of microtype and a halftone specimen. Independent particle lettering stays in front. Newsreader headings, Inter body text, thin rules, and an orange accent connect the introduction to the research and publications below. [Design reference](https://tanzhouhu.github.io/#research)
 
 ## Navigation and reading
 
@@ -23,9 +23,9 @@ The wordmark returns to Home. The active section has an orange underline. Pointe
 
 ## Butterfly banner
 
-The silent six-second film and the particle name share the full banner. After the opening identity reveal, reaching 30% visibility starts one pass of the film and the letter assembly. The final butterfly frame holds. Scrolling below 30% and returning starts a new pass. Pointer or touch input gently shifts the film and displaces particles near the contact point. The letters settle back into place. “Explore research” stays at bottom center, and the motion control sits at bottom right.
+The silent six-second film and the particle name share the full banner. After the opening identity reveal, reaching 30% visibility starts one pass of the film and the letter assembly. The final halftone holds. A Replay button appears to start the film and type entrance again. Scrolling below 30% and returning starts a new pass. Pointer or touch input gently shifts the film and pushes nearby grains; quick strokes leave a short directional wake. The letters settle back into place. “Explore research” stays at bottom center, and the motion control sits at bottom right.
 
-The pause control and reduced-motion preference provide a settled composition. Backgrounding the page pauses playback, and data saver suppresses automatic film playback. The poster and fallback name are readable before enhancement.
+The pause control and reduced-motion preference provide a settled composition. Backgrounding the page pauses playback, and data saver suppresses automatic film playback. The still poster and fallback name are readable before enhancement.
 
 ## Research network
 

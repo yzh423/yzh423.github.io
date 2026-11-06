@@ -1,100 +1,146 @@
-"""Render the original homepage ink-wing study. Requires numpy, Pillow, imageio-ffmpeg.
-Run from any directory: python scripts/render-butterfly.py
-The film has no sound; its final frame and poster remain useful without motion.
+"""Render the original typographic butterfly film (numpy, Pillow, imageio-ffmpeg).
+The marks, wing drawings and camera moves are authored here; no input footage.
+Run: python scripts/render-butterfly.py
 """
 from pathlib import Path
-import subprocess
 import math
+import subprocess
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
-OUT.mkdir(exist_ok=True)
-W, H, FPS, SEC = 984, 444, 30, 6
-PAPER = (235, 232, 225)
-rng = np.random.default_rng(247)
-
-def bezier(p, a, b, q, steps=40):
-    t = np.linspace(0, 1, steps)[:, None]
-    return (1-t)**3*p + 3*(1-t)**2*t*a + 3*(1-t)*t**2*b + t**3*q
-
+W, H, FPS, SECONDS = 1440, 540, 30, 6
+# Render the moving continuous-tone plate at half resolution. Print marks are
+# composited at delivery resolution, so fine type does not shimmer when zooming.
+S = 3
+XX, YY = np.meshgrid(np.arange(W, dtype='f')+.5, np.arange(H, dtype='f')+.5)
+U, V = XX/W, YY/H
+def ramp(a,b,x):
+    n=np.clip((x-a)/(b-a),0,1)
+    return n*n*(3-2*n)
+def mix(a,b,x): return a+(b-a)*x
+def track(t,keys):
+    for (a,v),(b,w) in zip(keys,keys[1:]):
+        if t<=b: return mix(v,w,ramp(a,b,t))
+    return keys[-1][1]
 def curve(points):
-    knots=np.array(points,dtype=float)
-    return np.vstack([bezier(*knots[i:i+4]) for i in range(0,len(knots)-1,3)])
+    p=np.array(points,dtype=float); t=np.linspace(0,1,34)[:,None]
+    return np.vstack([(1-t)**3*a+3*(1-t)**2*t*b+3*(1-t)*t*t*c+t**3*d
+                      for a,b,c,d in (p[i:i+4] for i in range(0,len(p)-1,3))])
+def path(ps): return [tuple(row) for row in (np.asarray(ps)+[9,173])*S]
+fore=curve([(4,-18),(32,-62),(129,-148),(200,-154),(219,-156),(204,-81),(181,-54),
+            (163,-26),(118,-7),(74,4),(39,13),(18,3),(4,-18)])
+hind=curve([(5,-5),(29,-22),(101,-33),(136,-16),(156,1),(141,27),(131,41),
+            (125,48),(125,62),(113,62),(109,72),(105,85),(94,83),
+            (89,93),(78,102),(70,97),(62,117),(51,126),(50,106),
+            (25,107),(10,58),(5,-5)])
+shape=Image.new('L',(234*S,310*S)); pen=ImageDraw.Draw(shape)
+for wing in [hind,fore]: pen.polygon(path(wing),fill=251)
+y,x=np.indices((shape.height,shape.width),dtype='f');x=x/S-9;y=y/S-173
+radius=np.hypot(x*.87,y*.76)
+bands=(np.cos(radius*.1+.8*np.sin(y*.053))*.5+.5)
+density=105+55*bands+65*ramp(84,151,radius)+12*np.sin(x*.12-y*.045)
+for cx,cy,rx,ry in [(188,-128,4,8),(179,-109,5,9),(169,-91,5,8),(156,-75,6,7),
+                     (143,-59,5,7),(123,26,5,8),(111,48,5,8),(91,68,5,8),(69,83,4,7)]:
+    d=((x-cx)/rx)**2+((y-cy)/ry)**2
+    density*=.14+.86*ramp(.64,1.15,d)
+material=Image.fromarray(np.clip(density,0,255).astype('uint8')); pen=ImageDraw.Draw(material)
+for tx,ty in [(202,-148),(199,-113),(189,-79),(168,-51),(140,-30),(112,-15),
+               (132,24),(117,57),(91,81),(69,99),(51,104)]:
+    route=curve([(5,-9),(tx*.32,ty*.15-8),(tx*.68,ty*.7-2),(tx,ty)])
+    pen.line(path(route),fill=245,width=2*S)
+pen.line(path(fore),fill=239,width=2*S);pen.line(path(hind),fill=239,width=2*S)
+plate=np.array(material)* (np.array(shape)>0)
+material=Image.fromarray(plate.astype('uint8')).filter(ImageFilter.GaussianBlur(.65))
 
-# A forewing and a scalloped hindwing share the same thoracic hinge.
-fore = curve([(4,-18),(32,-62),(129,-148),(200,-154),(219,-156),(204,-81),(181,-54),
-              (163,-26),(118,-7),(74,4),(39,13),(18,3),(4,-18)])
-hind = curve([(5,-5),(29,-22),(101,-33),(136,-16),(156,1),(141,27),(131,41),
-              (125,48),(125,62),(113,62),(109,72),(105,85),(94,83),
-              (89,93),(78,102),(70,97),(62,117),(51,126),(50,106),
-              (25,107),(10,58),(5,-5)])
-def pts(a): return [tuple(row) for row in a]
-def uv(points): return np.asarray(points)+[0,166]
-mask=Image.new('L',(227,303)); brush=ImageDraw.Draw(mask)
-vein=Image.new('L',mask.size); pen=ImageDraw.Draw(vein)
-for shape in (hind,fore):
-    brush.polygon(pts(uv(shape)),fill=255)
-    pen.line(pts(uv(shape)),fill=250,width=3)
-for x,y in [(202,-148),(199,-113),(189,-79),(168,-51),(140,-30),(112,-15),
-            (132,24),(117,57),(91,81),(69,99),(51,104)]:
-    route=curve([(5,-9),(x*.32,y*.12-9),(x*.68,y*.64-2),(x,y)])
-    pen.line(pts(uv(route)), fill=210,width=2)
-# Cells, pigmented margins and small light spots are marks on the wing membrane;
-# their projected positions follow each fold rather than sliding over the surface.
-m,v=np.asarray(mask),np.asarray(vein)
-x,y=np.meshgrid(np.arange(4,217,3.45),np.arange(-157,127,3.65))
-x=x.ravel();y=y.ravel()
-x+=rng.uniform(-.75,.75,x.shape); y+=rng.uniform(-.65,.65,y.shape)
-ix=x.astype(int);iy=(y+166).astype(int)
-inside=m[iy,ix]>0
-x=x[inside];y=y[inside]; ink=v[iy[inside],ix[inside]]/255
-r=np.hypot(x*.87,y*.76); stripe=(np.cos(r*.091+.36*np.sin(y*.072)) + 1)*.5
-marbling=(np.sin(x*.066-y*.10)+1)*.5
-outer=np.clip((r-99)/58,0,1)
-value=np.clip(.22+.28*stripe+.13*marbling+.20*outer+.53*ink+rng.normal(0,.075,len(x)),.12,1)
-# Pale border spots, with fine dark edging left visible.
-for cx,cy,rx,ry in [(189,-129,4,7),(181,-111,5,8),(171,-93,5,7),(157,-76,5,7),
-                     (144,-61,4,6),(123,26,5,7),(111,48,5,7),(91,68,5,7),(69,83,4,6)]:
-    value[((x-cx)/rx)**2+((y-cy)/ry)**2<1]*=.17
-u=np.tile(x,2)*np.repeat([-1,1],len(x)); v0=np.tile(y,2); pigment=np.tile(value,2)
-jitter=np.tile(rng.uniform(-.5,.5,len(x)),2)
+# A custom 3 by 5 alphabet for the screen-printed field. The column offset
+# locks the texture to the paper; the wing silhouette moves through it.
+alphabet=dict(zip('ACEFGHIKLMNOPRSTUVY012',
+ ['25757','74447','74647','74644','74557','55755','72227','55655','44447',
+  '57755','57775','75557','75744','75655','74217','72222','55557','55552','55222','75557','26227','71247']))
+words='MOTIONKINEMATICSCONTROLTRAJECTORY012'
+tiles=np.zeros((len(words),8,6),dtype='uint8')
+for i,ch in enumerate(words):
+    for row,n in enumerate(alphabet.get(ch,'00000')):
+        for col in range(3):
+            if int(n)&(4>>col): tiles[i,row+1,col+1]=255
+iy,ix=np.indices((H,W)); col=ix//6; row=iy//8
+char=(col*13+row+(col//5)*7+(row//11)*3)%len(words)
+glyph=tiles[char,iy%8,ix%6].astype('f')/255
+# fine pressure variations are static; there is no frame-to-frame grain noise
+pressure=(.89+.11*np.cos(col*1.73+row*.37)).astype('f')
+glyph*=pressure
+dist=np.hypot(((XX*.94+YY*.34)/5.9)%1-.5, ((YY*.94-XX*.34)/5.9)%1-.5)
+radial=np.sqrt(((U-.5)*1.27)**2+((V-.47)*.52)**2)
+rolloff=(.7*np.sin(U*7+V*3)+.3*np.sin(V*11-U*4)).astype('f')
+
+def projection(t):
+    macro=ramp(1.94,3.18,t)*(1-ramp(3.69,5.61,t))
+    env=(1-ramp(4.85,5.85,t))
+    fold=.20+env*(.18+.50*(.5+.5*math.sin(2*math.pi*(t*.92+.048*math.sin(2*t))-.8)))
+    turn=.055+.095*math.sin(t*1.35)*env-.17*macro
+    zoom=track(t,[(0,1.08),(.97,1.48),(1.94,1.73),(3.18,4.25),(3.69,4.08),(5.65,1.62)])
+    cx=W*(.5+.28*macro)+9*math.sin(t*2.2)*env
+    cy=H*(.523+.61*macro)+5*math.sin(t*3.1)*env
+    center=np.array([cx,cy])/2
+    rot=np.array([[math.cos(turn),-math.sin(turn)],[math.sin(turn),math.cos(turn)]])
+    return center,rot,zoom,fold
+
+def wing_plate(t):
+    c,rot,zoom,fold=projection(t)
+    accum=Image.new('L',(W//2,H//2))
+    for side in [-1,1]:
+        ang=fold+side*.045
+        mat=(zoom/2)*rot@np.array([[side*math.cos(ang),0],[.27*math.sin(ang),1.]])
+        inv=np.linalg.inv(mat)*S
+        offset=np.array([9,173])*S-inv@c
+        coeff=(inv[0,0],inv[0,1],offset[0],inv[1,0],inv[1,1],offset[1])
+        sideplate=material.transform(accum.size,Image.Transform.AFFINE,coeff,Image.Resampling.BILINEAR)
+        accum=Image.fromarray(np.maximum(np.asarray(accum),np.asarray(sideplate)))
+    pen=ImageDraw.Draw(accum)
+    def xy(ps):return [tuple(pt) for pt in np.asarray(ps)@(rot*zoom/2).T+c]
+    pen.line(xy([(0,48),(0,-25)]),fill=235,width=max(2,round(3.1*zoom)))
+    pen.line(xy([(0,4),(0,-22)]),fill=248,width=max(2,round(5.1*zoom)))
+    for sg in [-1,1]:
+        pen.line(xy(curve([(0,-24),(sg*3,-41),(sg*16,-49),(sg*19,-58)])),fill=230,width=max(1,round(zoom*.65)))
+    return np.asarray(accum.resize((W,H),Image.Resampling.BILINEAR)).astype('f')/255
+
+PAPER=np.array([237,234,226],dtype='f')
+INK=np.array([66,67,53],dtype='f')
+SAGE=np.array([176,187,158],dtype='f')
+PALE=np.array([239,239,225],dtype='f')
+GREEN=np.array([151,166,133],dtype='f')
 def frame(t):
-    phi=2*math.pi*t/SEC
-    # A flurry of wingbeats subsides into a glide, then a clear open-wing pose.
-    envelope=math.sin(math.pi*t/SEC)**1.1
-    turn=.12+.14*math.sin(phi-.3)*envelope
-    fold=.20+envelope*(.32+.44*(1+math.sin(2*math.pi*t*.97+.18*math.sin(phi)))/2)
-    cx=W*.5+20*math.sin(phi+.55)*envelope
-    cy=H*.485+10*math.sin(phi*2)*envelope
-    def proj(a,b):
-        a,b=np.asarray(a),np.asarray(b); f=fold*(.98+.04*np.sign(a))+.065*b/150
-        xx=a*np.cos(f); z=np.abs(a)*np.sin(f)
-        yy=b+z*.30+np.sin(np.abs(a)/205*math.pi)*z*.10
-        return cx+1.15*(xx*math.cos(turn)-yy*math.sin(turn)), cy+1.15*(xx*math.sin(turn)+yy*math.cos(turn))
-    img=Image.new('RGB',(W,H),PAPER); p=ImageDraw.Draw(img)
-    X,Y=proj(u,v0)
-    vals=(219-pigment*(139+17*np.sin(fold))).astype(int)
-    # Short, separated ink strokes retain the feel of a printed specimen in motion.
-    for a,b,k,l,h in zip(X,Y,vals,pigment,jitter):
-        color=(k+1,k,max(0,k-4)); a,b=round(a),round(b)
-        p.line((a,b,a+(k<132),b+1+int(l>.51)),fill=color,width=1)
-        if l>.62 and h>-.15:p.point((a-1,b+1),fill=color)
-    def line(ps,shade,width):
-        cx1,cy1=proj(ps[:,0],ps[:,1]);p.line(pts(np.c_[cx1,cy1]),fill=shade,width=width)
-    for side in (-1,1):
-        line(curve([(0,-27),(side*3,-49),(side*17,-58),(side*21,-64)]),(91,88,79),1)
-    for yy in np.arange(-27,51,2):
-        radius=1.4+3.1*math.exp(-((yy+11)/15)**2)+1.6*math.exp(-((yy-16)/24)**2)
-        a,b=proj(0,yy);p.ellipse((a-radius,b-2,a+radius,b+2),fill=(94,90,79))
-    return img
+    wing=wing_plate(t)
+    # Iris from pigment on bare paper to pale wings knocked out of sage type.
+    iris=ramp(-.13,.14,1.01*ramp(.52,1.67,t)-radial-.16)
+    dots=ramp(3.10,4.66,t-.18*(U-.5))
+    wing_cover=ramp(.045,.82,wing)
+    # Positive-print passages are made from the same alphabet as the ground.
+    ink=wing*(.095+.905*glyph)
+    bg_light=np.clip(glyph*(.6+.08*rolloff)+.029*rolloff,0,1)
+    negative=wing_cover*(.74+.25*wing)
+    light=mix(bg_light,.98,negative)
+    # In the final exposure, the screen angle changes, revealing a halftone wing.
+    dot_radius=.435*(1-.91*wing_cover)+.012*rolloff
+    print_dot=1-ramp(dot_radius-.056,dot_radius+.056,dist)
+    image=np.empty((H,W,3),dtype='uint8')
+    for j in range(3):
+        start=mix(PAPER[j],INK[j],ink)
+        field=mix(SAGE[j],PALE[j],light)
+        dot_field=mix(PALE[j],GREEN[j],print_dot*.93)
+        image[:,:,j]=np.clip(mix(mix(start,field,iris),dot_field,dots),0,255)
+    return Image.fromarray(image)
+
 if __name__=='__main__':
-    frame(0).save(OUT/'inkwing.webp','WEBP',quality=91,method=6)
+    OUT.mkdir(exist_ok=True)
+    frame(5.99).save(OUT/'inkwing.webp','WEBP',lossless=True,method=6)
+    frame(0).save(OUT/'inkwing-opening.webp','WEBP',quality=90,method=6)
     cmd=[imageio_ffmpeg.get_ffmpeg_exe(),'-hide_banner','-loglevel','error','-y','-f','rawvideo',
          '-pix_fmt','rgb24','-s',f'{W}x{H}','-r',str(FPS),'-i','-','-an','-c:v','libx264',
          '-preset','slow','-crf','20','-pix_fmt','yuv420p','-movflags','+faststart',str(OUT/'inkwing.mp4')]
     with subprocess.Popen(cmd,stdin=subprocess.PIPE) as encoder:
-        for i in range(FPS*SEC): encoder.stdin.write(frame(i/(FPS*SEC-1)*SEC).tobytes())
+        for i in range(FPS*SECONDS): encoder.stdin.write(frame(i/FPS).tobytes())
         encoder.stdin.close()
         if encoder.wait(): raise RuntimeError('Encoding failed')
