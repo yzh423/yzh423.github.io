@@ -41,6 +41,8 @@ try {
   await page.locator('.choices').screenshot({path:out+'/background-choices.png'});
   for(const key of ['eclipse','prism','contours']) {
     await page.locator('[data-key="'+key+'"]').click();
+    // The old iframe can still expose its video while the new URL is loading.
+    await page.waitForFunction(k=>document.querySelector('iframe').contentWindow.location.search==='?look='+k,key);
     const player=page.frameLocator('iframe');
     await player.locator('video').evaluate(async (v,k)=>{
       const end=performance.now()+11000;
