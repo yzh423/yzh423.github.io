@@ -24,30 +24,44 @@ try {
   await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
   const canvas=page.locator('#flight-lettering'),box=await canvas.boundingBox();
   const initial=await canvas.evaluate(c=>c.drawn);
-  const selected=initial.map((p,i)=>({p,i})).filter(({p})=>p[0]>box.width*.21&&p[0]<box.width*.53);
-  const movement=async()=>{
+  const target=initial.reduce((best,p)=>Math.hypot(p[0]-box.width*.32,p[1]-box.height*.49)<
+    Math.hypot(best[0]-box.width*.32,best[1]-box.height*.49)?p:best);
+  const selected=initial.map((p,i)=>({p,i})).filter(({p})=>Math.hypot(p[0]-target[0],p[1]-target[1])<110);
+  const distant=initial.map((p,i)=>({p,i})).filter(({p})=>Math.hypot(p[0]-target[0],p[1]-target[1])>240);
+  const movement=async(items=selected)=>{
     const points=await canvas.evaluate(c=>c.drawn);assert.equal(points.length,initial.length);
-    const shift=selected.map(({p,i})=>[points[i][0]-p[0],points[i][1]-p[1]]);
-    return {x:shift.reduce((s,p)=>s+p[0],0)/shift.length,y:shift.reduce((s,p)=>s+p[1],0)/shift.length,
-      distance:shift.reduce((s,p)=>s+Math.hypot(...p),0)/shift.length};
+    const shifts=items.map(({p,i})=>Math.hypot(points[i][0]-p[0],points[i][1]-p[1]));
+    return {mean:shifts.reduce((a,b)=>a+b,0)/shifts.length,max:Math.max(...shifts)};
   };
-  for(const direction of [1,-1]) {
-    const from=direction===1?.17:.57,to=direction===1?.57:.17;
-    await page.mouse.move(box.x+box.width*from,box.y+box.height*.49);
-    for(let i=1;i<=28;i++) {
-      await page.mouse.move(box.x+box.width*(from+(to-from)*i/28),box.y+box.height*.49);
-      await page.waitForTimeout(12);
-    }
-    const carried=await movement();
-    assert.ok(carried.x*direction>1.2,`ink follows the stroke: ${JSON.stringify(carried)}`);
-    assert.ok(Math.abs(carried.y)<Math.abs(carried.x), 'directional drift dominates radial scattering');
-    await page.screenshot({path:out+`pointer-${direction===1?'right':'left'}.png`});
-    await page.waitForTimeout(450);
-    const returning=await movement();assert.ok(returning.distance>.2,'return is gradual');
-    await page.waitForTimeout(2300);
-    const settled=await movement();assert.ok(settled.distance<.2,`grains regain their letter: ${JSON.stringify(settled)}`);
-    await page.mouse.move(20,20);await page.waitForTimeout(100);
-    console.log('PASS directional stroke and soft return',direction,{carried,returning,settled});
-  }
+  const colours=()=>canvas.evaluate(c=>{
+    const p=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+    let n=0;for(let i=0;i<p.length;i+=4)if(p[i+3]>100&&Math.max(p[i],p[i+1],p[i+2])-Math.min(p[i],p[i+1],p[i+2])>32)n++;
+    return n;
+  });
+  await page.mouse.move(box.x+target[0],box.y+target[1],{steps:10});
+  await page.waitForTimeout(800);
+  const arrived=await movement();
+  assert.ok(arrived.mean>16&&arrived.max>45,`hover has a clearly visible reach: ${JSON.stringify(arrived)}`);
+  await page.waitForTimeout(2700);
+  const held=await movement();
+  assert.ok(held.mean>16&&held.mean/arrived.mean>.80,'stationary hover keeps the particles dispersed');
+  assert.ok(await colours()>100,'the stationary displacement retains colour');
+  assert.ok((await movement(distant)).max<.25,'letters outside the pointer field keep their shape');
+  await page.screenshot({path:out+'/pointer-held.png'});
+  await page.mouse.move(20,20);await page.waitForTimeout(450);
+  const returning=await movement();
+  assert.ok(returning.mean>1&&returning.mean<held.mean*.70,'leaving releases the field gradually');
+  await page.waitForTimeout(2300);
+  const settled=await movement();
+  assert.ok(settled.max<.25,`grains regain their letter after pointer leave: ${JSON.stringify(settled)}`);
+  assert.equal(await colours(),0);
+  console.log('PASS stronger stationary hover, persistent colour, local influence and soft exit',{arrived,held,returning,settled});
+  // Pause resets the interactive field even if the pointer was still on the ink.
+  await page.mouse.move(box.x+target[0],box.y+target[1]);await page.waitForTimeout(700);
+  await page.locator('.motion-toggle').evaluate(b=>b.click());await page.waitForTimeout(100);
+  assert.ok((await movement()).max<.25,'pause restores the readable name');
+  const paused=await canvas.evaluate(c=>c.toDataURL());
+  await page.mouse.move(box.x+target[0]+30,box.y+target[1]);await page.waitForTimeout(300);
+  assert.equal(await canvas.evaluate(c=>c.toDataURL()),paused,'paused ink ignores pointer motion');
   assert.deepEqual(errors,[]);
 } finally {await browser.close();}

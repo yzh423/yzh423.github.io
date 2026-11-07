@@ -252,40 +252,10 @@ hatch = hatch_lines(XX*.36 + YY*.93, 6.7, 1.05)
 crosshatch = hatch_lines(XX*.88 - YY*.48, 9.2, .95)
 
 
-def optical_field(t, center, radius):
-    """Register the tool; the background currents are drawn live in the page."""
-    plate = Image.new('RGB', (W, H), 'white')
-    pen = ImageDraw.Draw(plate, 'RGBA')
-    blue, teal, iris = (49,94,215), (0,155,174), (127,79,205)
-    # Split arcs, calibration ticks and an acquisition pulse follow the real
-    # bushing centre. They remain outside the machined surface.
-    cx,cy = center
-    r = radius*(1.90 - .31*travel(1.36,1.93,t))
-    for factor,hue,arcs in [(1,teal,[(-148,-42),(-23,24),(65,140)]),
-                            (1.10,iris,[(-86,-33),(39,100),(144,171)])]:
-        rr=r*factor
-        for start,end in arcs:
-            a = start + 4*t
-            pen.arc((cx-rr,cy-rr,cx+rr,cy+rr),a,a+end-start,fill=(*hue,157),width=2)
-    for n in range(36):
-        a = math.radians(n*10 + 4*t)
-        if abs(math.sin(a))>.97: continue
-        scale = 1.20 if n%3==0 else 1.16
-        dx,dy = r*math.cos(a),r*math.sin(a)
-        pen.line((cx+1.12*dx,cy+1.12*dy,cx+scale*dx,cy+scale*dy),fill=(*blue,126),width=1)
-    pulse = (t-1.93)/.88
-    if 0 < pulse < 1:
-        rr = r*(1.02+.56*pulse)
-        pen.arc((cx-rr,cy-rr,cx+rr,cy+rr),-171,158,fill=(*teal,int(112*(1-pulse))),width=2)
-    return np.asarray(plate)
-
-
 def assembly_effects(t, records, backdrop):
-    """Cast soft depth shadows, trace moving parts, and mark their seating."""
+    """Keep depth as a soft impression, without detached trails or rings."""
     shadows=Image.new('RGBA',(W,H))
     shadow_pen=ImageDraw.Draw(shadows)
-    engraving=Image.new('RGBA',(W,H))
-    etch=ImageDraw.Draw(engraving)
     colours=[(0,137,149),(66,110,171),(173,91,55)]
     for index,record in enumerate(records):
         name=record['name']
@@ -299,26 +269,9 @@ def assembly_effects(t, records, backdrop):
         radius=13+9*max(0,record['depth'])
         shadow_pen.ellipse((x-radius+8,y-radius*.45+15,x+radius+8,y+radius*.45+15),
             fill=(*hue,round(opening*(21+14*max(0,record['depth'])))))
-        motion=np.linalg.norm(np.asarray(points[-1])-points[0])
-        visibility=min(1,motion/28)
-        for segment in range(3):
-            etch.line(points[segment:segment+2],fill=(*hue,round(visibility*(25+segment*26))),width=1)
-        for dot in range(3):
-            angle=index*2.399+dot*2.1
-            px=points[0][0]+math.cos(angle)*(6+dot*4)
-            py=points[0][1]+math.sin(angle)*(6+dot*4)
-            etch.ellipse((px-.8,py-.8,px+.8,py+.8),fill=(*hue,round(visibility*75)))
-        # A single engraved ring acknowledges a seated group. Its stroke
-        # dissolves before the next group completes, keeping the focal order.
-        phase=(t-record['completed'])/.48
-        if 0<phase<1 and 'cover' not in name and 'finger' not in name:
-            strength=math.sin(math.pi*phase)**2
-            r=11+22*phase
-            etch.arc((x-r,y-r,x+r,y+r),-125,32,fill=(*hue,round(100*strength)),width=1)
-            etch.arc((x-r*1.18,y-r*1.18,x+r*1.18,y+r*1.18),48,184,fill=(*hue,round(62*strength)),width=1)
     image=Image.fromarray(backdrop).convert('RGBA')
     image=Image.alpha_composite(image,shadows.filter(ImageFilter.GaussianBlur(8)))
-    return np.asarray(Image.alpha_composite(image,engraving).convert('RGB'))
+    return np.asarray(image.convert('RGB'))
 
 
 def frame(t):
@@ -336,9 +289,8 @@ def frame(t):
     # The drawing stays an engraving throughout the exploded view. The paper
     # and restrained ink tint change with its opening and reassembly.
     background_weight=1-np.clip(metal*4,0,1)
-    scenery=optical_field(t,center,radius).astype('f')
+    scenery=np.full((H,W,3),255,dtype='uint8')
     handoff=travel(RELEASE,SETTLED-.25,t)
-    scenery=np.clip(255+(scenery-255)*(1-opened*.78)*(1-.78*handoff),0,255).astype('uint8')
     backdrop=assembly_effects(t,records,scenery)
     warmth=travel(.30,.84,t)*(1-travel(1.05,1.66,t))
     type_field=opened*glyph*.045

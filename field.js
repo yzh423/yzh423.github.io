@@ -26,10 +26,12 @@
     const ctx=canvas.getContext('2d'), mask=document.createElement('canvas'), sampler=mask.getContext('2d',{willReadFrequently:true});
     const stillPoster=film.getAttribute('poster'), assemblyTime=1.52;
     const printStage=stage.classList.contains('print-stage');
-    let w=0,h=0,groups=[],threads=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
+    const fieldWidth=112,fieldHeight=56;
+    let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
     let inkMap, filmUnavailable = false, tint = [], flowTint = [], filmAlignment = .5, filmFit = 'cover';
-    let currentCanvas,currentCtx,currentFrame=0,currentLast=0,currentTime=0,currentHeat=0,currentTextures=[];
+    let currentCanvas,currentCtx,currentFrame=0,currentLast=0,currentTime=0,currentPixels,currentBuffer,currentSurface,currentSurfaceCtx,fieldPalette=[];
+    let fieldEdges,fieldColumns,fieldPulls;
     // Use coordinates exported by the engraving renderer. Their origin is the
     // centre of the part, so they stay on the tool throughout the camera move.
     if (film.dataset.inkMap) {
@@ -46,6 +48,15 @@
       currentCanvas=document.createElement('canvas');currentCanvas.className='flight-currents';
       currentCanvas.setAttribute('aria-hidden','true');currentCtx=currentCanvas.getContext('2d');
       if(!currentCtx)return;
+      currentSurface=document.createElement('canvas');currentSurface.width=fieldWidth;currentSurface.height=fieldHeight;
+      currentSurfaceCtx=currentSurface.getContext('2d');
+      currentBuffer=currentSurfaceCtx.createImageData(fieldWidth,fieldHeight);currentPixels=currentBuffer.data;
+      fieldEdges=new Float32Array(fieldWidth*fieldHeight);
+      fieldColumns=new Float32Array(fieldWidth);fieldPulls=new Float32Array(fieldWidth);
+      for(let y=0;y<fieldHeight;y++)for(let x=0;x<fieldWidth;x++) {
+        const u=x/(fieldWidth-1),v=y/(fieldHeight-1);
+        fieldEdges[y*fieldWidth+x]=soften(clamp(Math.min(u,1-u,v,1-v)*9,0,1));
+      }
       stage.insertBefore(currentCanvas,film);stage.classList.add('has-currents');
     }
     function filmProjection() {
@@ -55,118 +66,43 @@
       return {scale,x:(w-width*scale)*filmAlignment,y:(h-height*scale)/2};
     }
     function drawCurrents(time,still=false) {
-      if(!currentCtx||!w||!h||!flowTint.length)return;
-      currentCtx.clearRect(0,0,w,h);
-      const view=filmProjection(),scale=view.scale;
-      const ox=view.x+(still?0:fx*.18),oy=view.y+(still?0:fy*.18);
-      const px=(mx-ox)/scale,py=(my-oy)/scale;
+      if(!currentCtx||!w||!h||!fieldPalette.length)return;
       const phase=(from,to)=>soften(clamp((time-from)/(to-from),0,1));
       const opening=phase(inkMap.explosion_start??1.22,inkMap.explosion_peak??2.58)*
         (1-phase(inkMap.assembly_start??3.1,inkMap.assembled));
-      const handoff=soften(clamp((time-inkMap.release)/(inkMap.settled-inkMap.release),0,1));
-      const assembly=phase(inkMap.assembly_start??3.1,inkMap.assembled);
-      const density=(1-opening*.28)*(1-handoff*.24);
-      currentCtx.save();currentCtx.translate(ox,oy);currentCtx.scale(scale,scale);currentCtx.lineCap='round';
-      // Three printing plates share one flowing contour. Crossfading their
-      // engraving, halftone and small type marks changes the material rather
-      // than cutting between unrelated scenes. Tiles are cached at resize/theme.
-      const drift=still?0:Math.sin(time*.24)*13;
-      const material=[1-opening*.83-handoff*.35,opening*.86+.17*assembly*(1-handoff),handoff*.70];
-      for(let layer=0;layer<3;layer++) {
-        currentCtx.save();
-        const tilt=(layer-1)*.20+Math.sin(time*.19+layer)*.018;
-        currentCtx.translate(720+(still?0:fx*.30),320+(still?0:fy*.25));
-        currentCtx.rotate(tilt);currentCtx.translate(-720,-320);
-        const rise=(layer-1)*123+drift*(layer%2?-1:1)-opening*(layer-1)*38;
-        const breadth=23+opening*43+(1-handoff)*15+currentHeat*9;
-        const contour=new Path2D();
-        contour.moveTo(-100,500+rise);
-        contour.bezierCurveTo(330,570+rise,395,35+rise,920,135+rise);
-        contour.bezierCurveTo(1170,182+rise,1280,65+rise,1540,205+rise);
-        contour.lineTo(1540,205+rise+breadth);
-        contour.bezierCurveTo(1280,65+rise+breadth,1170,182+rise+breadth,920,135+rise+breadth);
-        contour.bezierCurveTo(395,35+rise+breadth,330,570+rise+breadth,-100,500+rise+breadth);
-        contour.closePath();
-        const colorIndex=Math.round(clamp(.14+layer*.26+opening*.27-handoff*.09+Math.sin(time*.12)*.06,0,1)*63);
-        currentCtx.fillStyle=flowTint[colorIndex][12];
-        currentCtx.globalAlpha=(.035+opening*.065+currentHeat*.025)*(1-handoff*.28);
-        currentCtx.fill(contour);
-        for(let texture=0;texture<3;texture++) {
-          if(!currentTextures[layer]?.[texture]||material[texture]<.001)continue;
-          currentCtx.fillStyle=currentTextures[layer][texture];
-          currentCtx.globalAlpha=material[texture]*(.38+opening*.10)*(1-handoff*.20);
-          currentCtx.fill(contour);
-        }
-        currentCtx.strokeStyle=flowTint[colorIndex][12];
-        currentCtx.globalAlpha=.13+opening*.12+currentHeat*.09;
-        currentCtx.lineWidth=.70;currentCtx.stroke(contour);
-        currentCtx.restore();
+      const handoff=phase(inkMap.release,inkMap.settled);
+      const pointerX=mx/w,pointerY=my/h,heat=still?0:strength;
+      // One continuous pigment field, not paths or separate floating shapes.
+      // A small raster carries slow, broad colour folds across the whole paper;
+      // the film supplies its finer engraved texture. No full-size pixel reads.
+      const timeX=time*.18,timeY=time*.13;
+      for(let x=0;x<fieldWidth;x++) {
+        const u=x/(fieldWidth-1);
+        fieldColumns[x]=Math.sin(u*4.8-timeY)*.10;
+        fieldPulls[x]=heat>.001?heat*Math.exp(-((u-pointerX)**2)*9):0;
       }
-      // A partial impression around the arm expands with its separated parts.
-      // The uneven spacing is that of a print plate, not a target or UI gauge.
-      currentCtx.save();
-      currentCtx.translate(941+(still?0:fx*.25),280+drift*.5);
-      currentCtx.rotate(-.37+Math.sin(time*.15)*.045-opening*.14);
-      const spread=1+opening*.22-handoff*.12;
-      currentCtx.scale(spread,spread);
-      for(let k=0;k<13;k++) {
-        const radius=201+k*7+(k%3)*3;
-        currentCtx.beginPath();
-        currentCtx.ellipse(0,0,radius*1.47,radius,0,Math.PI*1.08,Math.PI*2.18);
-        currentCtx.strokeStyle=flowTint[Math.round((.26+k*.035+currentHeat*.12)*63)][12];
-        currentCtx.globalAlpha=(k%4?.14:.27)*(1-handoff*.23);
-        currentCtx.lineWidth=k%4?.65:1.05;currentCtx.stroke();
-      }
-      currentCtx.restore();
-      // One broad light pass accompanies the final joints seating; it decays
-      // into the same narrow strands that carry the name from the gripper.
-      const sweep=phase((inkMap.assembly_start??3.1)-.12,inkMap.release+1.15);
-      if(sweep>0&&sweep<1) {
-        const x=-350+sweep*2050,envelope=Math.sin(Math.PI*sweep)**2;
-        currentCtx.save();currentCtx.transform(1,0,-.36,1,0,0);
-        const light=currentCtx.createLinearGradient(x-125,0,x+125,0);
-        light.addColorStop(0,'rgba(0,163,190,0)');light.addColorStop(.42,'rgba(0,163,190,.11)');
-        light.addColorStop(.54,'rgba(168,106,225,.14)');light.addColorStop(1,'rgba(207,127,66,0)');
-        currentCtx.fillStyle=light;currentCtx.globalAlpha=envelope;
-        currentCtx.fillRect(x-125,0,250,640);currentCtx.restore();
-      }
-      const point=(u,k,lower)=>{
-        const breath=Math.sin(time*.30+k*.12)*12;
-        const a=lower?[285+k*14,685]:[-90,443+k*13];
-        const b=lower?[390+k*12,350+breath]:[360,475+breath+k*8];
-        const c=lower?[1160-k*10,125+breath]:[415,58+breath-k*10];
-        const d=lower?[1510,295+k*13]:[1200,78+k*13];
-        const v=1-u;
-        let x=v*v*v*a[0]+3*v*v*u*b[0]+3*v*u*u*c[0]+u*u*u*d[0];
-        let y=v*v*v*a[1]+3*v*v*u*b[1]+3*v*u*u*c[1]+u*u*u*d[1];
-        if(!still&&strength>.001) {
-          const dx=px-x,dy=py-y,weight=Math.exp(-(dx*dx+dy*dy)/(2*270*270))*strength;
-          x+=(flowX*.011+dx*.018)*weight;y+=(flowY*.011+dy*.018)*weight;
-        }
-        return [x,y];
-      };
-      const path=(from,to,k,lower,steps)=>{
-        currentCtx.beginPath();
-        for(let i=0;i<=steps;i++) {
-          const [x,y]=point(from+(to-from)*i/steps,k,lower);
-          if(i===0)currentCtx.moveTo(x,y);else currentCtx.lineTo(x,y);
-        }
-      };
-      for(let lower=0;lower<2;lower++)for(let k=0;k<7;k++) {
-        const phase=.5-.5*Math.cos(time*.08+k*.19+lower*.65);
-        const hue=Math.round((phase*(1-currentHeat*.60)+.15*currentHeat*.60)*63);
-        currentCtx.strokeStyle=flowTint[hue][10];
-        path(.03+k*.012,.91-k*.014,k,lower,60);
-        currentCtx.globalAlpha=density*(k%3?.24:.38);currentCtx.lineWidth=.9;currentCtx.stroke();
-        const head=(time*.033+k*.087+lower*.24)%1;
-        for(let n=0;n<9;n++) {
-          const from=head-.144+n*.016;if(from<.04||from+.016>.90)continue;
-          path(from,from+.016,k,lower,3);
-          currentCtx.globalAlpha=density*(.18+currentHeat*.15)*Math.sin(Math.PI*n/9)**2;
-          currentCtx.lineWidth=1.35;currentCtx.stroke();
+      for(let y=0;y<fieldHeight;y++) {
+        const v=y/(fieldHeight-1),drift=Math.sin(v*4.2+timeX)*.13;
+        const rowPull=heat>.001?Math.exp(-((v-pointerY)**2)*9):0;
+        for(let x=0;x<fieldWidth;x++) {
+          const u=x/(fieldWidth-1),influence=fieldPulls[x]*rowPull;
+          const warpX=u+drift+influence*.08,warpY=v+fieldColumns[x];
+          const tide=Math.sin(warpX*4.6+warpY*2.8-timeX)*.5+.5;
+          const fold=Math.cos(warpX*3.0-warpY*4.2+timeY)*.5+.5;
+          const hue=clamp(.07+tide*.59+fold*.20+opening*.10+influence*.10,0,1);
+          const color=fieldPalette[Math.round(hue*255)];
+          // Feather into the same white paper at the edges. A continuous centre
+          // stays visible throughout the introduction and the resting name.
+          const edge=fieldEdges[y*fieldWidth+x];
+          const opacity=(.12+.16*fold+.07*opening+.045*influence)*(1-handoff*.18)*edge;
+          const index=(y*fieldWidth+x)*4;
+          currentPixels[index]=color[0];currentPixels[index+1]=color[1];currentPixels[index+2]=color[2];
+          currentPixels[index+3]=Math.round(opacity*255);
         }
       }
-      currentCtx.restore();
+      currentSurfaceCtx.putImageData(currentBuffer,0,0);
+      currentCtx.clearRect(0,0,w,h);currentCtx.imageSmoothingEnabled=true;
+      currentCtx.drawImage(currentSurface,0,0,w,h);
     }
     function currentsAllowed() {
       return currentCtx&&visible&&intro&&enabled()&&!filmUnavailable&&!navigator.connection?.saveData;
@@ -176,9 +112,8 @@
       if(currentLast&&now-currentLast<1000/60-.75){currentFrame=request(tickCurrents);return;}
       const dt=currentLast?Math.min(.05,(now-currentLast)/1000):1/60;currentLast=now;
       // Follow the film until its last frame, then continue the very same
-      // phase. The lettering canvas can sleep while these few curves flow.
+      // phase. The lettering canvas can sleep while the pigment field flows.
       currentTime=film.ended?Math.max(currentTime,film.currentTime)+dt:film.currentTime;
-      currentHeat+=(clamp(Math.hypot(flowX,flowY)/750,0,1)-currentHeat)*(1-Math.exp(-dt*2.2));
       drawCurrents(currentTime);currentFrame=request(tickCurrents);
     }
     function syncCurrents() {
@@ -203,25 +138,6 @@
       const c2x=p.x+reach*.21,c2y=p.y-h*(.06+.07*p.lane);
       return [v*v*v*x+3*v*v*u*c1x+3*v*u*u*c2x+u*u*u*p.x,
         v*v*v*y+3*v*v*u*c1y+3*v*u*u*c2y+u*u*u*p.y];
-    }
-    function drawThreads(pose,time) {
-      ctx.lineCap='round';
-      for(const p of threads) {
-        const progress=flowProgress(p,time);
-        if(progress<=0||progress>=1)continue;
-        const envelope=Math.sin(Math.PI*progress)**2;
-        ctx.strokeStyle=flowTint[Math.round(progress*63)][10];
-        ctx.beginPath();
-        for(let i=0;i<=12;i++) {
-          const t=Math.max(0,progress-.28+.28*i/12);
-          const [x,y]=flowPoint(p,pose,t);
-          if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
-        }
-        // A broad, low-opacity pass carries the light; the narrow pass is ink.
-        ctx.globalAlpha=envelope*.025;ctx.lineWidth=7;ctx.stroke();
-        ctx.globalAlpha=envelope*.40;ctx.lineWidth=.75;ctx.stroke();
-      }
-      ctx.globalAlpha=1;
     }
     function projectionAt(time) {
       const index = clamp(time * inkMap.fps, 0, inkMap.poses.length - 1);
@@ -248,22 +164,10 @@
           'rgb('+a.map((v,i)=>Math.round(v+(colour[i]-v)*step/12)).join(',')+')');
       });
       palette=Array.from({length:18},(_,i)=>'rgb('+a.map((c,j)=>Math.round(c+(b[j]-c)*i/17)).join(',')+')');
-      if(currentCtx)currentTextures=Array.from({length:3},(_,layer)=>Array.from({length:3},(_,kind)=>{
-        const tile=document.createElement('canvas');tile.width=tile.height=48;
-        const pen=tile.getContext('2d');pen.strokeStyle=pen.fillStyle=flowTint[8+layer*22][12];
-        pen.lineWidth=.65;
-        if(kind===0) {
-          for(let x=-48;x<96;x+=6) {pen.beginPath();pen.moveTo(x,0);pen.lineTo(x+48,48);pen.stroke();}
-        } else if(kind===1) {
-          for(let y=4;y<48;y+=8)for(let x=4;x<48;x+=8) {
-            pen.beginPath();pen.arc(x+(y%16===4?0:2),y,.9,0,Math.PI*2);pen.fill();
-          }
-        } else {
-          pen.font='5px monospace';
-          for(let y=6;y<48;y+=8)for(let x=3;x<48;x+=8)pen.fillText('01/+·:'[(x+y)%6],x,y);
-        }
-        return currentCtx.createPattern(tile,'repeat');
-      }));
+      fieldPalette=Array.from({length:256},(_,step)=>{
+        const position=step/255*3,lo=Math.min(2,Math.floor(position)),blend=position-lo;
+        return pigments[lo].map((channel,i)=>Math.round(channel+(pigments[lo+1][i]-channel)*blend));
+      });
     }
     function measure(){
       if(!ctx||!sampler)return;
@@ -306,7 +210,6 @@
           mark:Math.floor(rand()*384), phase:rand(), pigment:clamp(Math.floor((x/w + .10*(s-.5))*5),0,3),
           span:.89+.28*depth,size:grain*(.84+.28*rand()),depth,dx:0,dy:0,vx:0,vy:0,driftX:0,driftY:0,hue:.12});
       }
-      threads=groups.filter((g,i)=>g.length&&i%2===0).map((g,i)=>g[Math.floor(g.length*(.25+.25*(i%3)))]);
       ready=groups.some(g=>g.length);if(ready)stage.classList.add('has-lettering');
       colors();render(0,!enabled());syncCurrents();wake();
     }
@@ -336,13 +239,12 @@
       if(still)fx=fy=strength=flowX=flowY=0;
       film.style.transform='translate('+fx.toFixed(2)+'px,'+fy.toFixed(2)+'px) rotate('+(fx*.049).toFixed(3)+'deg)';
       let movingInk=false;
-      const radius=clamp(w*.115,50,128), invRadius=1/radius;
+      const radius=clamp(w*.14,60,160), invRadius=1/radius;
       const speed=Math.hypot(flowX,flowY),directionX=flowX/Math.max(speed,1),directionY=flowY/Math.max(speed,1);
-      const drive=radius*.29*(1-Math.exp(-speed/340)),stroke2=moveX*moveX+moveY*moveY;
+      const drive=radius*.48*(1-Math.exp(-speed/340)),stroke2=moveX*moveX+moveY*moveY;
       const driftDecay=Math.exp(-dt*2.8),pickup=1-Math.exp(-dt*16);
       const attack=15,release=6.3,attackDecay=Math.exp(-dt*attack),releaseDecay=Math.exp(-dt*release);
       const engraved=pose&&inkMap.flow==='engraved';
-      if(engraved)drawThreads(pose,filmTime);
       for(let i=0;i<groups.length;i++){
         ctx.fillStyle=palette[i];
         for(const p of groups[i]){
@@ -352,12 +254,17 @@
           const along=stroke2>1?clamp(-(tipX*moveX+tipY*moveY)/stroke2,0,1):0;
           const ax=tipX+along*moveX,ay=tipY+along*moveY,d2=ax*ax+ay*ay;
           p.driftX*=driftDecay;p.driftY*=driftDecay;
-          let destX=0,destY=0,carrying=false;
+          let destX=0,destY=0,carrying=false,hovering=false;
           if(act&&!assembling&&d2<radius*radius){
             const dist=Math.sqrt(d2),s=1-clamp(dist*invRadius,0,1);
             const influence=strength*s*s*(.78+.22*p.depth);
-            const gain=radius*.08*influence*(1-Math.exp(-speed/280))/Math.sqrt(d2+36);
-            destX=ax*gain;destY=ay*gain;
+            // Position keeps a clear pocket open even at zero pointer speed.
+            // Use the resting glyph position, so the equilibrium cannot chatter.
+            const reach=radius*.56*strength*s**1.2*(.75+.20*p.depth);
+            const angle=p.phase*Math.PI*2,normal=Math.max(dist,1);
+            destX=(dist>1?ax/normal:Math.cos(angle))*reach;
+            destY=(dist>1?ay/normal:Math.sin(angle))*reach;
+            hovering=true;
             if(speed>12) {
               const bend=(p.lane-.5)*drive*.22;
               const targetX=(directionX*drive-directionY*bend)*influence;
@@ -369,8 +276,8 @@
           }
           if(still)p.driftX=p.driftY=0;
           destX+=p.driftX;destY+=p.driftY;
-          const hueTarget=carrying?.10+p.lane*.22:1;
-          if(carrying&&Math.hypot(p.dx,p.dy)<.2)p.hue=hueTarget;
+          const hueTarget=(hovering||carrying)?.10+p.lane*.22:1;
+          if((hovering||carrying)&&Math.hypot(p.dx,p.dy)<.2)p.hue=hueTarget;
           p.hue+=(hueTarget-p.hue)*(1-Math.exp(-dt*(carrying?5:1.5)));
           // The return is slower than the outward movement. Critical damping
           // settles a grain onto its letter without a bounce.

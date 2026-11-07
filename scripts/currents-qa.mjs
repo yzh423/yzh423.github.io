@@ -20,6 +20,15 @@ try {
   assert.ok(timing.movement_end>timing.release+timing.name_duration && timing.movement_end<timing.settled);
   await film.evaluate(async(v,t)=>{v.pause();await new Promise(r=>{v.addEventListener('seeked',r,{once:true});v.currentTime=t;});},timing.settled+.03);
   await page.waitForTimeout(150);
+  const coverage=await currents.evaluate(c=>{
+    const data=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+    let filled=0,total=0;
+    for(let y=.15;y<.86;y+=.05)for(let x=.15;x<.86;x+=.05) {
+      total++;if(data[(Math.floor(y*c.height)*c.width+Math.floor(x*c.width))*4+3]>10)filled++;
+    }
+    return filled/total;
+  });
+  assert.ok(coverage>.95,'the backdrop forms one continuous surface across the banner');
   const idle=await snapshot(currents),rect=await currents.boundingBox();
   await page.mouse.move(rect.x+rect.width*.23,rect.y+rect.height*.57);
   await page.mouse.move(rect.x+rect.width*.42,rect.y+rect.height*.40,{steps:14});
