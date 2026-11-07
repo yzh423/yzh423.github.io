@@ -120,11 +120,10 @@
         const shot={scale:at(1),spread:at(2),angle:at(3),x:at(4),y:at(5),negative:at(6),clock:at(7)};
         const macro=soften(clamp((time-inkMap.explosion_start-.65)/.75,0,1))*
           (1-soften(clamp((time-inkMap.assembly_start)/shotChange,0,1)));
-        // Follow the centre fold into the macro shot, keeping a readable
-        // surface in frame as the outer folds open away from it.
+        // Follow the centre of the fluid form into the macro shot.
         if(macro>0) {
           shot.x+=(.46-shot.x)*macro;
-          shot.y+=(.52-shot.spread*.12*shot.scale-shot.y)*macro;
+          shot.y+=(.52-shot.y)*macro;
         }
         // Reassembly follows the actual tool projection, including phone
         // object-fit. The numerical form shares the name's point of origin.
@@ -170,15 +169,10 @@
       const grade=fieldGrade(time),a=fieldPalette[grade.from],b=fieldPalette[grade.to];
       const transition=grade.from===grade.to?0:Math.sin(Math.PI*grade.progress)**2;
       const shot=digitShot(time),aspect=w/h;
-      // A single folded numerical sheet. Shared edges meet when closed;
-      // three broad facets open in depth, then become one surface again.
-      const turn=shot.angle*.28-.12,turnC=Math.cos(turn),turnS=Math.sin(turn);
-      const tops=[-.12,-.34,-.05,-.25],bottoms=[.25,.08,.34,.15];
-      const folds=[-.24,.12,.32].map((rise,i)=>({
-        x:(i-1)*(.42+shot.spread*.28),y:rise*shot.spread,
-        top:tops[i],topSlope:tops[i+1]-tops[i],
-        bottom:bottoms[i],bottomSlope:bottoms[i+1]-bottoms[i],light:i===1?1:.78
-      }));
+      // An evolving cross-section of a gyroid makes one connected numerical
+      // fluid: curved cavities open, curl and merge without separate panels.
+      const turn=shot.angle*.32-.2,turnC=Math.cos(turn),turnS=Math.sin(turn);
+      const depth=shot.clock*.22,depthSin=Math.sin(depth),depthCos=Math.cos(depth);
       const timeX=shot.clock*.18,timeY=shot.clock*.13;
       for(let x=0;x<fieldWidth;x++) {
         const u=x/(fieldWidth-1);
@@ -205,16 +199,14 @@
           const localX=((u-shot.x)*aspect+refraction*.35+influence*.025)/shot.scale;
           const localY=(v-shot.y)/shot.scale;
           const planeX=localX*turnC+localY*turnS,planeY=-localX*turnS+localY*turnC;
-          let shape=0;
-          for(const fold of folds) {
-            const along=(planeX-fold.x)/.21;
-            if(Math.abs(along)>1.05)continue;
-            const across=clamp((along+1)/2,0,1),y=planeY-fold.y;
-            const top=fold.top+fold.topSlope*across,bottom=fold.bottom+fold.bottomSlope*across;
-            const edge=1-soften(clamp((Math.abs(along)-.92)/.13,0,1));
-            const surface=soften(clamp((y-top)/.03,0,1))*(1-soften(clamp((y-bottom+.03)/.03,0,1)));
-            shape=Math.max(shape,edge*surface*fold.light*(.88+.12*across));
-          }
+          const radius=planeX*planeX+planeY*planeY;
+          const curl=shot.spread*.7/(1+radius*3)+depthSin*.18;
+          const curlC=Math.cos(curl),curlS=Math.sin(curl);
+          const fluidX=(planeX*curlC-planeY*curlS)*5.4+depth*.35;
+          const fluidY=(planeX*curlS+planeY*curlC)*5.4;
+          const volume=Math.sin(fluidX)*Math.cos(fluidY)+Math.sin(fluidY)*depthCos+depthSin*Math.cos(fluidX);
+          let shape=soften(clamp((volume+.24)/1.05,0,1))*
+            (1-soften(clamp((radius-.45)/.75,0,1)));
           shape=shape*(1-shot.negative)+(1-shape)*.56*shot.negative;
           const opacity=(.024+.75*shape+.018*influence)*
             (1-handoff*.67)*(1-handoff*.90*fieldQuiet[cell])*fieldEdges[cell];

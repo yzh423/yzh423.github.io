@@ -12,17 +12,18 @@ import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
 W, H, FPS, SECONDS = 1440, 640, 60, 10
-CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 7.22, 7.40, 9.85
-MOVEMENT_END, LIFT_END = 9.76, 9.50
-EXPLOSION_START, EXPLOSION_PEAK = .85, 2.45
+CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 7.30, 7.48, 9.92
+PICKUP_START, PICKUP_END = .85, 1.45
+MOVEMENT_END, LIFT_END = 9.84, 9.58
+EXPLOSION_START, EXPLOSION_PEAK = 1.70, 3.30
 ASSEMBLY_STAGES = {
-    'base': (2.65, 3.25),
-    'shoulder': (3.30, 3.90),
-    'upper_arm': (3.95, 4.55),
-    'elbow': (4.60, 5.20),
-    'forearm': (5.25, 5.85),
-    'wrist': (5.90, 6.50),
-    'gripper': (6.55, 7.20),
+    'base': (3.55, 4.25),
+    'shoulder': (4.05, 4.75),
+    'upper_arm': (4.55, 5.25),
+    'elbow': (5.05, 5.75),
+    'forearm': (5.55, 6.25),
+    'wrist': (6.05, 6.75),
+    'gripper': (6.55, 7.25),
 }
 XX, YY = np.meshgrid(np.arange(W, dtype='f')+.5, np.arange(H, dtype='f')+.5)
 def ramp(a,b,x):
@@ -74,20 +75,21 @@ def pose(t):
     align = travel(0, .93, approach)
     descend = travel(.24, 1.35, approach)
     close = travel(1.36, 1.93, approach)
-    # Lift and carry continue while the jaw engraving becomes the signature.
-    # The completed arm and the letters come to rest together.
+    # Clear the fixture with the complete gripper before any part separates.
+    pickup = cruise(PICKUP_START,PICKUP_END,t)
+    # After reassembly, continue the lift as the engraving becomes the name.
     lift = cruise(ASSEMBLED,LIFT_END,t)
     carry = cruise(RELEASE,MOVEMENT_END,t)
 
     # A level approach ends directly above the V-block. Both fingers reach
     # the OD before the first lifting frame. Only then does the load follow.
-    offset = np.array([-76 * carry, -110 * lift])
+    offset = np.array([-76 * carry, -45 * pickup -65 * lift])
     wrist = np.array([mix(734, PART_SEAT[0], align), mix(149, 250, descend)]) + offset
     return wrist, PART_SEAT + offset, mix(57, PART_RADIUS, close)
 
 
 def return_window(stage, lag=0, name=None):
-    start,end = ASSEMBLY_STAGES.get(stage,(2.65,7.20))
+    start,end = ASSEMBLY_STAGES.get(stage,(3.55,7.25))
     if stage == 'base':
         if name == 'base plate': end = start+.38
         elif name == 'pedestal': start += .25
@@ -105,7 +107,7 @@ def projection(t):
     settle = cruise(6.55, 7.40, t)
     # Pull back ahead of the separation, hold a readable exploded drawing,
     # then quietly reframe the complete arm for its signature.
-    wide = cruise(.65, 2.15, t)*(1-cruise(6.55, 7.35, t))
+    wide = cruise(1.50, 3.05, t)*(1-cruise(6.55, 7.35, t))
     zoom = mix(mix(1.29, 1.80, settle), .76, wide)
     close_center = mix(np.array([563., 270.]), np.array([590., 270.]),settle)
     center = mix(close_center, np.array([600., 265.]), wide)
@@ -354,7 +356,7 @@ def write_ink_map():
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
-    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], assembly_stages=ASSEMBLY_STAGES, live_currents=True, flow='engraved', motion_profile='cruise', name_duration=1.70, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data = dict(width=W, height=H, contact=CONTACT, pickup_start=PICKUP_START, pickup_end=PICKUP_END, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], assembly_stages=ASSEMBLY_STAGES, live_currents=True, flow='engraved', motion_profile='cruise', name_duration=1.70, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 
