@@ -11,8 +11,8 @@ from PIL import Image, ImageDraw, ImageFilter
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
-W, H, FPS, SECONDS = 1440, 540, 60, 9
-CONTACT, ASSEMBLED, RELEASE, SETTLED = .95, 5.90, 6.20, 8.92
+W, H, FPS, SECONDS = 1440, 540, 60, 10
+CONTACT, ASSEMBLED, RELEASE, SETTLED = .95, 5.90, 6.20, 9.90
 ASSEMBLY_STAGES = {
     'base': (3.00, 3.72),
     'shoulder': (3.38, 4.10),
@@ -355,21 +355,28 @@ def frame(t):
     # and restrained ink tint change with its opening and reassembly.
     background_weight=1-np.clip(metal*4,0,1)
     scenery=optical_field(t,center,radius).astype('f')
-    scenery=np.clip(255+(scenery-255)*(1-opened*.78),0,255).astype('uint8')
+    handoff=travel(RELEASE,SETTLED-.25,t)
+    scenery=np.clip(255+(scenery-255)*(1-opened*.78)*(1-.78*handoff),0,255).astype('uint8')
     backdrop=assembly_effects(t,records,scenery)
     warmth=travel(.30,.84,t)*(1-travel(1.05,1.66,t))
     type_field=opened*glyph*.045
-    transfer=travel(RELEASE,RELEASE+.65,t)*(1-travel(SETTLED-.65,SETTLED,t))
-    ink*=1-.35*transfer*(1-ramp(radius*.8,radius*2.5,distance))
+    # Ink leaves the jaws first, then drains through the complete drawing.
+    # The same media clock drives the strands which carry it into the name.
+    front=radius+handoff*930
+    retreat=travel(RELEASE,RELEASE+1.05,t)*(1-ramp(front-110,front+110,distance))
+    ink*=1-.85*retreat
+    light=np.exp(-((distance-front)/68)**2)*math.sin(math.pi*handoff)*.42
+    light_colour=mix(np.array([0,137,149]),np.array([184,96,57]),handoff)
     angle=np.arcsin(np.abs(np.sin(np.arctan2(dy,dx))))
     edge_arc=(1-ramp(.035,.087,np.abs(distance/radius-.975)))*(1-ramp(.30,.44,angle))
-    accent=travel(CONTACT,CONTACT+.24,t)*(1-explosion(t,.02))*.86*edge_arc
+    accent=travel(CONTACT,CONTACT+.24,t)*(1-explosion(t,.02))*.86*edge_arc*(1-.85*retreat)
     image=np.empty((H,W,3),dtype='uint8')
     for channel in range(3):
         paper=PAPER[channel]+(backdrop[:,:,channel].astype('f')-255)*background_weight
         paper=mix(paper,(224,190,140)[channel],warmth*.15)
         paper=mix(paper,(80,128,118)[channel],type_field)
         engraving=mix(GRAPHITE[channel],(36,98,100)[channel],opened*.35)
+        engraving=mix(engraving,light_colour[channel],light)
         layer=paper+paper_grain+(engraving-paper)*ink
         image[:,:,channel]=np.clip(mix(layer,COPPER[channel],accent),0,255)
     return Image.fromarray(image)
@@ -383,6 +390,7 @@ def write_ink_map():
     ys, xs = np.nonzero(jaws & (ink<185))
     sample = np.random.default_rng(423).choice(len(xs), 384, replace=False)
     origins = np.column_stack([local_x[ys[sample],xs[sample]],local_y[ys[sample],xs[sample]]])
+    origins = origins[np.argsort(origins[:,1])]
     rate = FPS
     poses = []
     for i in range(SECONDS*rate+1):
@@ -391,7 +399,7 @@ def write_ink_map():
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
-    data = dict(contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, name_duration=2.05, name_stagger=.55, fade_in=.55, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data = dict(contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, flow='engraved', name_duration=2.80, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 

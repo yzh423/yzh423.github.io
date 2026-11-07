@@ -36,15 +36,25 @@ try {
   }
   const timing=await film.evaluate(async video=>
     fetch(video.dataset.inkMap).then(response=>response.json()));
+  const engravingStrength=()=>film.evaluate(v=>{
+    const c=document.createElement('canvas');c.width=480;c.height=180;
+    const ctx=c.getContext('2d');ctx.drawImage(v,0,0,480,180);
+    const pixels=ctx.getImageData(0,0,480,180).data;
+    let ink=0;for(let i=0;i<pixels.length;i+=4)ink+=255-pixels[i+1];
+    return ink;
+  });
   assert.ok(timing.release-timing.assembled>=.25,'the complete arm holds before releasing the name');
   await freeze(timing.assembled+.10);
   assert.equal((await ink()).total,0,'the exploded assembly can finish before the name appears');
+  const assembledInk=await engravingStrength();
   assert.equal(await page.locator('#home').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)');
-  await freeze(timing.release+1.00);
-  const airborne=await ink(); assert.ok(airborne.color>150 && airborne.total>airborne.color);
+  await freeze(timing.release+timing.name_duration*.72);
+  const airborne=await ink();
+  assert.ok(airborne.color>150 && airborne.color>airborne.total*.5,'travelling ink carries colour before settling into neutral lettering');
   await page.screenshot({path:out+'/chapter-transfer.png'});
   await freeze(timing.settled+.03);
   const rest=await ink(); assert.ok(rest.total>3000 && rest.color===0);
+  assert.ok(await engravingStrength()<assembledInk*.4,'the robot and its light field recede behind the finished name');
   await page.screenshot({path:out+'/chapter-cover.png'});
   const rect=await canvas.boundingBox();
   await page.mouse.move(rect.x+rect.width*.22,rect.y+rect.height*.48);

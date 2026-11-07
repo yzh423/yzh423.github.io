@@ -26,9 +26,9 @@
     const ctx=canvas.getContext('2d'), mask=document.createElement('canvas'), sampler=mask.getContext('2d',{willReadFrequently:true});
     const stillPoster=film.getAttribute('poster'), assemblyTime=1.52;
     const printStage=stage.classList.contains('print-stage');
-    let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
+    let w=0,h=0,groups=[],threads=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
-    let inkMap, filmUnavailable = false, tint = [], filmAlignment = .5, filmFit = 'cover';
+    let inkMap, filmUnavailable = false, tint = [], flowTint = [], filmAlignment = .5, filmFit = 'cover';
     // Use coordinates exported by the engraving renderer. Their origin is the
     // centre of the part, so they stay on the tool throughout the camera move.
     if (film.dataset.inkMap) {
@@ -39,6 +39,42 @@
     }
     const pointer=pointerFor(stage,wake);
     const smooth=n=>n*n*(3-2*n);
+    const soften=n=>n*n*n*(10+n*(6*n-15));
+    function flowProgress(p,time) {
+      const delay=.08+p.lane*.20+(1-p.x/w)*.35+p.phase*.06;
+      return clamp((time-inkMap.release-delay)/inkMap.name_duration,0,1);
+    }
+    function flowPoint(p,pose,progress) {
+      // Neighbouring cuts remain a family of flowing lines, rather than
+      // spreading radially from a single cloud beside the jaws.
+      const index=Math.min(inkMap.marks.length-1,Math.floor((p.lane*.88+p.phase*.12)*inkMap.marks.length));
+      const mark=inkMap.marks[index],u=soften(progress),v=1-u;
+      const x=pose.x+mark[0]*pose.radius/1000,y=pose.y+mark[1]*pose.radius/1000;
+      const reach=Math.max(w*.16,Math.abs(x-p.x));
+      const c1x=x-reach*.30,c1y=y-h*(.10+.10*p.lane);
+      const c2x=p.x+reach*.21,c2y=p.y-h*(.06+.07*p.lane);
+      return [v*v*v*x+3*v*v*u*c1x+3*v*u*u*c2x+u*u*u*p.x,
+        v*v*v*y+3*v*v*u*c1y+3*v*u*u*c2y+u*u*u*p.y];
+    }
+    function drawThreads(pose,time) {
+      ctx.lineCap='round';
+      for(const p of threads) {
+        const progress=flowProgress(p,time);
+        if(progress<=0||progress>=1)continue;
+        const envelope=Math.sin(Math.PI*progress)**2;
+        ctx.strokeStyle=flowTint[Math.round(progress*63)][10];
+        ctx.beginPath();
+        for(let i=0;i<=12;i++) {
+          const t=Math.max(0,progress-.28+.28*i/12);
+          const [x,y]=flowPoint(p,pose,t);
+          if(i===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);
+        }
+        // A broad, low-opacity pass carries the light; the narrow pass is ink.
+        ctx.globalAlpha=envelope*.025;ctx.lineWidth=7;ctx.stroke();
+        ctx.globalAlpha=envelope*.40;ctx.lineWidth=.75;ctx.stroke();
+      }
+      ctx.globalAlpha=1;
+    }
     function projectionAt(time) {
       const index = clamp(time * inkMap.fps, 0, inkMap.poses.length - 1);
       const a = inkMap.poses[Math.floor(index)], b = inkMap.poses[Math.ceil(index)];
@@ -55,9 +91,15 @@
       const dark=document.documentElement.dataset.theme==='dark';
       const a=dark?[251,244,225]:[44,43,34],b=printStage ? (dark?[224,227,205]:[49,58,51]) : (dark?[255,171,109]:[170,65,20]);
       const pigments = dark ? [[87,222,248],[126,161,255],[199,147,255],[255,142,130]] :
-        [[0,141,176],[41,88,213],[129,64,207],[209,68,78]];
+        [[0,141,176],[41,88,213],[129,64,207],[184,96,57]];
       tint = pigments.map(color => Array.from({length:13}, (_,step) =>
         'rgb('+a.map((v,i) => Math.round(v + (color[i]-v)*step/12)).join(',')+')'));
+      flowTint=Array.from({length:64},(_,phase)=>{
+        const t=phase/63*3,lo=Math.min(2,Math.floor(t)),blend=t-lo;
+        const colour=pigments[lo].map((v,i)=>v+(pigments[lo+1][i]-v)*blend);
+        return Array.from({length:13},(_,step)=>
+          'rgb('+a.map((v,i)=>Math.round(v+(colour[i]-v)*step/12)).join(',')+')');
+      });
       palette=Array.from({length:18},(_,i)=>'rgb('+a.map((c,j)=>Math.round(c+(b[j]-c)*i/17)).join(',')+')');
     }
     function measure(){
@@ -78,7 +120,9 @@
       const metric=sampler.measureText(text);
       const anchorX=printStage ? (narrow?.46:.36) : .5;
       const anchorY=printStage && narrow ? .60 : .49;
-      sampler.fillText(text,w*anchorX,h*anchorY+(metric.actualBoundingBoxAscent-metric.actualBoundingBoxDescent)*.5);
+      const baseline=h*anchorY+(metric.actualBoundingBoxAscent-metric.actualBoundingBoxDescent)*.5;
+      const top=baseline-metric.actualBoundingBoxAscent,letterHeight=metric.actualBoundingBoxAscent+metric.actualBoundingBoxDescent;
+      sampler.fillText(text,w*anchorX,baseline);
       const pixels=sampler.getImageData(0,0,mask.width,mask.height).data;
       const step=clamp(w/368,1.52,3.15);
       grain=step*(w<500?.87:.75);
@@ -91,10 +135,11 @@
         const s=rand(), depth=.65+.68*rand(), angle=2*Math.PI*rand(), sign=s<.5?-1:1;
         const sx=w*.5+Math.cos(angle)*w*(.32+.23*depth)-x, sy=h*.46+Math.sin(angle)*h*(.32+.25*depth)-y;
         const bin=clamp(Math.round(17*((x/w-.10)/.80+(s-.5)*.14)),0,17);
-        groups[bin].push({x,y,sx,sy,bend:sign*(8+17*rand())*depth,delay:.17*s+.14*x/w,
+        groups[bin].push({x,y,sx,sy,lane:clamp((y-top)/letterHeight,0,1),bend:sign*(8+17*rand())*depth,delay:.17*s+.14*x/w,
           mark:Math.floor(rand()*384), phase:rand(), pigment:clamp(Math.floor((x/w + .10*(s-.5))*5),0,3),
           span:.89+.28*depth,size:grain*(.84+.28*rand()),depth,dx:0,dy:0,vx:0,vy:0});
       }
+      threads=groups.filter((g,i)=>g.length&&i%2===0).map((g,i)=>g[Math.floor(g.length*(.25+.25*(i%3)))]);
       ready=groups.some(g=>g.length);if(ready)stage.classList.add('has-lettering');
       colors();render(0,!enabled());wake();
     }
@@ -127,6 +172,8 @@
       const radius=clamp(w*.132,54,142), invRadius=1/radius;
       const vx=flowX*.018,vy=flowY*.018,stroke2=moveX*moveX+moveY*moveY;
       const attack=21,release=10,attackDecay=Math.exp(-dt*attack),releaseDecay=Math.exp(-dt*release);
+      const engraved=pose&&inkMap.flow==='engraved';
+      if(engraved)drawThreads(pose,filmTime);
       for(let i=0;i<groups.length;i++){
         ctx.fillStyle=palette[i];
         for(const p of groups[i]){
@@ -151,11 +198,27 @@
           p.vx=still?0:(p.vx-stiffness*qx)*decay;p.vy=still?0:(p.vy-stiffness*qy)*decay;
           if(Math.abs(p.dx-destX)+Math.abs(p.dy-destY)>.025||Math.abs(p.vx)+Math.abs(p.vy)>.45)movingInk=true;
           else {p.dx=destX;p.dy=destY;p.vx=p.vy=0;}
-          let cx=p.x+p.dx,cy=p.y+p.dy,alpha=1;
+          let cx=p.x+p.dx,cy=p.y+p.dy,alpha=1,grainScale=1;
           if (printStage) {
             if (assembling && (!pose || filmTime < releaseAt)) continue;
-            let exposure = 0, typeMark = 0;
-            if (pose) {
+            let exposure = 0, typeMark = 0, flowTail=null, flowStrength=0, flowColour=null;
+            if (engraved) {
+              const progress=flowProgress(p,filmTime);
+              if(progress<=0)continue;
+              [cx,cy]=flowPoint(p,pose,progress);
+              const envelope=Math.sin(Math.PI*progress)**2;
+              // Keep travelling ink filament-thin. It gains weight only as
+              // each cut reaches its letter, avoiding a dense cloud at source.
+              const arrival=soften(clamp((progress-.25)/.70,0,1));
+              alpha=.10+.90*arrival;
+              grainScale=.44+.56*arrival;
+              exposure=envelope*(.66+.30*p.phase);
+              flowColour=flowTint[Math.round(progress*63)];
+              if(p.mark%12===0&&progress<.98) {
+                flowTail=flowPoint(p,pose,Math.max(0,progress-.018-.018*envelope));
+                flowStrength=envelope;
+              }
+            } else if (pose) {
               const mark = inkMap.marks[p.mark % inkMap.marks.length];
               // Adjacent cuts leave the tool in ribbons and settle together.
               const lane = clamp((mark[1]+1880)/2920,0,1);
@@ -177,7 +240,12 @@
             }
             const displacement = Math.hypot(p.dx,p.dy);
             const colorStep = Math.round(clamp(Math.max(exposure, displacement/(radius*.17)),0,1)*12);
-            ctx.fillStyle = colorStep ? tint[p.pigment][colorStep] : palette[i];
+            ctx.fillStyle = colorStep ? (flowColour ?? tint[p.pigment])[colorStep] : palette[i];
+            if(flowTail) {
+              ctx.strokeStyle=ctx.fillStyle;ctx.lineWidth=Math.max(.6,p.size*.48);
+              ctx.globalAlpha=flowStrength*.32;
+              ctx.beginPath();ctx.moveTo(flowTail[0],flowTail[1]);ctx.lineTo(cx,cy);ctx.stroke();
+            }
             if(typeMark>.20) {
               ctx.globalAlpha=alpha*typeMark*.78;
               const unit=p.size*(.38+.34*typeMark);
@@ -191,7 +259,8 @@
             alpha=.18+.82*smooth(progress);
           }
           ctx.globalAlpha=alpha;
-          ctx.fillRect(cx-p.size*.5,cy-p.size*.49,p.size,p.size*.98);
+          const size=p.size*grainScale;
+          ctx.fillRect(cx-size*.5,cy-size*.49,size,size*.98);
         }
       }
       ctx.globalAlpha=1;

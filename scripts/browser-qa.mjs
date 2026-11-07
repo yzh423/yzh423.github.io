@@ -66,8 +66,10 @@ try {
   await page.locator('.motion-toggle').click();
   await page.waitForFunction(() => !document.querySelector('[data-preview]').paused);
   const box=await stage.boundingBox();
-  const settledAt=await film.evaluate(async v=>(await fetch(v.dataset.inkMap).then(r=>r.json())).settled);
-  await page.waitForFunction(t=>document.querySelector('.flight-film').currentTime>=t,settledAt);
+  const timing=await film.evaluate(async v=>fetch(v.dataset.inkMap).then(r=>r.json()));
+  await page.waitForFunction(t=>document.querySelector('.flight-film').currentTime>=t,timing.assembled+.04);
+  const seatedCopper=await film.evaluate(countCopper);
+  await page.waitForFunction(t=>document.querySelector('.flight-film').currentTime>=t,timing.settled);
   const beforeHover=await lettering.evaluate(c=>c.toDataURL());
   await page.mouse.move(box.x+box.width*.22,box.y+box.height*.47);
   await page.waitForFunction(()=>Math.abs(new DOMMatrix(getComputedStyle(document.querySelector('.flight-film')).transform).e)>3);
@@ -80,8 +82,8 @@ try {
   await film.evaluate(v=>{v.currentTime=v.duration-.28;});
   await page.waitForFunction(()=>document.querySelector('.flight-film').ended);
   await page.waitForTimeout(230); assert.equal(await film.evaluate(v=>v.ended),true);
-  assert.ok(openingCopper < 3 && await film.evaluate(countCopper) > 9,
-    'copper appears at the gripper contacts once the part is held');
+  assert.ok(openingCopper<3 && seatedCopper>9 && await film.evaluate(countCopper)<seatedCopper*.4,
+    'copper marks the completed grip, then recedes as the signature takes focus');
   await page.locator('.flight-replay').focus(); await page.keyboard.press('Enter');
   await page.waitForFunction(()=>{const v=document.querySelector('.flight-film');return !v.paused&&v.currentTime>.05&&v.currentTime<1;});
   assert.equal(await page.locator('.motion-toggle').evaluate(e=>document.activeElement===e),true);

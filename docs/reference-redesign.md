@@ -23,7 +23,7 @@ The wordmark returns to Home. The active section has an orange underline. Pointe
 
 ## Robot arm banner
 
-The silent nine-second film and the particle name share the full banner. After the opening identity reveal, reaching 30% visibility starts one pass of the film and the letter assembly. The final engraving holds. A Replay button appears to start the film and type entrance again. Scrolling below 30% and returning starts a new pass. Pointer or touch input gently shifts the film and pushes nearby grains; quick strokes leave a short directional wake. The letters settle back into place. “Explore research” sits at the lower left on desktop and bottom center on phones, and the motion control sits at bottom right.
+The silent ten-second film and the particle name share the full banner. After the opening identity reveal, reaching 30% visibility starts one pass of the film and the letter assembly. The final engraving holds. A Replay button appears to start the film and type entrance again. Scrolling below 30% and returning starts a new pass. Pointer or touch input gently shifts the film and pushes nearby grains; quick strokes leave a short directional wake. The letters settle back into place. “Explore research” sits at the lower left on desktop and bottom center on phones, and the motion control sits at bottom right.
 
 The pause control and reduced-motion preference provide a settled composition. Backgrounding the page pauses playback, and data saver suppresses automatic film playback. The still poster and fallback name are readable before enhancement.
 
