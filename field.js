@@ -43,7 +43,7 @@
       const index = clamp(time * inkMap.fps, 0, inkMap.poses.length - 1);
       const a = inkMap.poses[Math.floor(index)], b = inkMap.poses[Math.ceil(index)];
       const lerp = slot => a[slot] + (b[slot] - a[slot]) * (index % 1);
-      const scale = Math.max(w / 1440, h / 540);
+      const scale = Math.max(film.clientWidth / 1440, film.clientHeight / 540);
       return {
         x: lerp(0)*scale + (w - 1440*scale)*filmAlignment,
         y: lerp(1)*scale + (h - 540*scale)/2,
@@ -104,8 +104,10 @@
       // data-saving visit gets the finished signature without a timed blank.
       const transfer = printStage && !still && !filmUnavailable && !navigator.connection?.saveData;
       const filmTime = film.currentTime;
-      const pose = transfer && inkMap && filmTime < 4.9 ? projectionAt(filmTime) : null;
-      const assembling = transfer && filmTime < 4.9;
+      const releaseAt = inkMap?.release ?? inkMap?.contact ?? 1.93;
+      const settledAt = inkMap?.settled ?? 4.9;
+      const pose = transfer && inkMap && filmTime < settledAt ? projectionAt(filmTime) : null;
+      const assembling = transfer && filmTime < settledAt;
       const r=stage.getBoundingClientRect(),px=pointer.cx-r.left,py=pointer.cy-r.top,act=pointer.active&&!still;
       const kFollow=1-Math.exp(-dt*22),kTrail=1-Math.exp(-dt*9);
       if(act&&strength<.002){mx=px;my=py;}
@@ -149,13 +151,13 @@
           else {p.dx=destX;p.dy=destY;p.vx=p.vy=0;}
           let cx=p.x+p.dx,cy=p.y+p.dy,alpha=1;
           if (printStage) {
-            if (assembling && (!pose || filmTime < inkMap.contact)) continue;
+            if (assembling && (!pose || filmTime < releaseAt)) continue;
             let exposure = 0, typeMark = 0;
             if (pose) {
               const mark = inkMap.marks[p.mark % inkMap.marks.length];
               // Adjacent cuts leave the tool in ribbons and settle together.
               const lane = clamp((mark[1]+1880)/2920,0,1);
-              const start = inkMap.contact + .05 + lane*.43 + p.phase*.26 + (1-p.x/w)*.32;
+              const start = releaseAt + .05 + lane*.43 + p.phase*.26 + (1-p.x/w)*.32;
               const progress = clamp((filmTime - start)/(1.05 + p.span*.42),0,1);
               if (!progress) continue;
               const ease = progress**3*(10+progress*(6*progress-15));

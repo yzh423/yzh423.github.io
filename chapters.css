@@ -88,6 +88,10 @@
 
 @media (max-width:850px) {
   .portfolio .print-stage { height:clamp(235px,min(69vw,43dvh),420px); }
+  .portfolio .print-stage .flight-film {
+    height:auto; max-height:100%; aspect-ratio:1.72;
+    top:50%; bottom:auto; translate:0 -50%;
+  }
 }
 .about-images,.campus-gallery { min-width:0; }
 .campus-track {

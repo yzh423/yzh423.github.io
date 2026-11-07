@@ -7,13 +7,13 @@ import json
 import math
 import subprocess
 import numpy as np
-from PIL import Image, ImageDraw, ImageFilter
+from PIL import Image, ImageDraw
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
-W, H, FPS, SECONDS = 1440, 540, 30, 6
+W, H, FPS, SECONDS = 1440, 540, 60, 7
+CONTACT, RELEASE, SETTLED = .95, 4.18, 6.90
 XX, YY = np.meshgrid(np.arange(W, dtype='f')+.5, np.arange(H, dtype='f')+.5)
-U, V = XX/W, YY/H
 def ramp(a,b,x):
     n=np.clip((x-a)/(b-a),0,1)
     return n*n*(3-2*n)
@@ -35,8 +35,6 @@ glyph=tiles[char,iy%8,ix%6].astype('f')/255
 # fine pressure variations are static; there is no frame-to-frame grain noise
 pressure=(.89+.11*np.cos(col*1.73+row*.37)).astype('f')
 glyph*=pressure
-dist=np.hypot(((XX*.94+YY*.34)/5.9)%1-.5, ((YY*.94-XX*.34)/5.9)%1-.5)
-rolloff=(.7*np.sin(U*7+V*3)+.3*np.sin(V*11-U*4)).astype('f')
 
 def travel(start, end, time):
     # Quintic motion gives zero velocity and acceleration at both stops.
@@ -49,6 +47,7 @@ PART_SEAT = np.array([843., 337.])
 
 
 def pose(t):
+    t = min(1.93, t*1.93/CONTACT) + travel(4.15,5.65,t)*(4.85-1.93)
     align = travel(0, .93, t)
     descend = travel(.24, 1.35, t)
     close = travel(1.36, 1.93, t)
@@ -62,114 +61,147 @@ def pose(t):
     return wrist, PART_SEAT + offset, mix(57, PART_RADIUS, close)
 
 
+def explosion(t, lag=0):
+    return travel(1.12+lag, 2.34+lag, t)*(1-travel(2.67+lag, 4.00+lag, t))
+
+
 def projection(t):
-    _, part, _ = pose(t)
-    push = travel(.48, 2.85, t)
-    pullback = travel(3.16, 5.72, t)
-    zoom = math.exp(math.log(1.29) + math.log(3.75/1.29)*push + math.log(1.59/3.75)*pullback)
-    center = mix(np.array([563., 270.]), part + [-98., -20.], push * (1 - pullback))
-    # Travel across the contact detail before returning to the wider print.
-    traverse = travel(2.10, 3.04, t)*(1-travel(3.36, 4.85, t))
-    center += np.array([42., -18.])*traverse
-    # Match the small contact detail to a full-height negative before the
-    # wider reconstruction. The camera and particle anchors share this move.
-    macro = travel(2.48, 2.85, t)*(1-travel(2.93, 3.36, t))
-    zoom *= 1 + 1.30*macro
-    center = mix(center, part + [-15., -5.], macro*.90)
+    settle = travel(3.55, 5.04, t)
+    # Pull back ahead of the separation, hold a readable exploded drawing,
+    # then quietly reframe the complete arm for its signature.
+    wide = travel(.86, 2.02, t)*(1-travel(3.35, 4.52, t))
+    zoom = mix(mix(1.29, 1.59, settle), .85, wide)
+    center = mix(np.array([563., 270.]), np.array([605., 250.]), wide)
     return center, zoom
 
 
-def arm_plate(t):
+def arm_plate(t, audit=None):
     wrist, part, gap = pose(t)
     shoulder = np.array([500.,366.])
-    # Analytic two-link IK keeps both castings rigid during approach and lift.
     reach = wrist-shoulder
     length = np.linalg.norm(reach)
     u = reach/length
     normal = np.array([-u[1],u[0]])
     a,b=203.,248.
-    s = (length**2+a*a-b*b)/(2*length)
-    elbow = shoulder + s*u - math.sqrt(max(0,a*a-s*s))*normal
-
-    # Keep the fixture visible at pickup. On the lift, frame the gripper a
-    # little right of centre, leaving room for the name on narrow screens.
+    distance = (length**2+a*a-b*b)/(2*length)
+    elbow = shoulder + distance*u - math.sqrt(max(0,a*a-distance*distance))*normal
     center, zoom = projection(t)
-    def screen(p): return (np.asarray(p)-center)*zoom + [W/2,H/2]
     img = Image.new('L',(W,H))
     pen = ImageDraw.Draw(img)
+    pivot, displacement, rotation = np.zeros(2), np.zeros(2), np.eye(2)
+
+    def component(name, origin, offset=(0,0), degrees=0, lag=0):
+        nonlocal pivot, displacement, rotation
+        amount = explosion(t, lag)
+        pivot = np.asarray(origin)
+        # Each rigid part follows a shallow arc and lands with zero velocity
+        # and acceleration. Lag gives the assembly a slight mechanical order.
+        offset = np.asarray(offset, dtype=float)
+        curve = np.array([-offset[1],offset[0]])*.055*math.sin(math.pi*amount)
+        displacement = amount*offset + curve
+        angle = math.radians(degrees)*amount
+        rotation = np.array([[math.cos(angle),-math.sin(angle)],[math.sin(angle),math.cos(angle)]])
+        if audit is not None:
+            audit.append(dict(name=name, amount=amount, offset=displacement.tolist(), angle=angle))
+
+    def screen(p):
+        transformed = (np.asarray(p)-pivot)@rotation.T + pivot + displacement
+        return (transformed-center)*zoom + [W/2,H/2]
     def pts(points): return [tuple(p) for p in screen(points)]
-    def polygon(points, value): pen.polygon(pts(points),fill=value)
-    def line(points, value, width): pen.line(pts(points),fill=value,width=max(1,round(width*zoom)),joint='curve')
-    def circle(center,r,value):
-        pt=screen(center); rr=r*zoom;pen.ellipse([tuple(pt-rr),tuple(pt+rr)],fill=value)
+    def polygon(points,value): pen.polygon(pts(points),fill=value)
+    def line(points,value,width): pen.line(pts(points),fill=value,width=max(1,round(width*zoom)),joint='curve')
+    def circle(p,r,value):
+        pt=screen(p);rr=r*zoom
+        pen.ellipse([tuple(pt-rr),tuple(pt+rr)],fill=value)
     def bar(p,q,r1,r2,value):
-        delta=q-p
-        perp=np.array([-delta[1],delta[0]])/np.linalg.norm(delta)
-        polygon([p+r1*perp,q+r2*perp,q-r2*perp,p-r1*perp],value)
+        delta=q-p; perpendicular=np.array([-delta[1],delta[0]])/np.linalg.norm(delta)
+        polygon([p+r1*perpendicular,q+r2*perpendicular,q-r2*perpendicular,p-r1*perpendicular],value)
         circle(p,r1,value);circle(q,r2,value)
-    def joint(p,r):
-        for f,v in [(1,230),(.88,142),(.71,76),(.54,226),(.44,147),(.24,55)]:
-            circle(p,r*f,v)
+    def cable(start,bend1,bend2,end):
+        samples=np.linspace(0,1,42)[:,None]
+        points=(1-samples)**3*start+3*(1-samples)**2*samples*bend1+3*(1-samples)*samples**2*bend2+samples**3*end
+        line(points,178,5);line(points,72,1.7)
+    def joint(name,p,r,offset,lag):
+        component(name+' housing',p,offset,-9,lag)
+        circle(p,r,230);circle(p,r*.88,142);circle(p,r*.71,65)
+        component(name+' bearing',p,np.asarray(offset)+[-34,-27],8,lag+.025)
+        circle(p,r*.68,226);circle(p,r*.54,96)
+        circle(p,r*.42,194);circle(p,r*.30,0)
+        component(name+' shaft cap',p,np.asarray(offset)+[-70,-48],-12,lag+.05)
+        circle(p,r*.42,221);circle(p,r*.29,147);circle(p,r*.16,55)
         for i in range(6):
-            ang=i*math.tau/6
-            circle(p+.79*r*np.array([math.cos(ang),math.sin(ang)]),1.6,45)
-    def casting(p,q,r1,r2):
-        # Metal edges and a relieved channel, like an inked workshop drawing.
-        bar(p,q,r1,r2,215)
-        bar(p+(q-p)*.05,q-(q-p)*.05,r1*.80,r2*.77,135)
+            angle=i*math.tau/6
+            radial=np.array([math.cos(angle),math.sin(angle)])
+            bolt=p+.79*r*radial
+            component(name+' fastener '+str(i+1),bolt,np.asarray(offset)+[-70,-48]+radial*22,0,lag+.065+i*.006)
+            circle(bolt,2.5,208);line([bolt-radial*1.3,bolt+radial*1.3],60,1)
+    def casting(name,p,q,r1,r2,offset,degrees,lag):
+        mid=(p+q)/2
+        component(name+' housing',mid,offset,degrees,lag)
+        bar(p,q,r1,r2,215);bar(p+(q-p)*.05,q-(q-p)*.05,r1*.80,r2*.77,135)
+        component(name+' cover',mid,np.asarray(offset)+[-18,-48],degrees+5,lag+.06)
         bar(p+(q-p)*.16,q-(q-p)*.17,r1*.41,r2*.39,74)
         line([p+(q-p)*.17,q-(q-p)*.18],185,2)
-    def cable(start, bend1, bend2, end):
-        u = np.linspace(0, 1, 42)[:, None]
-        points = (1-u)**3*start + 3*(1-u)**2*u*bend1 + 3*(1-u)*u**2*bend2 + u**3*end
-        line(points, 178, 5.0)
-        line(points, 72, 1.7)
 
-    # The top faces of the V are tangent to the 64-unit OD. The visible
-    # air gap between the lifted part and this fixed seat shows load transfer.
-    seat_x, seat_y = PART_SEAT
-    v_bottom = seat_y + PART_RADIUS * math.sqrt(2)
-    seat = np.array([seat_x, v_bottom])
-    polygon(seat + [(-37,-28),(-28,-28),(0,0),(28,-28),(37,-28),(37,7),(-37,7)], 162)
-    line(seat + [(-28,-28),(0,0),(28,-28)], 230, 2.4)
-    line(seat + [(-50,9),(50,9)], 192, 4)
-    for x in (-31,31): circle(seat + [x,1], 2.4, 68)
+    # The workpiece and fixture stay outside the exploded robot assembly.
+    component('fixture',PART_SEAT)
+    seat_x,seat_y=PART_SEAT
+    seat=np.array([seat_x,seat_y+PART_RADIUS*math.sqrt(2)])
+    polygon(seat+[(-37,-28),(-28,-28),(0,0),(28,-28),(37,-28),(37,7),(-37,7)],162)
+    line(seat+[(-28,-28),(0,0),(28,-28)],230,2.4)
+    line(seat+[(-50,9),(50,9)],192,4)
+    for x in (-31,31):circle(seat+[x,1],2.4,68)
 
-    polygon([(447,425),(457,410),(475,405),(482,368),(518,368),(527,405),(547,410),(555,425)],181)
+    component('pedestal',shoulder,(-85,36),-4,.03)
+    polygon([(475,405),(482,368),(518,368),(527,405)],181)
+    component('base plate',[500,416],(-112,70),-4,.07)
+    polygon([(447,425),(457,410),(475,405),(527,405),(547,410),(555,425)],181)
     line([(448,426),(555,426)],230,4)
-    for x in [464,538]: circle([x,415],3.1,69)
-    cable(shoulder+[-17,8], shoulder+[-55,-45], elbow+[-33,41], elbow+[-13,-8])
-    cable(elbow+[-13,-8], elbow+[7,-54], wrist+[-67,-39], wrist+[-4,-6])
-    casting(shoulder,elbow,31,24);casting(elbow,wrist,25,16)
-    joint(shoulder,36);joint(elbow,30);joint(wrist,18)
+    for x in [464,538]:
+        component('base fastener '+str(x),[x,415],(-130+(x-500)*.35,100),0,.12)
+        circle([x,415],3.1,69)
+    component('shoulder cable',(shoulder+elbow)/2,(-185,5),-16,.02)
+    cable(shoulder+[-17,8],shoulder+[-55,-45],elbow+[-33,41],elbow+[-13,-8])
+    component('wrist cable',(elbow+wrist)/2,(20,-82),9,.07)
+    cable(elbow+[-13,-8],elbow+[7,-54],wrist+[-67,-39],wrist+[-4,-6])
+    casting('upper arm',shoulder,elbow,31,24,(-90,-28),-8,.07)
+    casting('forearm',elbow,wrist,25,16,(75,-55),8,.12)
+    joint('shoulder',shoulder,36,(-115,-29),.08)
+    joint('elbow',elbow,30,(-15,-80),.13)
+    joint('wrist',wrist,18,(176,-47),.09)
 
-    def rel(points): return np.asarray(points) + wrist
+    def rel(points): return np.asarray(points)+wrist
+    component('wrist coupling',wrist+[0,18],(140,7),4,.06)
     polygon(rel([(-12,11),(12,11),(12,25),(-12,25)]),170)
-    line(rel([(-16,21),(16,21)]), 230, 3)
+    line(rel([(-16,21),(16,21)]),230,3)
+    component('gripper housing',wrist+[0,38],(173,49),6,.03)
     polygon(rel([(-66,24),(66,24),(71,30),(71,45),(64,51),(-64,51),(-71,45),(-71,30)]),223)
     polygon(rel([(-63,30),(63,30),(63,43),(-63,43)]),83)
-    line(rel([(-61,34),(61,34)]), 175, 2)
+    component('guide rail',wrist+[0,35],(210,97),7,.02)
+    line(rel([(-61,34),(61,34)]),175,2)
+    for side in (-1,1):
+        def jaw(points):return rel([(side*(gap+x),y) for x,y in points])
+        anchor=jaw([(4,67)])[0]
+        shift=np.array([-37,139]) if side<0 else np.array([160,166])
+        name='left' if side<0 else 'right'
+        component(name+' carriage',anchor,shift+[0,-33],side*6,0)
+        polygon(jaw([(-8,37),(11,37),(13,41),(13,53),(-8,53)]),190)
+        circle(jaw([(2,44)])[0],2.6,61)
+        component(name+' finger',anchor,shift,side*11,.02)
+        polygon(jaw([(3,50),(13,50),(13,87),(8,95),(0,95),(0,79),(4,76)]),226)
+        line(jaw([(9,55),(9,84)]),98,2)
+        component(name+' gripping pad',anchor,shift+[side*23,31],side*11,.04)
+        polygon(jaw([(0,80),(4,77),(5,91),(0,94)]),157)
+        for height in (82,86,90):line(jaw([(0,height),(3,height-1)]),70,1.2)
 
-    for side in (-1, 1):
-        def on_jaw(points):
-            return rel([(side*(gap+x), y) for x,y in points])
-        # Rail carriages and serrated pads travel together. The paler face
-        # and dark edge keep both jaws legible through the halftone exposure.
-        polygon(on_jaw([(-8,37),(11,37),(13,41),(13,53),(-8,53)]), 190)
-        polygon(on_jaw([(3,50),(13,50),(13,87),(8,95),(0,95),(0,79),(4,76)]), 226)
-        polygon(on_jaw([(0,80),(4,77),(5,91),(0,94)]), 157)
-        line(on_jaw([(9,55),(9,84)]), 98, 2)
-        for height in (82,86,90):
-            line(on_jaw([(0,height),(3,height-1)]), 70, 1.2)
-        circle(on_jaw([(2,44)])[0], 2.6, 61)
-    # Machined bushing: through bore, two concentric shoulders and six drilled holes.
+    component('workpiece',part)
     for rad,val in [(32,233),(30,110),(27.7,201),(20.5,167),(17.2,237),(14.8,93),(12.8,0)]:
         circle(part,rad,val)
     for i in range(6):
-        ang=(i+.5)*math.tau/6
-        p=part+23.5*np.array([math.cos(ang),math.sin(ang)])
-        circle(p,3.1,61);circle(p,2.0,0)
-    return np.asarray(img).astype('f')/255, screen(part), PART_RADIUS*zoom
+        angle=(i+.5)*math.tau/6
+        p=part+23.5*np.array([math.cos(angle),math.sin(angle)])
+        circle(p,3.1,61);circle(p,2,0)
+    return np.asarray(img).astype('f')/255,screen(part),PART_RADIUS*zoom
 
 PAPER = np.array([255, 255, 255])
 GRAPHITE = np.array([70, 82, 76])
@@ -186,32 +218,6 @@ def hatch_lines(coordinate, spacing, width):
 
 hatch = hatch_lines(XX*.36 + YY*.93, 6.7, 1.05)
 crosshatch = hatch_lines(XX*.88 - YY*.48, 9.2, .95)
-dots = 1 - ramp(.18, .30, dist)
-vertical_hatch = hatch_lines(XX, 6.2, 1.25)
-
-
-def montage_plate(t, metal, center, radius):
-    """Transform the impression while keeping the pickup's release point intact."""
-    tiles = travel(.78, .90, t)*(1-travel(.96, 1.30, t))
-    fragments = travel(3.10, 3.36, t)*(1-travel(3.48, 4.12, t))
-    if tiles > .001:
-        # Alternating rectangular pieces translate back into registration.
-        cell_x, cell_y = (XX//160).astype(int), (YY//108).astype(int)
-        sx = np.clip(XX+tiles*147*np.sin(cell_y*2.8+cell_x*.8),0,W-1).astype(int)
-        sy = np.clip(YY+tiles*81*np.cos(cell_x*2.1+cell_y*.7),0,H-1).astype(int)
-        metal = metal[sy,sx]
-    if fragments > .001:
-        # Oblique facets release from the arm; the jaws remain the origin of
-        # the name particles throughout this optical reconstruction.
-        field = ramp(radius*1.8, radius*3.4, np.hypot(XX-center[0],YY-center[1]))
-        diagonal = np.floor((XX*.80+YY*.60)/174)
-        cross = np.floor((-XX*.60+YY*.80)/126)
-        offset_x = fragments*field*178*np.sin(diagonal*2.3+cross*.7)
-        offset_y = fragments*field*104*np.cos(cross*1.8-diagonal*.8)
-        sx = np.clip(XX+offset_x,0,W-1).astype(int)
-        sy = np.clip(YY+offset_y,0,H-1).astype(int)
-        metal = metal[sy,sx]
-    return metal
 
 
 def optical_field(t, center, radius):
@@ -269,120 +275,42 @@ def optical_field(t, center, radius):
     return np.asarray(plate)
 
 
-def developing_screen(t, dx, dy, radius, metal):
-    # Contact exposes a plate of type. The tool masks the first impression;
-    # as the camera pulls back, the type gives way to a finer dot screen.
-    if t <= 1.93 or t >= 5.35:
-        return 0., 0., 0.
-    wave = np.hypot(dx*.88, dy*1.38)
-    front = radius + 1150*travel(1.93, 4.08, t)
-    body = 1-ramp(front-72, front+18, wave)
-    life = travel(1.93, 2.46, t)*(1-travel(3.94, 5.35, t))
-    screen = mix(glyph, dots, travel(3.29,4.71,t))
-    cutout = 1-np.clip(3.4*metal,0,1)
-    density = life*body*cutout*(.10+.58*screen)*(.91+.09*rolloff)
-    rim = np.exp(-((wave-front)/13)**2)*life*cutout
-    return density, rim, life*body
-
-
-def print_passes(t, metal, edges):
-    """Alternate copper linework, a blue negative and a warm halftone proof."""
-    copper = travel(.47, .57, t)*(1-travel(.84, 1.03, t))
-    negative = travel(2.03, 2.55, t)*(1-travel(3.45, 3.91, t))
-    halftone = travel(3.20, 3.86, t)*(1-travel(4.25, 5.13, t))
-    # The diagonal print edge develops across the frame. Its cells are fixed
-    # to the paper, so the camera motion produces no texture flicker.
-    diagonal = U*.83 + V*.17
-    reveal = 1-ramp(t-2.20, t-1.77, diagonal)
-    blue_plate = negative*(.34 + .23*glyph)*reveal
-    warm_plate = halftone*(.085 + .32*dots)
-    # Repeated edge impressions give the halftone a short chromatic echo.
-    separation = int(2 + 8*halftone)
-    echo = np.roll(edges, separation, axis=1)*halftone*(1-np.clip(metal*4,0,1))
-    return copper, blue_plate, warm_plate, echo
-
-
 def frame(t):
     metal, center, radius = arm_plate(t)
-    metal = montage_plate(t, metal, center, radius)
-    dx, dy = XX-center[0], YY-center[1]
-    distance = np.hypot(dx, dy)
-    # Keep the silhouette and the relief of the metal visible at every exposure.
-    vertical = np.abs(metal - np.roll(metal, 1, axis=0))
-    horizontal = np.abs(metal - np.roll(metal, 1, axis=1))
-    vertical[0,:] = 0
-    horizontal[:,0] = 0
-    edges = np.clip(2.5*np.maximum(vertical, horizontal), 0, 1)
-    first_impression = 1-travel(.43,.60,t)
-    cut = metal*(.14 + .77*mix(hatch,vertical_hatch,first_impression) + .34*crosshatch*metal)
-    printed = metal*(.10 + .52*glyph + .30*dots)
-    transition = ramp(2.25, 3.74, t)
-    impression = (1-ramp(.2*radius, 3.8*radius, distance))*transition
-
-    # Leave the outline of the bushing at its original seat during the lift.
-    _, position, _ = pose(t)
-    seat = center + (PART_SEAT-position)*(radius/PART_RADIUS)
-    seat_dx, seat_dy = XX-seat[0], YY-seat[1]
-    rim = 1-ramp(.4, 1.65, np.abs(np.hypot(seat_dx,seat_dy)-radius))
-    broken_line = .32+.68*(np.cos(np.arctan2(seat_dy,seat_dx)*64)>0)
-    original_rim = rim*broken_line*ramp(2.4,3.25,t)
-    ink = np.clip(mix(cut,printed,impression)+.62*edges+.22*original_rim,0,.85)
-    mint = travel(.94, 1.04, t)*(1-travel(1.28,1.57,t))
-    # A brief positive schematic follows the offset tiles, with a different
-    # density and colour before the contact exposes the reverse impression.
-    ink = mix(ink, np.clip(metal*(.32+.31*glyph)+edges*.49,0,.84),mint)
-
-    # As the name lifts away, the cut marks around the jaws give up their ink.
-    # The outline remains legible and regains its weight when the camera pulls back.
-    transfer = travel(2.00, 3.64, t) * (1-travel(4.22, 5.65, t))
-    ink *= 1 - .62 * transfer * (1-ramp(radius*.8, radius*2.8, distance))
-
-    # Print two arcs around the physical contacts, after the jaws close.
-    angle = np.arcsin(np.abs(np.sin(np.arctan2(dy, dx))))
-    edge_arc = (1-ramp(.035,.087,np.abs(distance/radius-.975))) * (1-ramp(.16+.38*transition,.23+.38*transition,angle))
-    soft_edge = np.exp(-((distance/radius-1)/.20)**2)*(1-ramp(.25,.51,angle))
-    accent = ramp(1.93,2.19,t)*(.86*edge_arc+.15*soft_edge)
-    backdrop = optical_field(t, center, radius)
-    background_weight = 1 - np.clip(metal*4, 0, 1)
-    screen, rim_light, exposure = developing_screen(t, dx, dy, radius, metal)
-    ink *= 1 - .62*exposure
-    copper, blue_plate, warm_plate, echo = print_passes(t, metal, edges)
-    negative_shape = np.clip(metal*3.7, 0, 1)
-    ink *= 1 - .80*blue_plate
-    defocus = travel(4.06,4.24,t)*(1-travel(4.43,4.98,t))
-    soft_shape = np.asarray(Image.fromarray((negative_shape*255).astype('uint8')).filter(
-        ImageFilter.GaussianBlur(8*defocus))).astype('f')/255 if defocus>.001 else negative_shape
-    focus_field = defocus*(.14+.27*dots)
-    # A cool proof on white paper, with a narrow violet offset at its edge.
-    spectral_ink = (53, 119, 135)
-    edge_ink = (108, 93, 176)
-    image = np.empty((H,W,3), dtype='uint8')
+    opened = explosion(t,.10)
+    dx,dy = XX-center[0],YY-center[1]
+    distance = np.hypot(dx,dy)
+    vertical=np.abs(metal-np.roll(metal,1,axis=0))
+    horizontal=np.abs(metal-np.roll(metal,1,axis=1))
+    vertical[0,:]=0;horizontal[:,0]=0
+    edges=np.clip(2.5*np.maximum(vertical,horizontal),0,1)
+    cut=metal*(.14+.77*hatch+.34*crosshatch*metal)
+    ink=np.clip(cut+.62*edges,0,.88)
+    # The drawing stays an engraving throughout the exploded view. The paper
+    # and restrained ink tint change with its opening and reassembly.
+    background_weight=1-np.clip(metal*4,0,1)
+    backdrop=optical_field(t,center,radius)
+    warmth=travel(.30,.84,t)*(1-travel(1.05,1.66,t))
+    type_field=opened*glyph*.045
+    transfer=travel(RELEASE,RELEASE+.65,t)*(1-travel(5.9,6.75,t))
+    ink*=1-.35*transfer*(1-ramp(radius*.8,radius*2.5,distance))
+    angle=np.arcsin(np.abs(np.sin(np.arctan2(dy,dx))))
+    edge_arc=(1-ramp(.035,.087,np.abs(distance/radius-.975)))*(1-ramp(.30,.44,angle))
+    accent=travel(CONTACT,CONTACT+.24,t)*(1-explosion(t,.02))*.86*edge_arc
+    image=np.empty((H,W,3),dtype='uint8')
     for channel in range(3):
-        paper = PAPER[channel] + (backdrop[:,:,channel].astype('f')-255)*background_weight
-        paper = mix(paper, (204, 166, 108)[channel], copper*.46*background_weight)
-        paper = mix(paper, (213, 229, 216)[channel], mint*.45*background_weight)
-        paper = mix(paper, spectral_ink[channel], screen)
-        paper = mix(paper, edge_ink[channel], .29*rim_light)
-        paper = mix(paper, (17, 108, 134)[channel], blue_plate*(1-negative_shape))
-        paper = mix(paper, (224, 158, 113)[channel], warm_plate*(1-negative_shape))
-        paper = mix(paper, (255, 255, 255)[channel], negative_shape*blue_plate*.9)
-        paper = mix(paper, (160, 74, 122)[channel], echo*.54)
-        engraving = mix(GRAPHITE[channel], (191, 99, 53)[channel], copper*.88)
-        engraving = mix(engraving, (58, 117, 104)[channel], mint*.90)
-        layer = paper + paper_grain + (engraving-paper)*ink
-        layer = mix(layer, (94, 137, 112)[channel], focus_field)
-        layer = mix(layer, 250, soft_shape*defocus*.72)
-        # Fine screen dots remain in focus while the underlying silhouette
-        # briefly loses and then regains its edge, as in a printed focus pull.
-        layer = mix(layer, (98, 127, 107)[channel], dots*soft_shape*defocus*.18)
-        image[:,:,channel] = np.clip(mix(layer, COPPER[channel], accent), 0, 255)
+        paper=PAPER[channel]+(backdrop[:,:,channel].astype('f')-255)*background_weight*(1-opened*.78)
+        paper=mix(paper,(224,190,140)[channel],warmth*.15)
+        paper=mix(paper,(80,128,118)[channel],type_field)
+        engraving=mix(GRAPHITE[channel],(36,98,100)[channel],opened*.35)
+        layer=paper+paper_grain+(engraving-paper)*ink
+        image[:,:,channel]=np.clip(mix(layer,COPPER[channel],accent),0,255)
     return Image.fromarray(image)
 
 def write_ink_map():
     # Origins are actual engraved pixels, in units of the bushing radius.
-    contact = 1.93
-    _, center, radius = arm_plate(contact)
-    ink = np.asarray(frame(contact))[:,:,1]
+    _, center, radius = arm_plate(RELEASE)
+    ink = np.asarray(frame(RELEASE))[:,:,1]
     local_x, local_y = (XX-center[0])/radius, (YY-center[1])/radius
     jaws = (np.abs(local_x)<1.4) & (local_y> -1.89) & (local_y<1.04)
     ys, xs = np.nonzero(jaws & (ink<185))
@@ -396,14 +324,14 @@ def write_ink_map():
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
-    data = dict(contact=contact, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data = dict(contact=CONTACT, release=RELEASE, settled=SETTLED, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 
 if __name__=='__main__':
     OUT.mkdir(exist_ok=True)
     write_ink_map()
-    frame(5.99).save(OUT/'grasp-study.webp','WEBP',quality=92,method=6)
+    frame(SECONDS-1/FPS).save(OUT/'grasp-study.webp','WEBP',quality=92,method=6)
     frame(0).save(OUT/'grasp-study-opening.webp','WEBP',quality=90,method=6)
     cmd=[imageio_ffmpeg.get_ffmpeg_exe(),'-hide_banner','-loglevel','error','-y','-f','rawvideo',
          '-pix_fmt','rgb24','-s',f'{W}x{H}','-r',str(FPS),'-i','-','-an','-c:v','libx264',

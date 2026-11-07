@@ -34,33 +34,15 @@ try {
       return {total,color};
     });
   }
-  // Measure the cool ink on the upper plate separately from the name canvas.
-  async function plateCoverage() {
-    return film.evaluate(video=>{
-      const plate=document.createElement('canvas');
-      plate.width=360; plate.height=135;
-      const ctx=plate.getContext('2d');
-      ctx.drawImage(video,0,0,plate.width,plate.height);
-      const pixels=ctx.getImageData(0,0,235,52).data;
-      let marks=0;
-      for(let i=0;i<pixels.length;i+=4) {
-        const red=pixels[i];
-        if(red<235 && pixels[i+1]-red>3 && pixels[i+2]-red>5) marks++;
-      }
-      return marks/(pixels.length/4);
-    });
-  }
-  await freeze(1.70);
-  const openingPlate=await plateCoverage();
-  assert.equal((await ink()).total,0,'no name before the jaws meet');
+  const timing=await film.evaluate(async video=>
+    fetch(video.dataset.inkMap).then(response=>response.json()));
+  await freeze(timing.release-.25);
+  assert.equal((await ink()).total,0,'the exploded assembly can finish before the name appears');
   assert.equal(await page.locator('#home').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)');
-  await freeze(3.25);
-  const developedPlate=await plateCoverage();
-  assert.ok(developedPlate>openingPlate+.08,'the contact exposure develops across the plate');
+  await freeze(timing.release+1.00);
   const airborne=await ink(); assert.ok(airborne.color>150 && airborne.total>airborne.color);
   await page.screenshot({path:out+'/chapter-transfer.png'});
-  await freeze(5.85);
-  assert.ok(await plateCoverage()<developedPlate-.08,'the field clears as the lettering settles');
+  await freeze(timing.settled+.03);
   const rest=await ink(); assert.ok(rest.total>3000 && rest.color===0);
   await page.screenshot({path:out+'/chapter-cover.png'});
   const rect=await canvas.boundingBox();
