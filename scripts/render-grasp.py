@@ -7,7 +7,7 @@ import json
 import math
 import subprocess
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
@@ -71,6 +71,11 @@ def projection(t):
     # Travel across the contact detail before returning to the wider print.
     traverse = travel(2.10, 3.04, t)*(1-travel(3.36, 4.85, t))
     center += np.array([42., -18.])*traverse
+    # Match the small contact detail to a full-height negative before the
+    # wider reconstruction. The camera and particle anchors share this move.
+    macro = travel(2.48, 2.85, t)*(1-travel(2.93, 3.36, t))
+    zoom *= 1 + 1.30*macro
+    center = mix(center, part + [-15., -5.], macro*.90)
     return center, zoom
 
 
@@ -182,6 +187,31 @@ def hatch_lines(coordinate, spacing, width):
 hatch = hatch_lines(XX*.36 + YY*.93, 6.7, 1.05)
 crosshatch = hatch_lines(XX*.88 - YY*.48, 9.2, .95)
 dots = 1 - ramp(.18, .30, dist)
+vertical_hatch = hatch_lines(XX, 6.2, 1.25)
+
+
+def montage_plate(t, metal, center, radius):
+    """Transform the impression while keeping the pickup's release point intact."""
+    tiles = travel(.78, .90, t)*(1-travel(.96, 1.30, t))
+    fragments = travel(3.10, 3.36, t)*(1-travel(3.48, 4.12, t))
+    if tiles > .001:
+        # Alternating rectangular pieces translate back into registration.
+        cell_x, cell_y = (XX//160).astype(int), (YY//108).astype(int)
+        sx = np.clip(XX+tiles*147*np.sin(cell_y*2.8+cell_x*.8),0,W-1).astype(int)
+        sy = np.clip(YY+tiles*81*np.cos(cell_x*2.1+cell_y*.7),0,H-1).astype(int)
+        metal = metal[sy,sx]
+    if fragments > .001:
+        # Oblique facets release from the arm; the jaws remain the origin of
+        # the name particles throughout this optical reconstruction.
+        field = ramp(radius*1.8, radius*3.4, np.hypot(XX-center[0],YY-center[1]))
+        diagonal = np.floor((XX*.80+YY*.60)/174)
+        cross = np.floor((-XX*.60+YY*.80)/126)
+        offset_x = fragments*field*178*np.sin(diagonal*2.3+cross*.7)
+        offset_y = fragments*field*104*np.cos(cross*1.8-diagonal*.8)
+        sx = np.clip(XX+offset_x,0,W-1).astype(int)
+        sy = np.clip(YY+offset_y,0,H-1).astype(int)
+        metal = metal[sy,sx]
+    return metal
 
 
 def optical_field(t, center, radius):
@@ -257,8 +287,8 @@ def developing_screen(t, dx, dy, radius, metal):
 
 def print_passes(t, metal, edges):
     """Alternate copper linework, a blue negative and a warm halftone proof."""
-    copper = travel(.42, .87, t)*(1-travel(1.12, 1.73, t))
-    negative = travel(2.03, 2.72, t)*(1-travel(3.16, 3.87, t))
+    copper = travel(.47, .57, t)*(1-travel(.84, 1.03, t))
+    negative = travel(2.03, 2.55, t)*(1-travel(3.45, 3.91, t))
     halftone = travel(3.20, 3.86, t)*(1-travel(4.25, 5.13, t))
     # The diagonal print edge develops across the frame. Its cells are fixed
     # to the paper, so the camera motion produces no texture flicker.
@@ -274,6 +304,7 @@ def print_passes(t, metal, edges):
 
 def frame(t):
     metal, center, radius = arm_plate(t)
+    metal = montage_plate(t, metal, center, radius)
     dx, dy = XX-center[0], YY-center[1]
     distance = np.hypot(dx, dy)
     # Keep the silhouette and the relief of the metal visible at every exposure.
@@ -282,7 +313,8 @@ def frame(t):
     vertical[0,:] = 0
     horizontal[:,0] = 0
     edges = np.clip(2.5*np.maximum(vertical, horizontal), 0, 1)
-    cut = metal*(.14 + .77*hatch + .34*crosshatch*metal)
+    first_impression = 1-travel(.43,.60,t)
+    cut = metal*(.14 + .77*mix(hatch,vertical_hatch,first_impression) + .34*crosshatch*metal)
     printed = metal*(.10 + .52*glyph + .30*dots)
     transition = ramp(2.25, 3.74, t)
     impression = (1-ramp(.2*radius, 3.8*radius, distance))*transition
@@ -295,6 +327,10 @@ def frame(t):
     broken_line = .32+.68*(np.cos(np.arctan2(seat_dy,seat_dx)*64)>0)
     original_rim = rim*broken_line*ramp(2.4,3.25,t)
     ink = np.clip(mix(cut,printed,impression)+.62*edges+.22*original_rim,0,.85)
+    mint = travel(.94, 1.04, t)*(1-travel(1.28,1.57,t))
+    # A brief positive schematic follows the offset tiles, with a different
+    # density and colour before the contact exposes the reverse impression.
+    ink = mix(ink, np.clip(metal*(.32+.31*glyph)+edges*.49,0,.84),mint)
 
     # As the name lifts away, the cut marks around the jaws give up their ink.
     # The outline remains legible and regains its weight when the camera pulls back.
@@ -313,13 +349,18 @@ def frame(t):
     copper, blue_plate, warm_plate, echo = print_passes(t, metal, edges)
     negative_shape = np.clip(metal*3.7, 0, 1)
     ink *= 1 - .80*blue_plate
+    defocus = travel(4.06,4.24,t)*(1-travel(4.43,4.98,t))
+    soft_shape = np.asarray(Image.fromarray((negative_shape*255).astype('uint8')).filter(
+        ImageFilter.GaussianBlur(8*defocus))).astype('f')/255 if defocus>.001 else negative_shape
+    focus_field = defocus*(.14+.27*dots)
     # A cool proof on white paper, with a narrow violet offset at its edge.
     spectral_ink = (53, 119, 135)
     edge_ink = (108, 93, 176)
     image = np.empty((H,W,3), dtype='uint8')
     for channel in range(3):
         paper = PAPER[channel] + (backdrop[:,:,channel].astype('f')-255)*background_weight
-        paper = mix(paper, (204, 166, 108)[channel], copper*.22*background_weight)
+        paper = mix(paper, (204, 166, 108)[channel], copper*.46*background_weight)
+        paper = mix(paper, (213, 229, 216)[channel], mint*.45*background_weight)
         paper = mix(paper, spectral_ink[channel], screen)
         paper = mix(paper, edge_ink[channel], .29*rim_light)
         paper = mix(paper, (17, 108, 134)[channel], blue_plate*(1-negative_shape))
@@ -327,7 +368,13 @@ def frame(t):
         paper = mix(paper, (255, 255, 255)[channel], negative_shape*blue_plate*.9)
         paper = mix(paper, (160, 74, 122)[channel], echo*.54)
         engraving = mix(GRAPHITE[channel], (191, 99, 53)[channel], copper*.88)
+        engraving = mix(engraving, (58, 117, 104)[channel], mint*.90)
         layer = paper + paper_grain + (engraving-paper)*ink
+        layer = mix(layer, (94, 137, 112)[channel], focus_field)
+        layer = mix(layer, 250, soft_shape*defocus*.72)
+        # Fine screen dots remain in focus while the underlying silhouette
+        # briefly loses and then regains its edge, as in a printed focus pull.
+        layer = mix(layer, (98, 127, 107)[channel], dots*soft_shape*defocus*.18)
         image[:,:,channel] = np.clip(mix(layer, COPPER[channel], accent), 0, 255)
     return Image.fromarray(image)
 
@@ -341,7 +388,7 @@ def write_ink_map():
     ys, xs = np.nonzero(jaws & (ink<185))
     sample = np.random.default_rng(423).choice(len(xs), 384, replace=False)
     origins = np.column_stack([local_x[ys[sample],xs[sample]],local_y[ys[sample],xs[sample]]])
-    rate = 12
+    rate = FPS
     poses = []
     for i in range(SECONDS*rate+1):
         t = i/rate
