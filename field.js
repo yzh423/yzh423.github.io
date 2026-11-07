@@ -31,7 +31,7 @@
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
     let inkMap, filmUnavailable = false, tint = [], flowTint = [], filmAlignment = .5, filmFit = 'cover';
     let currentCanvas,currentCtx,currentFrame=0,currentLast=0,currentTime=0,currentPixels,currentBuffer,currentSurface,currentSurfaceCtx,fieldPalette=[];
-    let fieldEdges,fieldColumns,fieldPulls;
+    let fieldEdges,fieldColumns,fieldPulls,fieldCues=[];
     // Use coordinates exported by the engraving renderer. Their origin is the
     // centre of the part, so they stay on the tool throughout the camera move.
     if (film.dataset.inkMap) {
@@ -57,6 +57,13 @@
         const u=x/(fieldWidth-1),v=y/(fieldHeight-1);
         fieldEdges[y*fieldWidth+x]=soften(clamp(Math.min(u,1-u,v,1-v)*9,0,1));
       }
+      fieldCues=[
+        [0,0],[inkMap.contact,0],
+        [inkMap.explosion_peak+.2,1],[inkMap.assembly_start+.18,1],
+        [inkMap.assembled+.1,2],[inkMap.release+.55,2],
+        [inkMap.release+inkMap.name_duration*.70,3],[inkMap.settled-.65,3],
+        [inkMap.settled,0]
+      ];
       stage.insertBefore(currentCanvas,film);stage.classList.add('has-currents');
     }
     function filmProjection() {
@@ -65,6 +72,17 @@
       const scale=filmFit==='contain'?Math.min(sx,sy):Math.max(sx,sy);
       return {scale,x:(w-width*scale)*filmAlignment,y:(h-height*scale)/2};
     }
+    function fieldGrade(time) {
+      if(time>=inkMap.settled) {
+        // The last film grade is also the first loop grade: no seam on ending,
+        // pausing or replaying. Each six-second state has a short colour hold.
+        const step=(time-inkMap.settled)/6,from=Math.floor(step)%4;
+        return {from,to:(from+1)%4,progress:clamp((step%1-.12)/.88,0,1)};
+      }
+      const next=fieldCues.findIndex(cue=>cue[0]>time);
+      const a=fieldCues[Math.max(0,next-1)],b=fieldCues[Math.max(1,next)];
+      return {from:a[1],to:b[1],progress:clamp((time-a[0])/(b[0]-a[0]),0,1)};
+    }
     function drawCurrents(time,still=false) {
       if(!currentCtx||!w||!h||!fieldPalette.length)return;
       const phase=(from,to)=>soften(clamp((time-from)/(to-from),0,1));
@@ -72,9 +90,10 @@
         (1-phase(inkMap.assembly_start??3.1,inkMap.assembled));
       const handoff=phase(inkMap.release,inkMap.settled);
       const pointerX=mx/w,pointerY=my/h,heat=still?0:strength;
-      // One continuous pigment field, not paths or separate floating shapes.
-      // A small raster carries slow, broad colour folds across the whole paper;
-      // the film supplies its finer engraved texture. No full-size pixel reads.
+      const grade=fieldGrade(time),a=fieldPalette[grade.from],b=fieldPalette[grade.to];
+      const transition=grade.from===grade.to?0:Math.sin(Math.PI*grade.progress)**2;
+      // Colour changes travel through one continuous exposure. Slightly offset
+      // RGB transitions suggest optical separation without stripes or cuts.
       const timeX=time*.18,timeY=time*.13;
       for(let x=0;x<fieldWidth;x++) {
         const u=x/(fieldWidth-1);
@@ -84,19 +103,27 @@
       for(let y=0;y<fieldHeight;y++) {
         const v=y/(fieldHeight-1),drift=Math.sin(v*4.2+timeX)*.13;
         const rowPull=heat>.001?Math.exp(-((v-pointerY)**2)*9):0;
+        const refraction=Math.sin(v*7.4-time*.85)*transition*.035;
         for(let x=0;x<fieldWidth;x++) {
           const u=x/(fieldWidth-1),influence=fieldPulls[x]*rowPull;
-          const warpX=u+drift+influence*.08,warpY=v+fieldColumns[x];
+          const warpX=u+drift+influence*.08+refraction,warpY=v+fieldColumns[x];
           const tide=Math.sin(warpX*4.6+warpY*2.8-timeX)*.5+.5;
           const fold=Math.cos(warpX*3.0-warpY*4.2+timeY)*.5+.5;
           const hue=clamp(.07+tide*.59+fold*.20+opening*.10+influence*.10,0,1);
-          const color=fieldPalette[Math.round(hue*255)];
+          const tone=Math.round(hue*255);
+          const front=((u-.5)*.32+(v-.5)*.18+(tide-.5)*.12)*transition;
+          const blend=grade.progress+front,separation=transition*(.055+influence*.035);
+          const red=soften(clamp(blend+separation,0,1));
+          const green=soften(clamp(blend,0,1));
+          const blue=soften(clamp(blend-separation,0,1));
           // Feather into the same white paper at the edges. A continuous centre
           // stays visible throughout the introduction and the resting name.
           const edge=fieldEdges[y*fieldWidth+x];
-          const opacity=(.12+.16*fold+.07*opening+.045*influence)*(1-handoff*.18)*edge;
+          const opacity=(.19+.15*fold+.045*opening+.05*transition+.045*influence)*(1-handoff*.12)*edge;
           const index=(y*fieldWidth+x)*4;
-          currentPixels[index]=color[0];currentPixels[index+1]=color[1];currentPixels[index+2]=color[2];
+          currentPixels[index]=a[tone][0]+(b[tone][0]-a[tone][0])*red;
+          currentPixels[index+1]=a[tone][1]+(b[tone][1]-a[tone][1])*green;
+          currentPixels[index+2]=a[tone][2]+(b[tone][2]-a[tone][2])*blue;
           currentPixels[index+3]=Math.round(opacity*255);
         }
       }
@@ -164,10 +191,17 @@
           'rgb('+a.map((v,i)=>Math.round(v+(colour[i]-v)*step/12)).join(',')+')');
       });
       palette=Array.from({length:18},(_,i)=>'rgb('+a.map((c,j)=>Math.round(c+(b[j]-c)*i/17)).join(',')+')');
-      fieldPalette=Array.from({length:256},(_,step)=>{
-        const position=step/255*3,lo=Math.min(2,Math.floor(position)),blend=position-lo;
-        return pigments[lo].map((channel,i)=>Math.round(channel+(pigments[lo+1][i]-channel)*blend));
-      });
+      // Each exposure has one dominant colour family, rather than keeping all
+      // hues on screen at once. Colour is still bright enough for graphite ink.
+      const grades=dark?[
+        [[12,137,192],[40,229,241]],[[230,73,25],[255,182,47]],
+        [[122,50,239],[246,66,169]],[[0,159,139],[151,223,58]]
+      ]:[
+        [[0,122,183],[0,202,214]],[[219,62,21],[245,164,26]],
+        [[118,36,213],[224,48,147]],[[0,137,121],[130,191,45]]
+      ];
+      fieldPalette=grades.map(([low,high])=>Array.from({length:256},(_,step)=>
+        low.map((channel,i)=>Math.round(channel+(high[i]-channel)*step/255))));
     }
     function measure(){
       if(!ctx||!sampler)return;

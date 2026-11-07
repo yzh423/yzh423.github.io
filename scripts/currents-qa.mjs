@@ -14,6 +14,26 @@ try {
   const film=page.locator('.flight-film'),currents=page.locator('.flight-currents'),letters=page.locator('#flight-lettering');
   const snapshot=canvas=>canvas.evaluate(c=>c.toDataURL());
   const timing=await film.evaluate(async v=>fetch(v.dataset.inkMap).then(r=>r.json()));
+  const colour=()=>currents.evaluate(c=>{
+    const pixels=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
+    const rgb=[0,0,0];let weight=0;
+    for(let y=.2;y<.81;y+=.06)for(let x=.2;x<.81;x+=.06) {
+      const i=(Math.floor(y*c.height)*c.width+Math.floor(x*c.width))*4,a=pixels[i+3]/255;
+      for(let channel=0;channel<3;channel++)rgb[channel]+=pixels[i+channel]*a;
+      weight+=a;
+    }
+    return rgb.map(value=>value/weight);
+  });
+  const exposure=async time=>{
+    await film.evaluate(async(v,t)=>{v.pause();await new Promise(r=>{v.addEventListener('seeked',r,{once:true});v.currentTime=t;});},time);
+    await page.waitForTimeout(80);return colour();
+  };
+  const cyan=await exposure(timing.contact*.7),amber=await exposure(timing.explosion_peak+.3);
+  const magenta=await exposure(timing.assembled+.12),green=await exposure(timing.settled-1.1);
+  assert.ok(cyan[2]>cyan[0]+90,'opening exposure is visibly cyan');
+  assert.ok(amber[0]>amber[2]+90,'exploded exposure turns amber');
+  assert.ok(magenta[0]>magenta[1]+70&&magenta[2]>magenta[1]+70,'assembly exposure turns magenta');
+  assert.ok(green[1]>green[0]+30&&green[1]>green[2]+30,'name transfer passes through green');
   const at=t=>timing.poses[Math.round(t*timing.fps)];
   const early=at(timing.release+timing.name_duration*.40),late=at(timing.release+timing.name_duration*.85);
   assert.ok(Math.hypot(late[0]-early[0],late[1]-early[1])>40,'the wrist travels while the name is forming');
@@ -43,6 +63,11 @@ try {
   assert.equal(await snapshot(letters),name,'resting letters do not need to redraw with the background');
   assert.equal(await film.evaluate(v=>v.currentTime),await film.evaluate(v=>v.duration));
   await page.screenshot({path:out+'/living-currents.png'});
+  const restingColour=await colour();await page.waitForTimeout(5700);
+  const nextColour=await colour();
+  assert.ok(Math.hypot(...nextColour.map((value,i)=>value-restingColour[i]))>110,
+    'the finished banner continues to change its dominant colour after the film ends');
+  assert.equal(await snapshot(letters),name,'the colour cycle leaves the resting name intact');
   await page.locator('.motion-toggle').click();await page.waitForTimeout(120);
   const paused=await snapshot(currents);await page.waitForTimeout(350);
   assert.equal(await snapshot(currents),paused,'pause stills the live background');
@@ -59,5 +84,5 @@ try {
   assert.equal(await reduced.locator('.flight-currents').evaluate(c=>c.toDataURL()),still);
   assert.ok(await reduced.locator('.flight-film').evaluate(v=>v.paused));
   assert.deepEqual(errors,[]);
-  console.log('PASS overlapping arm and name motion; continuous background; linked pointer; pause, resume, offscreen and reduced motion');
+  console.log('PASS four distinct colour exposures and ambient colour cycle; continuous background; linked pointer; pause, resume, offscreen and reduced motion');
 } finally {await browser.close();}
