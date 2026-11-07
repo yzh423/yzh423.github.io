@@ -29,7 +29,7 @@
     // The film is the master clock for the arm, numerical field and name.
     // Keep all authored layers together at a brisker pace; research videos
     // retain their recorded speed.
-    if(printStage)film.defaultPlaybackRate=film.playbackRate=1.05;
+    if(printStage)film.defaultPlaybackRate=film.playbackRate=1.18;
     const shotChange=.64;
     const fieldWidth=112,fieldHeight=56;
     let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;

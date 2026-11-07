@@ -35,7 +35,7 @@ try{
   poses.push((await page.evaluate(t=>window.armFilm.render(t).pose,timing.duration)).map(n=>Math.round(n*100)/100));
   const marks=await page.evaluate(()=>window.armFilm.inkMarks());
   const data={...timing,live_currents:true,background_strength:.72,flow:'engraved',motion_profile:'cruise',model:'original-3d',
-    orbit_degrees:360,assembly_mode:'simultaneous',poses,marks};
+    assembly_mode:'simultaneous',poses,marks};
   await writeFile(new URL('grasp-ink.json',folder),JSON.stringify(data)+'\n');
   for(const [source,target] of [['opening.png','grasp-study-opening.webp'],['settled.png','grasp-study.webp']])
     execFileSync(ffmpeg,['-hide_banner','-loglevel','error','-y','-i',new URL(source,scratch).pathname.slice(1),'-quality','92',new URL(target,folder).pathname.slice(1)],{windowsHide:true});

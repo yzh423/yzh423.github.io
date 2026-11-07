@@ -1,6 +1,6 @@
 /* The video remains a synchronized fallback and media clock. The live scene
  * supplies opaque, dimensional surfaces above the transparent numeric backdrop. */
-import {createArmFilm} from './scripts/arm-3d.js';
+import {createArmFilm} from './scripts/arm-3d.js?v=material-arc-1';
 const stage=document.querySelector('.print-stage'),film=stage?.querySelector('video');
 if(stage&&film&&!navigator.connection?.saveData){
   let model,frame=0,lastRender=0,inView=false,disposed=false;

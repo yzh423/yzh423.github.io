@@ -60,10 +60,17 @@ try {
   assert.ok(shapeChange(spread,macro)>.18,'separated and macro shots have visibly different silhouettes, independent of their colour');
   assert.ok(shapeChange(macro,reverse)>.25,'the viewpoint change reframes the entire numeric composition');
   await exposure(timing.assembled+.10);const gathered=await composition();
-  assert.ok(gathered.cx>.68,'the digital form converges at the gripper before the signature release');
+  const tool=timing.poses[Math.round((timing.assembled+.10)*timing.fps)];
+  const toolX=await film.evaluate((v,{tool,width,height})=>{
+    const css=getComputedStyle(v),sx=v.clientWidth/width,sy=v.clientHeight/height;
+    const scale=css.objectFit==='contain'?Math.min(sx,sy):Math.max(sx,sy);
+    return ((v.clientWidth-width*scale)*(parseFloat(css.objectPosition)/100||.5)+tool[0]*scale)/v.clientWidth;
+  },{tool,width:timing.width,height:timing.height});
+  assert.ok(Math.abs(gathered.cx-toolX)<.08,'the digital form converges at the actual projected gripper before the signature release');
   const at=t=>timing.poses[Math.round(t*timing.fps)];
   const early=at(timing.release+timing.name_duration*.40),late=at(timing.release+timing.name_duration*.85);
-  assert.ok(Math.hypot(late[0]-early[0],late[1]-early[1])>40,'the wrist travels while the name is forming');
+  assert.ok(Math.hypot(late[0]-early[0],late[1]-early[1])>early[2],
+    'the wrist travels more than one projected tool radius while the name is forming');
   assert.ok(timing.movement_end>timing.release+timing.name_duration && timing.movement_end<timing.settled);
   await film.evaluate(async(v,t)=>{v.pause();await new Promise(r=>{v.addEventListener('seeked',r,{once:true});v.currentTime=t;});},timing.settled+.03);
   await page.waitForTimeout(150);

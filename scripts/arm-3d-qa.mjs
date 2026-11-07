@@ -22,16 +22,20 @@ try{
         return actual.sub(p.mesh.position).length()/p.offset.length();
       }));
     }
-    const matrices=[];
-    for(const t of [2.8,3.65,4.5,5.35,6.2]){film.render(t);matrices.push(film.camera.matrixWorld.elements.slice());}
+    const matrices=[],angles=[];
+    for(let i=0;i<=4;i++){
+      const t=timing.orbit_start+(timing.orbit_end-timing.orbit_start)*i/4;
+      film.render(t);matrices.push(film.camera.matrixWorld.elements.slice());angles.push(motion(t).orbit);
+    }
     return {clipped,pieces:film.pieces.length,lift:pickup.part.y-before.part.y,gap:pickup.gap,
-      beforeOpen:pickup.opened,turnOpen:[turnStart.opened,turnEnd.opened],angle:turnEnd.orbit-turnStart.orbit,shared,matrices};
+      beforeOpen:pickup.opened,turnOpen:[turnStart.opened,turnEnd.opened],angle:turnEnd.orbit-turnStart.orbit,
+      expectedAngle:timing.camera_sweep_degrees*Math.PI/180,shared,matrices,angles};
   });
   assert.equal(audit.clipped,0,'all rigid parts remain in frame at every sampled angle');
   assert.ok(audit.pieces>60);assert.equal(audit.beforeOpen,0);assert.equal(audit.gap,.26);assert.ok(audit.lift>.4);
-  assert.deepEqual(audit.turnOpen,[1,1]);assert.ok(Math.abs(audit.angle-2*Math.PI)<1e-8);
+  assert.deepEqual(audit.turnOpen,[1,0]);assert.ok(Math.abs(audit.angle-audit.expectedAngle)<1e-8);
   for(const ratios of audit.shared)assert.ok(Math.max(...ratios)-Math.min(...ratios)<1e-8,'all parts reassemble together');
-  assert.ok(audit.matrices[0].every((n,i)=>Math.abs(n-audit.matrices[4][i])<1e-8),'360-degree orbit returns to the same viewpoint');
+  assert.ok(audit.angles.slice(1).every((angle,i)=>angle<audit.angles[i]),'the camera arc never reverses direction');
   assert.ok(new Set(audit.matrices.slice(0,4).map(m=>JSON.stringify(m))).size===4);
   for(const t of [1.45,2.8,3.65,4.5,5.35,6.9]){
     const r=await page.evaluate(t=>window.armFilm.render(t,true),t);
@@ -64,5 +68,5 @@ try{
   assert.equal(await reduced.locator('.motion-toggle').isDisabled(),true);
   assert.deepEqual(errors,[]);
   await writeFile(new URL('audit.json',out),JSON.stringify(audit,null,2));
-  console.log('PASS true 360-degree camera, full pickup, simultaneous assembly, 101 framing samples, six viewports, dark mode, reduced motion and WebGL fallback');
+  console.log('PASS continuous camera arc, full pickup, simultaneous assembly, 101 framing samples, six viewports, dark mode, reduced motion and WebGL fallback');
 }finally{await browser.close();}

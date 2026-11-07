@@ -4,19 +4,19 @@ import {RoomEnvironment} from './vendor/three/examples/jsm/environments/RoomEnvi
 import {RoundedBoxGeometry} from './vendor/three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 export const timing={width:1440,height:640,fps:60,duration:10,contact:.70,pickup_start:.85,pickup_end:1.45,
-  explosion_start:1.70,explosion_peak:2.70,orbit_start:2.80,orbit_end:6.20,
-  assembly_start:6.25,assembled:7.30,release:7.48,settled:9.92,movement_end:9.84,name_duration:1.70};
+  explosion_start:1.70,explosion_peak:2.70,orbit_start:2.75,orbit_end:7.50,camera_sweep_degrees:-68,
+  assembly_start:6.35,assembled:7.30,release:7.43,settled:9.88,movement_end:9.80,name_duration:1.70};
 const clamp=x=>Math.max(0,Math.min(1,x));
 const ease=(a,b,t)=>{const x=clamp((t-a)/(b-a));return x*x*x*(10+x*(-15+6*x));};
-const cruise=(a,b,t)=>{
-  const x=clamp((t-a)/(b-a)),r=.12;
+const cruise=(a,b,t,r=.12)=>{
+  const x=clamp((t-a)/(b-a));
   const enter=n=>{const q=n/r;return r*(q*q*q-.5*q*q*q*q)/(1-r);};
   return x<r?enter(x):x>1-r?1-enter(1-x):(x-r*.5)/(1-r);
 };
 const vec=(x,y,z=0)=>new T.Vector3(x,y,z),Y=vec(0,1,0);
 export function motion(t){
   const contact=ease(0,timing.contact,t),lift=ease(timing.pickup_start,timing.pickup_end,t);
-  const carry=ease(timing.release,timing.movement_end,t),rise=ease(timing.assembled,9.58,t);
+  const carry=ease(timing.assembled-.28,timing.movement_end,t),rise=ease(timing.assembled-.28,9.58,t);
   const wrist=vec(1.50-.55*carry,2.10+.65*(1-contact)+.44*lift+.32*rise);
   const shoulder=vec(-1.45,.82),delta=wrist.clone().sub(shoulder),d=delta.length();
   const lengthA=2.05,lengthB=2.28,along=(d*d+lengthA**2-lengthB**2)/(2*d);
@@ -25,7 +25,7 @@ export function motion(t){
     .addScaledVector(normal,Math.sqrt(Math.max(0,lengthA**2-along**2)));
   const part=vec(1.50-.55*carry,1.39+.44*lift+.32*rise);
   const opened=cruise(timing.explosion_start,timing.explosion_peak,t)*(1-ease(timing.assembly_start,timing.assembled,t));
-  const orbit=cruise(timing.orbit_start,timing.orbit_end,t)*Math.PI*2;
+  const orbit=cruise(timing.orbit_start,timing.orbit_end,t,.22)*timing.camera_sweep_degrees*Math.PI/180;
   return {shoulder,elbow,wrist,part,opened,orbit,gap:.26+.16*(1-contact),carry};
 }
 
@@ -33,28 +33,39 @@ export async function createArmFilm({live=false}={}){
   const {width,height}=timing;
   const renderer=new T.WebGLRenderer({antialias:true,preserveDrawingBuffer:!live,alpha:live});
   renderer.setSize(width,height);renderer.setPixelRatio(1);
-  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.15;
+  renderer.toneMapping=T.ACESFilmicToneMapping;renderer.toneMappingExposure=1.05;
   renderer.shadowMap.enabled=true;renderer.shadowMap.type=T.PCFSoftShadowMap;
   if(!live)document.body.appendChild(renderer.domElement);
   const scene=new T.Scene();scene.background=live?null:new T.Color('white');
   const camera=new T.PerspectiveCamera(30,width/height,.1,80);
   camera.setViewOffset(width,height,-100,0,width,height);
   const room=new RoomEnvironment(),pmrem=new T.PMREMGenerator(renderer);
-  scene.environment=pmrem.fromScene(room,.05).texture;scene.environmentIntensity=.8;
+  scene.environment=pmrem.fromScene(room,.05).texture;scene.environmentIntensity=.75;
   room.dispose();pmrem.dispose();
-  scene.add(new T.HemisphereLight(0xeaf5ff,0xc6bba8,1.4));
-  const key=new T.DirectionalLight(0xfff7e9,4.2);key.position.set(-3,9,5);key.castShadow=true;
+  scene.add(new T.HemisphereLight(0xeaf5ff,0xc6bba8,1.0));
+  const key=new T.DirectionalLight(0xfff4e9,3.2);key.position.set(-3,9,5);key.castShadow=true;
   key.shadow.mapSize.set(live?1024:2048,live?1024:2048);Object.assign(key.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:.1,far:20});
   key.shadow.bias=-.0005;key.shadow.normalBias=.025;key.shadow.radius=3;scene.add(key);
   const rim=new T.DirectionalLight(0xc4e9f2,2.8);rim.position.set(4,4,-4);scene.add(rim);
-  const fill=new T.DirectionalLight(0xffffff,.9);fill.position.set(1,2,6);scene.add(fill);
+  const fill=new T.DirectionalLight(0xffffff,.75);fill.position.set(1,2,6);scene.add(fill);
+  // Subpixel, object-bound machining grain: mipmaps keep it stable in motion.
+  const grainBytes=new Uint8Array(128*128*4);
+  let seed=423;
+  for(let y=0;y<128;y++)for(let x=0;x<128;x++){
+    seed=(Math.imul(seed,1664525)+1013904223)>>>0;
+    const value=Math.round(205+20*Math.sin(x*2.7)+((seed>>>24)/255-.5)*12),i=(y*128+x)*4;
+    grainBytes[i]=grainBytes[i+1]=grainBytes[i+2]=value;grainBytes[i+3]=255;
+  }
+  const brushed=new T.DataTexture(grainBytes,128,128);brushed.wrapS=brushed.wrapT=T.RepeatWrapping;
+  brushed.generateMipmaps=true;brushed.minFilter=T.LinearMipmapLinearFilter;brushed.magFilter=T.LinearFilter;
+  brushed.repeat.set(3,1);brushed.needsUpdate=true;
   const materials={
-    shell:new T.MeshStandardMaterial({color:0xc3ccc8,metalness:.5,roughness:.30}),
-    panel:new T.MeshStandardMaterial({color:0xe1e5df,metalness:.35,roughness:.3}),
-    core:new T.MeshStandardMaterial({color:0x283c3d,metalness:.65,roughness:.33}),
+    shell:new T.MeshPhysicalMaterial({color:0x8c9f98,metalness:.82,roughness:.32,clearcoat:.20,clearcoatRoughness:.25}),
+    panel:new T.MeshPhysicalMaterial({color:0xb8c8be,metalness:.72,roughness:.28,clearcoat:.30,clearcoatRoughness:.22}),
+    core:new T.MeshStandardMaterial({color:0x203333,metalness:.78,roughness:.38,roughnessMap:brushed}),
     rubber:new T.MeshStandardMaterial({color:0x162325,metalness:.05,roughness:.7}),
-    steel:new T.MeshStandardMaterial({color:0xaebdc3,metalness:.92,roughness:.2}),
-    copper:new T.MeshStandardMaterial({color:0xaf7049,metalness:.82,roughness:.25}),
+    steel:new T.MeshPhysicalMaterial({color:0xaebdc3,metalness:.95,roughness:.34,roughnessMap:brushed,bumpMap:brushed,bumpScale:.002,anisotropy:.55}),
+    copper:new T.MeshPhysicalMaterial({color:0xae7248,metalness:.88,roughness:.30,roughnessMap:brushed,clearcoat:.18}),
   };
   const pieces=[],staticMeshes=[];
   const box=(x,y,z,r=.03)=>new RoundedBoxGeometry(x,y,z,3,r);
@@ -68,7 +79,7 @@ export async function createArmFilm({live=false}={}){
   function mesh(geometry,material){const m=new T.Mesh(geometry,materials[material]);m.castShadow=true;m.receiveShadow=true;return m;}
   function part(name,geometry,material,place,offset,rotation=vec()){
     const m=mesh(geometry,material);scene.add(m);
-    pieces.push({name,mesh:m,place,offset:vec(...offset),rotation});return m;
+    pieces.push({name,mesh:m,place,offset:vec(...offset).multiply(vec(1.12,1.08,1.40)),rotation});return m;
   }
   const at=(position,rotation)=>m=>{m.position.copy(position);m.rotation.set(...(rotation||[0,0,0]));};
   const fixed=(name,geometry,material,position,rotation)=>{const m=mesh(geometry,material);at(position,rotation)(m);scene.add(m);staticMeshes.push(m);return m;};
@@ -159,11 +170,14 @@ export async function createArmFilm({live=false}={}){
       p.mesh.quaternion.multiply(tempQuat);
     }
     workpiece.position.copy(s.part);collar.position.copy(s.part).add(vec(0,0,.115));
-    const wide=ease(1.45,2.70,t)*(1-ease(6.25,7.45,t));
-    const closing=ease(7.10,9.80,t);
-    const target=vec(.05+.22*closing,1.68+.12*closing);
-    const radius=8.3+3.9*wide-.20*closing,azimuth=.34+s.orbit;
-    const elevation=.19+.075*Math.sin(s.orbit/2)**2;
+    const wide=ease(1.45,2.70,t)*(1-ease(timing.assembly_start-.20,timing.release+.10,t));
+    const closing=ease(6.90,9.80,t);
+    const turn=cruise(timing.orbit_start,timing.orbit_end,t,.22);
+    // Follow the nearer base as the viewpoint changes, keeping the larger
+    // model fully framed instead of cropping its feet during the handoff.
+    const target=vec(.05+.22*closing,1.68+.12*closing-.60*turn);
+    const radius=7.5+3.4*wide+.25*closing+.32*turn,azimuth=.34+s.orbit;
+    const elevation=.22+.045*Math.sin(Math.PI*turn)**2;
     camera.position.copy(target).add(vec(Math.sin(azimuth)*radius,Math.sin(elevation)*radius,Math.cos(azimuth)*radius));
     camera.lookAt(target);camera.updateMatrixWorld();renderer.render(scene,camera);
     // Keep the name legible without flattening the dimensional model early.
@@ -204,7 +218,7 @@ export async function createArmFilm({live=false}={}){
   }
   function theme(dark){
     // The model keeps its materials in dark mode; only the studio light changes.
-    scene.environmentIntensity=dark?.65:.8;key.intensity=dark?3.0:4.2;fill.intensity=dark?.5:.9;
+    scene.environmentIntensity=dark?.65:.75;key.intensity=dark?2.6:3.2;fill.intensity=dark?.5:.75;
   }
   return {render,timing,inkMarks,bounds,theme,canvas:output,renderer,scene,camera,pieces};
 }
