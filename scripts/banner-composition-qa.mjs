@@ -32,7 +32,10 @@ try{
     const controls=[...document.querySelectorAll('.flight-action,.motion-toggle,.flight-replay')].map(e=>e.getBoundingClientRect().toJSON());
     return {stage:rect('.print-stage'),video:vr.toJSON(),arm,name,controls,overflow:document.documentElement.scrollWidth-innerWidth};
   });
-  const times=[0,.7,1.45,1.7,2.5,3.3,3.9,4.7,5.5,6.3,7,7.4,8,8.8,9.5,9.98];
+  const timing=await film.evaluate(v=>fetch(v.dataset.inkMap).then(r=>r.json()));
+  const times=[0,timing.contact,timing.pickup_end,timing.explosion_start,timing.explosion_peak,
+    ...Object.values(timing.assembly_stages).map(([a,b])=>(a+b)/2),timing.assembled,
+    timing.release+timing.name_duration*.5,timing.settled,timing.duration-.01].sort((a,b)=>a-b);
   for(const [width,height] of [[1440,920],[1440,600],[1024,768],[768,1024],[390,844],[320,740]]){
     await page.setViewportSize({width,height});await page.waitForTimeout(120);
     for(const t of times){

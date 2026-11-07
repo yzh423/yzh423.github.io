@@ -13,19 +13,19 @@ from PIL import Image, ImageDraw, ImageFilter
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
-W, H, FPS, SECONDS = 1440, 640, 60, 10
-CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 7.30, 7.48, 9.92
+W, H, FPS, SECONDS = 1440, 640, 60, 8.70
+CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 6.00, 6.18, 8.62
 PICKUP_START, PICKUP_END = .85, 1.45
-MOVEMENT_END, LIFT_END = 9.84, 9.58
+MOVEMENT_END, LIFT_END = 8.54, 8.28
 EXPLOSION_START, EXPLOSION_PEAK = 1.70, 3.30
 ASSEMBLY_STAGES = {
-    'base': (3.55, 4.25),
-    'shoulder': (4.05, 4.75),
-    'upper_arm': (4.55, 5.25),
-    'elbow': (5.05, 5.75),
-    'forearm': (5.55, 6.25),
-    'wrist': (6.05, 6.75),
-    'gripper': (6.55, 7.25),
+    'base': (3.45, 4.03),
+    'shoulder': (3.77, 4.35),
+    'upper_arm': (4.09, 4.67),
+    'elbow': (4.41, 4.99),
+    'forearm': (4.73, 5.31),
+    'wrist': (5.05, 5.63),
+    'gripper': (5.37, 5.95),
 }
 XX, YY = np.meshgrid(np.arange(W, dtype='f')+.5, np.arange(H, dtype='f')+.5)
 def ramp(a,b,x):
@@ -56,10 +56,9 @@ def travel(start, end, time):
     return fraction**3 * (10 + fraction * (-15 + 6*fraction))
 
 
-def cruise(start, end, time):
+def cruise(start, end, time, edge=.12):
     """Constant middle speed, with short C2-continuous endpoint ramps."""
     n=float(np.clip((time-start)/(end-start),0,1))
-    edge=.12
     def entering(x):
         q=x/edge
         return edge*(q**3-.5*q**4)/(1-edge)
@@ -91,25 +90,27 @@ def pose(t):
 
 
 def return_window(stage, lag=0, name=None):
-    start,end = ASSEMBLY_STAGES.get(stage,(3.55,7.25))
+    start,end = ASSEMBLY_STAGES.get(stage,(ASSEMBLY_STAGES['base'][0],ASSEMBLY_STAGES['gripper'][1]))
     if stage == 'base':
-        if name == 'base plate': end = start+.38
-        elif name == 'pedestal': start += .25
-        else: start,end = start+.18,end-.08
+        if name == 'base plate': end = start+.46
+        elif name == 'pedestal': start += .08
+        else: start,end = start+.12,end-.02
     else: start += min(.05,lag*.25)
     return start,end
 
 
 def explosion(t, lag=0, stage=None, name=None):
     start,end = return_window(stage,lag,name)
-    return cruise(EXPLOSION_START+lag, EXPLOSION_PEAK+lag, t)*(1-cruise(start, end, t))
+    # Nearly uniform return speed, with only two frames of soft landing at
+    # either end. Adjacent assemblies overlap instead of stopping in sequence.
+    return cruise(EXPLOSION_START+lag, EXPLOSION_PEAK+lag, t)*(1-cruise(start, end, t,edge=.06))
 
 
 def projection(t):
-    settle = cruise(6.55, 7.40, t)
+    settle = cruise(ASSEMBLY_STAGES['gripper'][0], ASSEMBLED+.10, t)
     # Pull back ahead of the separation, hold a readable exploded drawing,
     # then quietly reframe the complete arm for its signature.
-    wide = cruise(1.50, 3.05, t)*(1-cruise(6.55, 7.35, t))
+    wide = cruise(1.50, 3.05, t)*(1-cruise(ASSEMBLY_STAGES['gripper'][0], ASSEMBLED+.05, t))
     zoom = mix(mix(1.29, 1.80, settle), .76, wide)
     close_center = mix(np.array([563., 270.]), np.array([590., 270.]),settle)
     center = mix(close_center, np.array([600., 265.]), wide)
@@ -356,14 +357,14 @@ def write_ink_map(bounds):
     origins = origins[np.argsort(origins[:,1])]
     rate = FPS
     poses = []
-    for i in range(SECONDS*rate+1):
+    for i in range(round(SECONDS*rate)+1):
         t = i/rate
         _, part, _ = pose(t)
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
     data = dict(width=W, height=H, contact=CONTACT, pickup_start=PICKUP_START, pickup_end=PICKUP_END, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], assembly_stages=ASSEMBLY_STAGES, live_currents=True, flow='engraved', motion_profile='cruise', name_duration=1.70, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
-    data.update(bounds=bounds, artwork='2d-engraving')
+    data.update(bounds=bounds, artwork='2d-engraving', duration=SECONDS, assembly_ramp=.06)
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 
@@ -376,7 +377,7 @@ if __name__=='__main__':
          '-preset','slow','-crf','22','-pix_fmt','yuv420p','-movflags','+faststart',str(OUT/'grasp-study.mp4')]
     bounds=[]
     with subprocess.Popen(cmd,stdin=subprocess.PIPE) as encoder:
-        for i in range(FPS*SECONDS): encoder.stdin.write(frame(i/FPS,bounds).tobytes())
+        for i in range(round(FPS*SECONDS)): encoder.stdin.write(frame(i/FPS,bounds).tobytes())
         encoder.stdin.close()
         if encoder.wait(): raise RuntimeError('Encoding failed')
     bounds.append(bounds[-1])

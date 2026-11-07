@@ -177,7 +177,7 @@
       return pen.getImageData(0,0,fieldWidth,fieldHeight).data;
     }
     function composition(time,finished=false) {
-      const progress=finished?1:soften(clamp((time-(inkMap?.release??7.48))/2.1,0,1));
+      const progress=finished?1:soften(clamp((time-(inkMap?.release??6.18))/2.1,0,1));
       const stacked=innerWidth<=850;
       if(!inkMap?.bounds)return {scale:1,x:0,y:0};
       const i=clamp((finished?inkMap.settled:time)*inkMap.fps,0,inkMap.bounds.length-1);
