@@ -7,6 +7,7 @@ from pathlib import Path
 import json
 import math
 import subprocess
+import sys
 import numpy as np
 from PIL import Image, ImageDraw, ImageFilter
 import imageio_ffmpeg
@@ -380,3 +381,4 @@ if __name__=='__main__':
         if encoder.wait(): raise RuntimeError('Encoding failed')
     bounds.append(bounds[-1])
     write_ink_map(bounds)
+    subprocess.run([sys.executable, '-B', str(Path(__file__).with_name('render-engraving-atlas.py'))], check=True)

@@ -37,7 +37,8 @@
     let ready=false,entry=0,needsEntry=true,mx=0,my=0,strength=0,flowX=0,flowY=0;
     let inkMap, filmUnavailable = false, tint = [], flowTint = [], filmAlignment = .5, filmFit = 'cover';
     let currentCanvas,currentCtx,currentFrame=0,currentLast=0,currentTime=0,currentPixels,currentBuffer,currentSurface,currentSurfaceCtx,fieldPalette=[];
-    let fieldEdges,fieldColumns,fieldPulls,fieldCues=[],fieldQuiet,digitScreens=[],digitShots=[];
+    let fieldEdges,fieldColumns,fieldPulls,fieldCues=[],fieldQuiet,digitScreens=[],softDigitScreens=[],digitShots=[];
+    let engravingAtlas,engravingCanvas,engravingCtx;
     // Use coordinates exported by the engraving renderer. Their origin is the
     // centre of the part, so they stay on the tool throughout the camera move.
     if (film.dataset.inkMap) {
@@ -64,6 +65,12 @@
       fieldEdges=new Float32Array(fieldWidth*fieldHeight);
       fieldQuiet=new Float32Array(fieldWidth*fieldHeight);
       fieldColumns=new Float32Array(fieldWidth);fieldPulls=new Float32Array(fieldWidth);
+      if(inkMap.atlas){
+        engravingCanvas=document.createElement('canvas');engravingCanvas.width=fieldWidth;engravingCanvas.height=fieldHeight;
+        engravingCtx=engravingCanvas.getContext('2d',{willReadFrequently:true});
+        const image=new Image();image.src=new URL(inkMap.atlas.file,new URL(film.dataset.inkMap,document.baseURI)).href;
+        image.decode().then(()=>{engravingAtlas=image;wake();}).catch(()=>{});
+      }
       for(let y=0;y<fieldHeight;y++)for(let x=0;x<fieldWidth;x++) {
         const u=x/(fieldWidth-1),v=y/(fieldHeight-1);
         fieldEdges[y*fieldWidth+x]=soften(clamp(Math.min(u,1-u,v,1-v)*9,0,1));
@@ -71,25 +78,28 @@
       }
       fieldCues=[
         [0,0],[inkMap.contact,0],
-        [inkMap.explosion_peak+.2,1],[inkMap.assembly_start+.18,1],
+        [inkMap.explosion_peak+.2,1],[inkMap.assembly_start+shotChange,3],
+        [inkMap.assembly_start+1.1,3],
         [inkMap.assembled+.1,2],[inkMap.release+.55,2],
         [inkMap.release+inkMap.name_duration*.55,3],[inkMap.settled-.65,3],
         [inkMap.settled,0]
       ];
-      // One edit follows the mechanical film: establish, open, macro,
-      // change viewpoint, reassemble at the jaws, then yield to the signature.
-      // time, scale, separation, angle, centre x/y, negative exposure, digit clock
+      // Material cuts share the arm's actual silhouette: engraved contour,
+      // split impression, enlarged bearing, negative print, then clear type.
+      // time, scale, echo, angle, centre x/y, negative exposure, digit clock
       digitShots=[
-        [0,1,0,-.24,.54,.51,0,0],
-        [inkMap.contact,1,0,-.24,.54,.51,0,.15],
-        [inkMap.explosion_start+.65,1.4,.62,.12,.52,.50,0,.7],
-        [inkMap.explosion_peak-.2,3.6,1,.42,.36,.51,0,3.7],
-        [inkMap.assembly_start,3.6,1,.42,.36,.51,0,3.9],
-        [inkMap.assembly_start+shotChange,1.12,.92,1.42,.64,.46,1,6.9],
-        [inkMap.assembled-.65,1.15,.35,1.20,.61,.44,.7,7.8],
-        [inkMap.assembled,.68,0,1.06,.69,.48,0,8],
-        [inkMap.release,.68,0,1.06,.69,.48,0,8.1],
-        [inkMap.settled,1.05,.08,1.20,.68,.43,0,9.2]
+        [0,1,0,0,.5,.5,0,0],
+        [inkMap.contact,1,0,0,.5,.5,0,.15],
+        [inkMap.explosion_start,1.08,0,-.025,.5,.5,0,.6],
+        [inkMap.explosion_start+.65,1.25,.7,-.05,.5,.5,0,1.2],
+        [inkMap.explosion_peak-.2,4.8,0,.08,.5,.5,0,3.6],
+        [inkMap.assembly_start,4.8,0,.08,.5,.5,0,3.8],
+        [inkMap.assembly_start+shotChange,1,0,0,.5,.5,.88,6.1],
+        [inkMap.assembly_start+1.1,1,0,0,.5,.5,.88,6.3],
+        [inkMap.assembly_start+1.65,1,0,0,.5,.5,0,7],
+        [inkMap.assembled,1,0,0,.5,.5,0,7.8],
+        [inkMap.release,1,0,0,.5,.5,0,8],
+        [inkMap.settled,1,0,0,.5,.5,0,9.2]
       ];
       stage.insertBefore(currentCanvas,film);stage.classList.add('has-currents');
     }
@@ -117,6 +127,12 @@
         }
         pen.putImageData(buffer,0,0);return screen;
       });
+      // Defocus is prepared once. Crossfading these screens avoids an animated
+      // full-banner blur filter, which can stall video compositing on laptops.
+      softDigitScreens=digitScreens.map(screen=>{
+        const soft=document.createElement('canvas');soft.width=screen.width;soft.height=screen.height;
+        const pen=soft.getContext('2d');pen.filter='blur(1.6px)';pen.drawImage(screen,0,0);return soft;
+      });
     }
     function digitShot(time) {
       if(time<inkMap.settled) {
@@ -125,29 +141,40 @@
         const blend=soften(clamp((time-a[0])/(b[0]-a[0]),0,1));
         const at=i=>a[i]+(b[i]-a[i])*blend;
         const shot={scale:at(1),spread:at(2),angle:at(3),x:at(4),y:at(5),negative:at(6),clock:at(7)};
-        const macro=soften(clamp((time-inkMap.explosion_start-.65)/.75,0,1))*
-          (1-soften(clamp((time-inkMap.assembly_start)/shotChange,0,1)));
-        // Keep the simple disc centred during the closer view.
-        if(macro>0) {
-          shot.x+=(.46-shot.x)*macro;
-          shot.y+=(.52-shot.y)*macro;
-        }
-        // Reassembly follows the actual tool projection, including phone
-        // object-fit. The numerical form shares the name's point of origin.
-        const gather=soften(clamp((time-inkMap.assembled+.65)/.65,0,1))*
-          (1-soften(clamp((time-inkMap.release)/inkMap.name_duration,0,1)));
-        if(gather>0) {
-          const tool=projectionAt(time);
-          shot.x+=(tool.x/w-shot.x)*gather;shot.y+=(tool.y/h-shot.y)*gather;
-        }
         return shot;
       }
       const elapsed=time-inkMap.settled;
       const drift=elapsed-.45*(1-Math.exp(-elapsed/.45)),breath=Math.sin(drift*.24);
       // No more macro cuts once the visitor is reading the name. The final
       // exposure becomes a low-amplitude, slow peripheral movement.
-      return {scale:1.05+breath*.035,spread:.08+breath*.025,angle:1.20+drift*.035,
-        x:.68+breath*.018,y:.43+Math.sin(drift*.18)*.012,negative:0,clock:9.2+drift*.24};
+      return {scale:1+breath*.018,spread:0,angle:breath*.007,
+        x:.5+breath*.003,y:.5+Math.sin(drift*.18)*.003,negative:0,clock:9.2+drift*.24};
+    }
+    function engravedImpression(time,shot,heat){
+      if(!engravingAtlas||!engravingCtx)return null;
+      const atlas=inkMap.atlas,index=clamp(time*atlas.fps,0,atlas.frames-1),fraction=index%1;
+      const view=filmProjection(Math.min(time,inkMap.settled)),tool=projectionAt(Math.min(time,inkMap.settled));
+      const macro=soften(clamp((shot.scale-1.25)/3.55,0,1));
+      const focusX=w/2+(tool.x-w/2)*macro,focusY=h/2+(tool.y-h/2)*macro;
+      const pen=engravingCtx;pen.setTransform(1,0,0,1,0,0);pen.clearRect(0,0,fieldWidth,fieldHeight);
+      pen.save();pen.scale(fieldWidth/w,fieldHeight/h);
+      pen.translate(w*shot.x+(mx-w/2)*heat*.012,h*shot.y+(my-h/2)*heat*.012);
+      pen.rotate(shot.angle);pen.scale(shot.scale,shot.scale);pen.translate(-focusX,-focusY);
+      const draw=(frame,weight,offset=0)=>{
+        if(weight<=0)return;
+        pen.globalAlpha=weight;pen.globalCompositeOperation='lighter';
+        pen.drawImage(engravingAtlas,(frame%atlas.columns)*atlas.width,Math.floor(frame/atlas.columns)*atlas.height,
+          atlas.width,atlas.height,view.x+offset,view.y,inkMap.width*view.scale,inkMap.height*view.scale);
+      };
+      // Two offset impressions briefly open in opposite directions. Their
+      // source pixels remain the same physical parts as the foreground film.
+      const low=Math.floor(index),high=Math.ceil(index);
+      for(const [frame,weight] of [[low,1-fraction],[high,fraction]]){
+        draw(frame,weight);
+        if(shot.spread>0){draw(frame,weight*shot.spread*.26,-w*.23*shot.spread);draw(frame,weight*shot.spread*.26,w*.23*shot.spread);}
+      }
+      pen.restore();
+      return pen.getImageData(0,0,fieldWidth,fieldHeight).data;
     }
     function composition(time,finished=false) {
       const progress=finished?1:soften(clamp((time-(inkMap?.release??7.48))/2.1,0,1));
@@ -195,10 +222,12 @@
       const pointerX=mx/w,pointerY=my/h,heat=still?0:strength;
       const grade=fieldGrade(time),a=fieldPalette[grade.from],b=fieldPalette[grade.to];
       const transition=grade.from===grade.to?0:Math.sin(Math.PI*grade.progress)**2;
-      const shot=digitShot(time),aspect=w/h;
-      // One softly edged numerical disc. Its scale and colour follow the
-      // arm, leaving the background legible as a single, quiet shape.
-      const turn=shot.angle*.26-.18,turnC=Math.cos(turn),turnS=Math.sin(turn);
+      const shot=digitShot(time),impression=engravedImpression(time,shot,heat);
+      if(!impression){currentCtx.clearRect(0,0,w,h);return;}
+      const tool=projectionAt(Math.min(time,inkMap.settled));
+      const gather=phase(inkMap.assembled-.65,inkMap.assembled)*(1-phase(inkMap.release,inkMap.release+.8));
+      const optical=phase(inkMap.assembly_start-.05,inkMap.assembly_start+.18)*(1-phase(inkMap.assembly_start+.18,inkMap.assembly_start+shotChange));
+      const focus=reduced.matches?0:optical;
       const timeX=shot.clock*.18,timeY=shot.clock*.13;
       for(let x=0;x<fieldWidth;x++) {
         const u=x/(fieldWidth-1);
@@ -222,15 +251,12 @@
           const green=soften(clamp(blend,0,1));
           const blue=soften(clamp(blend-separation,0,1));
           const cell=y*fieldWidth+x;
-          const localX=((u-shot.x)*aspect+refraction*.35+influence*.025)/shot.scale;
-          const localY=(v-shot.y)/shot.scale;
-          const planeX=localX*turnC+localY*turnS,planeY=-localX*turnS+localY*turnC;
-          const radius=Math.hypot(planeX/.64,planeY/.40);
-          const edge=1-soften(clamp((radius-.76)/.24,0,1));
-          const light=clamp(.68+planeX*.24-planeY*.15,.4,.9);
-          const shape=edge*(light*(1-shot.negative)+(.95-light*.35)*shot.negative);
-          const opacity=(.024+.75*shape+.018*influence)*
-            (1-handoff*.67)*(1-handoff*.90*fieldQuiet[cell])*fieldEdges[cell]*(inkMap.background_strength??1);
+          const print=impression?impression[cell*4]/255:0;
+          const shape=print*(1-shot.negative)+(1-print*.92)*shot.negative;
+          const source=Math.exp(-(((u-tool.x/w)/.16)**2+((v-tool.y/h)/.23)**2));
+          const density=shape*(1-gather)+source*gather;
+          const opacity=(.004+.70*density+.018*influence*density)*
+            (1-handoff*.76)*(1-handoff*.95*fieldQuiet[cell])*fieldEdges[cell]*(inkMap.background_strength??1);
           const index=cell*4;
           currentPixels[index]=a[tone][0]+(b[tone][0]-a[tone][0])*red;
           currentPixels[index+1]=a[tone][1]+(b[tone][1]-a[tone][1])*green;
@@ -243,10 +269,12 @@
       if(!digitScreens.length)return;
       const frame=Math.floor(shot.clock)%4,blend=soften(shot.clock%1),zoom=1.08+shot.spread*.08;
       const x=(w-w*zoom)/2+(shot.x-.54)*w*.06,y=(h-h*zoom)/2+(shot.y-.51)*h*.06;
-      currentCtx.save();currentCtx.globalAlpha=1-blend;
-      currentCtx.drawImage(digitScreens[frame],x,y,w*zoom,h*zoom);
-      currentCtx.globalCompositeOperation='lighter';currentCtx.globalAlpha=blend;
-      currentCtx.drawImage(digitScreens[(frame+1)%4],x,y,w*zoom,h*zoom);
+      currentCtx.save();currentCtx.globalCompositeOperation='lighter';
+      for(const [screens,weight] of [[digitScreens,1-focus],[softDigitScreens,focus]]){
+        if(weight<=0)continue;
+        currentCtx.globalAlpha=weight*(1-blend);currentCtx.drawImage(screens[frame],x,y,w*zoom,h*zoom);
+        currentCtx.globalAlpha=weight*blend;currentCtx.drawImage(screens[(frame+1)%4],x,y,w*zoom,h*zoom);
+      }
       currentCtx.globalCompositeOperation='source-in';currentCtx.globalAlpha=1;
       currentCtx.drawImage(currentSurface,0,0,w,h);
       currentCtx.globalCompositeOperation='destination-over';currentCtx.globalAlpha=.10;

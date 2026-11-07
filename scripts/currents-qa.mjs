@@ -55,10 +55,13 @@ try {
   await exposure(timing.assembly_start+.64);const reverse=await composition();
   const shapeChange=(a,b)=>{
     const peakA=Math.max(...a.density),peakB=Math.max(...b.density);
-    return a.density.reduce((sum,value,i)=>sum+Math.abs(value/peakA-b.density[i]/peakB),0)/a.density.length;
+    // Compare visible ink mass, so extra white paper cannot hide a real cut.
+    const difference=a.density.reduce((sum,value,i)=>sum+Math.abs(value/peakA-b.density[i]/peakB),0);
+    const union=a.density.reduce((sum,value,i)=>sum+Math.max(value/peakA,b.density[i]/peakB),0);
+    return difference/union;
   };
-  assert.ok(shapeChange(spread,macro)>.18,'separated and macro shots have visibly different silhouettes, independent of their colour');
-  assert.ok(shapeChange(macro,reverse)>.25,'the viewpoint change reframes the entire numeric composition');
+  assert.ok(shapeChange(spread,macro)>.40,'separated and macro shots change at least 40% of their visible shape, independent of colour');
+  assert.ok(shapeChange(macro,reverse)>.50,'the negative print changes at least 50% of the visible composition');
   await exposure(timing.assembled+.10);const gathered=await composition();
   const tool=timing.poses[Math.round((timing.assembled+.10)*timing.fps)];
   const toolX=await film.evaluate((v,{tool,width,height})=>{
