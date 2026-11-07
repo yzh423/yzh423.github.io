@@ -57,17 +57,20 @@ def pose(t):
 
     # A level approach ends directly above the V-block. Both fingers reach
     # the OD before the first lifting frame. Only then does the load follow.
-    offset = np.array([-57 * carry, -98 * lift])
-    wrist = np.array([mix(756, PART_SEAT[0], align), mix(171, 250, descend)]) + offset
+    offset = np.array([-76 * carry, -110 * lift])
+    wrist = np.array([mix(734, PART_SEAT[0], align), mix(149, 250, descend)]) + offset
     return wrist, PART_SEAT + offset, mix(57, PART_RADIUS, close)
 
 
 def projection(t):
     _, part, _ = pose(t)
-    push = travel(.77, 3.78, t)
-    pullback = travel(3.78, 5.90, t)
-    zoom = math.exp(math.log(1.29) + math.log(3.45/1.29)*push + math.log(1.59/3.45)*pullback)
+    push = travel(.48, 2.85, t)
+    pullback = travel(3.16, 5.72, t)
+    zoom = math.exp(math.log(1.29) + math.log(3.75/1.29)*push + math.log(1.59/3.75)*pullback)
     center = mix(np.array([563., 270.]), part + [-98., -20.], push * (1 - pullback))
+    # Travel across the contact detail before returning to the wider print.
+    traverse = travel(2.10, 3.04, t)*(1-travel(3.36, 4.85, t))
+    center += np.array([42., -18.])*traverse
     return center, zoom
 
 
@@ -252,6 +255,23 @@ def developing_screen(t, dx, dy, radius, metal):
     return density, rim, life*body
 
 
+def print_passes(t, metal, edges):
+    """Alternate copper linework, a blue negative and a warm halftone proof."""
+    copper = travel(.42, .87, t)*(1-travel(1.12, 1.73, t))
+    negative = travel(2.03, 2.72, t)*(1-travel(3.16, 3.87, t))
+    halftone = travel(3.20, 3.86, t)*(1-travel(4.25, 5.13, t))
+    # The diagonal print edge develops across the frame. Its cells are fixed
+    # to the paper, so the camera motion produces no texture flicker.
+    diagonal = U*.83 + V*.17
+    reveal = 1-ramp(t-2.20, t-1.77, diagonal)
+    blue_plate = negative*(.34 + .23*glyph)*reveal
+    warm_plate = halftone*(.085 + .32*dots)
+    # Repeated edge impressions give the halftone a short chromatic echo.
+    separation = int(2 + 8*halftone)
+    echo = np.roll(edges, separation, axis=1)*halftone*(1-np.clip(metal*4,0,1))
+    return copper, blue_plate, warm_plate, echo
+
+
 def frame(t):
     metal, center, radius = arm_plate(t)
     dx, dy = XX-center[0], YY-center[1]
@@ -290,15 +310,24 @@ def frame(t):
     background_weight = 1 - np.clip(metal*4, 0, 1)
     screen, rim_light, exposure = developing_screen(t, dx, dy, radius, metal)
     ink *= 1 - .62*exposure
+    copper, blue_plate, warm_plate, echo = print_passes(t, metal, edges)
+    negative_shape = np.clip(metal*3.7, 0, 1)
+    ink *= 1 - .80*blue_plate
     # A cool proof on white paper, with a narrow violet offset at its edge.
     spectral_ink = (53, 119, 135)
     edge_ink = (108, 93, 176)
     image = np.empty((H,W,3), dtype='uint8')
     for channel in range(3):
         paper = PAPER[channel] + (backdrop[:,:,channel].astype('f')-255)*background_weight
+        paper = mix(paper, (204, 166, 108)[channel], copper*.22*background_weight)
         paper = mix(paper, spectral_ink[channel], screen)
         paper = mix(paper, edge_ink[channel], .29*rim_light)
-        layer = paper + paper_grain + (GRAPHITE[channel]-paper)*ink
+        paper = mix(paper, (17, 108, 134)[channel], blue_plate*(1-negative_shape))
+        paper = mix(paper, (224, 158, 113)[channel], warm_plate*(1-negative_shape))
+        paper = mix(paper, (255, 255, 255)[channel], negative_shape*blue_plate*.9)
+        paper = mix(paper, (160, 74, 122)[channel], echo*.54)
+        engraving = mix(GRAPHITE[channel], (191, 99, 53)[channel], copper*.88)
+        layer = paper + paper_grain + (engraving-paper)*ink
         image[:,:,channel] = np.clip(mix(layer, COPPER[channel], accent), 0, 255)
     return Image.fromarray(image)
 

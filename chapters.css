@@ -53,7 +53,7 @@
   .chapter-sheet.turn-front { z-index:2; will-change:clip-path,transform; }
   .chapter-contour {
     position:fixed; z-index:32; overflow:hidden; pointer-events:none; contain:strict;
-    --contour-paper:#f1f3e9; --contour-ink:#355e58; --contour-copper:#a66643;
+    --contour-paper:#f5f1e7; --contour-ink:#465950; --contour-copper:#b35330;
   }
   [data-theme="dark"] .chapter-contour {
     --contour-paper:#1a2b2a; --contour-ink:#a1c9ba; --contour-copper:#e3a278;

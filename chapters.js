@@ -78,7 +78,12 @@
     document.dispatchEvent(new Event('site:turn-start'));
     root.dataset.turn=sign>0?'down':'up';
     const exposure=window.chapterTurns.create(sheets[origin],sheets[index],sign,change);
-    let progress=0, pressure=Math.min(.12,Math.abs(impulse)/1500), reverse=false;
+    // Wheel deltas move a destination, and a critically damped spring follows
+    // it. After the gesture rests, finish in its last deliberate direction.
+    const travelDistance = Math.max(320, sheets[index].clientHeight*.72);
+    let progress=0, velocity=0, intent=1;
+    let destination=impulse ? Math.min(.60,.14+Math.abs(impulse)/travelDistance) : 1;
+    let lastInput=impulse ? performance.now() : -Infinity;
     let last=performance.now(), frame=0;
     function finish(undo) {
       cancelAnimationFrame(frame);
@@ -92,18 +97,33 @@
       delete root.dataset.turn;
     }
     function draw(now) {
-      const dt=Math.min(50,now-last); last=now;
-      const response=pressure*(1-Math.exp(-dt/46));
-      pressure-=response;
-      progress=Math.max(0,Math.min(1,progress+dt/(reverse?-480:700)+response));
-      exposure.paint(progress);
-      if(progress===1 || (reverse && progress===0)) finish(reverse);
+      const dt=Math.max(0,Math.min(50,now-last))/1000; last=now;
+      const tracking=now-lastInput<110;
+      if(!tracking) destination=intent>0 ? 1 : 0;
+      const frequency=tracking ? 27 : 18;
+      const distance=progress-destination;
+      const momentum=velocity+frequency*distance;
+      const decay=Math.exp(-frequency*dt);
+      progress=destination+(distance+momentum*dt)*decay;
+      velocity=(velocity-frequency*momentum*dt)*decay;
+      // A sharp reversal preserves momentum, while bounds keep the reading
+      // surface intact if the destination reaches an endpoint first.
+      if(progress<0 || progress>1) {
+        progress=Math.max(0,Math.min(1,progress)); velocity=0;
+      }
+      exposure.paint(progress,velocity);
+      if(!tracking && Math.abs(progress-destination)<.001 && Math.abs(velocity)<.025) finish(intent<0);
       else frame=requestAnimationFrame(draw);
     }
     motion={finish, feed(delta) {
       const signed=sign*delta;
-      if(Math.abs(signed)>3) reverse=signed<0;
-      pressure=Math.max(-.32,Math.min(.32,pressure+signed/980));
+      if(Math.abs(signed)>3) {
+        const nextIntent=Math.sign(signed);
+        if(nextIntent!==intent) destination=progress;
+        intent=nextIntent;
+      }
+      destination=Math.max(0,Math.min(1,destination+signed/travelDistance));
+      lastInput=performance.now();
     }};
     exposure.paint(0);
     frame=requestAnimationFrame(draw);
