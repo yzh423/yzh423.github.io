@@ -29,17 +29,99 @@
     let w=0,h=0,groups=[],threads=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
     let inkMap, filmUnavailable = false, tint = [], flowTint = [], filmAlignment = .5, filmFit = 'cover';
+    let currentCanvas,currentCtx,currentFrame=0,currentLast=0,currentTime=0,currentHeat=0;
     // Use coordinates exported by the engraving renderer. Their origin is the
     // centre of the part, so they stay on the tool throughout the camera move.
     if (film.dataset.inkMap) {
       fetch(film.dataset.inkMap).then(response => {
         if (!response.ok) throw Error('Missing ink map');
         return response.json();
-      }).then(map => { inkMap = map; wake(); }).catch(() => { filmUnavailable = true; wake(); });
+      }).then(map => { inkMap = map; setupCurrents(); measure(); wake(); }).catch(() => { filmUnavailable = true; wake(); });
     }
     const pointer=pointerFor(stage,wake);
     const smooth=n=>n*n*(3-2*n);
     const soften=n=>n*n*n*(10+n*(6*n-15));
+    function setupCurrents() {
+      if(!printStage||!stage.hasAttribute('data-live-currents')||!inkMap.live_currents||currentCanvas)return;
+      currentCanvas=document.createElement('canvas');currentCanvas.className='flight-currents';
+      currentCanvas.setAttribute('aria-hidden','true');currentCtx=currentCanvas.getContext('2d');
+      if(!currentCtx)return;
+      stage.insertBefore(currentCanvas,film);stage.classList.add('has-currents');
+    }
+    function filmProjection() {
+      const width=inkMap.width??1440,height=inkMap.height??540;
+      const sx=film.clientWidth/width,sy=film.clientHeight/height;
+      const scale=filmFit==='contain'?Math.min(sx,sy):Math.max(sx,sy);
+      return {scale,x:(w-width*scale)*filmAlignment,y:(h-height*scale)/2};
+    }
+    function drawCurrents(time,still=false) {
+      if(!currentCtx||!w||!h||!flowTint.length)return;
+      currentCtx.clearRect(0,0,w,h);
+      const view=filmProjection(),scale=view.scale;
+      const ox=view.x+(still?0:fx*.18),oy=view.y+(still?0:fy*.18);
+      const px=(mx-ox)/scale,py=(my-oy)/scale;
+      const opening=soften(clamp((time-1.22)/1.36,0,1))*(1-soften(clamp((time-3.1)/2.84,0,1)));
+      const handoff=soften(clamp((time-inkMap.release)/(inkMap.settled-inkMap.release),0,1));
+      const density=(1-opening*.72)*(1-handoff*.48);
+      currentCtx.save();currentCtx.translate(ox,oy);currentCtx.scale(scale,scale);currentCtx.lineCap='round';
+      const point=(u,k,lower)=>{
+        const breath=Math.sin(time*.30+k*.12)*12;
+        const a=lower?[285+k*14,685]:[-90,443+k*13];
+        const b=lower?[390+k*12,350+breath]:[360,475+breath+k*8];
+        const c=lower?[1160-k*10,125+breath]:[415,58+breath-k*10];
+        const d=lower?[1510,295+k*13]:[1200,78+k*13];
+        const v=1-u;
+        let x=v*v*v*a[0]+3*v*v*u*b[0]+3*v*u*u*c[0]+u*u*u*d[0];
+        let y=v*v*v*a[1]+3*v*v*u*b[1]+3*v*u*u*c[1]+u*u*u*d[1];
+        if(!still&&strength>.001) {
+          const dx=px-x,dy=py-y,weight=Math.exp(-(dx*dx+dy*dy)/(2*270*270))*strength;
+          x+=(flowX*.011+dx*.018)*weight;y+=(flowY*.011+dy*.018)*weight;
+        }
+        return [x,y];
+      };
+      const path=(from,to,k,lower,steps)=>{
+        currentCtx.beginPath();
+        for(let i=0;i<=steps;i++) {
+          const [x,y]=point(from+(to-from)*i/steps,k,lower);
+          if(i===0)currentCtx.moveTo(x,y);else currentCtx.lineTo(x,y);
+        }
+      };
+      for(let lower=0;lower<2;lower++)for(let k=0;k<7;k++) {
+        const phase=.5-.5*Math.cos(time*.08+k*.19+lower*.65);
+        const hue=Math.round((phase*(1-currentHeat*.60)+.15*currentHeat*.60)*63);
+        currentCtx.strokeStyle=flowTint[hue][10];
+        path(.03+k*.012,.91-k*.014,k,lower,60);
+        currentCtx.globalAlpha=density*(k%3?.16:.24);currentCtx.lineWidth=.9;currentCtx.stroke();
+        const head=(time*.033+k*.087+lower*.24)%1;
+        for(let n=0;n<9;n++) {
+          const from=head-.144+n*.016;if(from<.04||from+.016>.90)continue;
+          path(from,from+.016,k,lower,3);
+          currentCtx.globalAlpha=density*(.18+currentHeat*.15)*Math.sin(Math.PI*n/9)**2;
+          currentCtx.lineWidth=1.35;currentCtx.stroke();
+        }
+      }
+      currentCtx.restore();
+    }
+    function currentsAllowed() {
+      return currentCtx&&visible&&intro&&enabled()&&!filmUnavailable&&!navigator.connection?.saveData;
+    }
+    function tickCurrents(now) {
+      currentFrame=0;if(!currentsAllowed())return;
+      if(currentLast&&now-currentLast<1000/60-.75){currentFrame=request(tickCurrents);return;}
+      const dt=currentLast?Math.min(.05,(now-currentLast)/1000):1/60;currentLast=now;
+      // Follow the film until its last frame, then continue the very same
+      // phase. The lettering canvas can sleep while these few curves flow.
+      currentTime=film.ended?Math.max(currentTime,film.currentTime)+dt:film.currentTime;
+      currentHeat+=(clamp(Math.hypot(flowX,flowY)/750,0,1)-currentHeat)*(1-Math.exp(-dt*2.2));
+      drawCurrents(currentTime);currentFrame=request(tickCurrents);
+    }
+    function syncCurrents() {
+      if(!currentCtx)return;
+      if(!currentsAllowed()) {
+        cancelAnimationFrame(currentFrame);currentFrame=currentLast=0;
+        if(visible)drawCurrents(played?currentTime:inkMap.settled,true);
+      } else if(!currentFrame)currentFrame=request(tickCurrents);
+    }
     function flowProgress(p,time) {
       const delay=.08+p.lane*.20+(1-p.x/w)*.35+p.phase*.06;
       return clamp((time-inkMap.release-delay)/inkMap.name_duration,0,1);
@@ -79,12 +161,10 @@
       const index = clamp(time * inkMap.fps, 0, inkMap.poses.length - 1);
       const a = inkMap.poses[Math.floor(index)], b = inkMap.poses[Math.ceil(index)];
       const lerp = slot => a[slot] + (b[slot] - a[slot]) * (index % 1);
-      const sourceWidth=inkMap.width??1440,sourceHeight=inkMap.height??540;
-      const scaleX = film.clientWidth/sourceWidth, scaleY = film.clientHeight/sourceHeight;
-      const scale = filmFit==='contain' ? Math.min(scaleX,scaleY) : Math.max(scaleX,scaleY);
+      const view=filmProjection(),scale=view.scale;
       return {
-        x: lerp(0)*scale + (w - sourceWidth*scale)*filmAlignment,
-        y: lerp(1)*scale + (h - sourceHeight*scale)/2,
+        x: lerp(0)*scale + view.x,
+        y: lerp(1)*scale + view.y,
         radius: lerp(2)*scale
       };
     }
@@ -111,6 +191,10 @@
       if (!Number.isFinite(filmAlignment)) filmAlignment = .5;
       const dpr=Math.min(devicePixelRatio||1,2);
       canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
+      if(currentCtx) {
+        currentCanvas.width=canvas.width;currentCanvas.height=canvas.height;
+        currentCtx.setTransform(dpr,0,0,dpr,0,0);
+      }
       mask.width=Math.ceil(w);mask.height=Math.ceil(h);
       const family='Newsreader, Georgia, serif',text='Zhenghao YU';
       sampler.textAlign='center';sampler.textBaseline='alphabetic';sampler.font='500 100px '+family;
@@ -142,7 +226,7 @@
       }
       threads=groups.filter((g,i)=>g.length&&i%2===0).map((g,i)=>g[Math.floor(g.length*(.25+.25*(i%3)))]);
       ready=groups.some(g=>g.length);if(ready)stage.classList.add('has-lettering');
-      colors();render(0,!enabled());wake();
+      colors();render(0,!enabled());syncCurrents();wake();
     }
     function render(dt,still=false){
       if(!ready)return false;
@@ -312,17 +396,18 @@
       if(!visible||!intro||!enabled()){
         cancelAnimationFrame(frame);frame=last=0;film.pause();
         if(!enabled()){entry=assemblyTime;render(0,true);}
+        syncCurrents();
         return;
       }
       if(needsEntry){entry=0;played=false;needsEntry=false;}
       if(allowFilm&&(!played||(film.paused&&!film.ended))){
         if(!played)film.currentTime=0;
         played=true;
-        film.play().then(() => { filmUnavailable=false; wake(); }).catch(error => {
+        film.play().then(() => { filmUnavailable=false; syncCurrents(); wake(); }).catch(error => {
           if (error.name !== 'AbortError') { filmUnavailable=true; wake(); }
         });
       }
-      wake();
+      syncCurrents();wake();
     }
     film.addEventListener('error', () => { filmUnavailable=true; wake(); });
     film.querySelector('source')?.addEventListener('error', () => { filmUnavailable=true; wake(); });
@@ -338,7 +423,7 @@
     },{threshold:[0,.30]}).observe(stage);
     intro=true;
     new ResizeObserver(measure).observe(stage);document.fonts.ready.then(measure);
-    document.addEventListener('site:theme',()=>{colors();render(0,!enabled());wake();});
+    document.addEventListener('site:theme',()=>{colors();render(0,!enabled());drawCurrents(currentTime,!enabled());wake();});
     document.addEventListener('site:motion',sync);
     navigator.connection?.addEventListener?.('change',()=>{if(navigator.connection.saveData)film.pause();sync();});
     sync();

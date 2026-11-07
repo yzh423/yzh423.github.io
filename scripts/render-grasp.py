@@ -13,6 +13,7 @@ import imageio_ffmpeg
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
 W, H, FPS, SECONDS = 1440, 640, 60, 10
 CONTACT, ASSEMBLED, RELEASE, SETTLED = .95, 5.90, 6.20, 9.90
+MOVEMENT_END = 9.72
 ASSEMBLY_STAGES = {
     'base': (3.00, 3.72),
     'shoulder': (3.38, 4.10),
@@ -57,12 +58,14 @@ PART_SEAT = np.array([843., 337.])
 
 
 def pose(t):
-    t = min(1.93, t*1.93/CONTACT) + travel(ASSEMBLED,7.15,t)*(4.85-1.93)
-    align = travel(0, .93, t)
-    descend = travel(.24, 1.35, t)
-    close = travel(1.36, 1.93, t)
-    lift = travel(2.16, 3.55, t)
-    carry = travel(2.95, 4.85, t)
+    approach = min(1.93, t*1.93/CONTACT)
+    align = travel(0, .93, approach)
+    descend = travel(.24, 1.35, approach)
+    close = travel(1.36, 1.93, approach)
+    # Lift and carry continue while the jaw engraving becomes the signature.
+    # The completed arm and the letters come to rest together.
+    lift = travel(ASSEMBLED,8.95,t)
+    carry = travel(RELEASE,MOVEMENT_END,t)
 
     # A level approach ends directly above the V-block. Both fingers reach
     # the OD before the first lifting frame. Only then does the load follow.
@@ -245,34 +248,10 @@ crosshatch = hatch_lines(XX*.88 - YY*.48, 9.2, .95)
 
 
 def optical_field(t, center, radius):
-    """Let sparse engraved currents bend around the assembly and its tool."""
+    """Register the tool; the background currents are drawn live in the page."""
     plate = Image.new('RGB', (W, H), 'white')
     pen = ImageDraw.Draw(plate, 'RGBA')
     blue, teal, iris = (49,94,215), (0,155,174), (127,79,205)
-    def current(u,k,lower=False):
-        breath=math.sin(t*.39+k*.12)*12
-        if lower:
-            points=[(285+k*14,685),(390+k*12,350+breath),(1160-k*10,125+breath),(1510,295+k*13)]
-        else:
-            points=[(-90,443+k*13),(360,475+breath+k*8),(415,58+breath-k*10),(1200,78+k*13)]
-        a,b,c,d=np.asarray(points,dtype=float)
-        u=np.asarray(u)[:,None];v=1-u
-        return v**3*a+3*v*v*u*b+3*v*u*u*c+u**3*d
-    # Two open fans leave a generous quiet centre. Travelling highlights
-    # follow the cut, rather than drawing a grid or flashing isolated points.
-    for lower in (False,True):
-        for k in range(7):
-            hue=(teal,blue,iris)[(k//3+int(lower))%3]
-            u=np.linspace(.03+.012*k,.91-.014*k,110)
-            path=current(u,k,lower)
-            pen.line([tuple(p) for p in path],fill=(*hue,50 if k%3 else 91),width=1)
-            head=(t*.055+k*.087+int(lower)*.24)%1
-            for n in range(10):
-                start=head-.13+n*.013
-                if start<.04 or start+.013>.9: continue
-                segment=current(np.linspace(start,start+.013,4),k,lower)
-                strength=math.sin(math.pi*n/10)**2
-                pen.line([tuple(p) for p in segment],fill=(*hue,round(100*strength)),width=1)
     # Split arcs, calibration ticks and an acquisition pulse follow the real
     # bushing centre. They remain outside the machined surface.
     cx,cy = center
@@ -397,7 +376,7 @@ def write_ink_map():
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
-    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, flow='engraved', name_duration=2.80, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, live_currents=True, flow='engraved', name_duration=2.80, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 
