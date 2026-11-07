@@ -54,11 +54,15 @@ try {
   await page.screenshot({path:out+'/chapter-transfer.png'});
   await freeze(timing.settled+.03);
   const rest=await ink(); assert.ok(rest.total>3000 && rest.color===0);
-  assert.ok(await engravingStrength()<assembledInk*.4,'the robot and its light field recede behind the finished name');
+  const finalInk=await engravingStrength()/assembledInk;
+  assert.ok(finalInk>.45&&finalInk<.9,'the closer arm retains a readable engraving behind the finished name');
   await page.screenshot({path:out+'/chapter-cover.png'});
   const rect=await canvas.boundingBox();
-  await page.mouse.move(rect.x+rect.width*.22,rect.y+rect.height*.48);
-  await page.waitForTimeout(320);
+  await page.mouse.move(rect.x+rect.width*.13,rect.y+rect.height*.48);
+  for(let i=1;i<=12;i++) {
+    await page.mouse.move(rect.x+rect.width*(.13+.12*i/12),rect.y+rect.height*.48);
+    await page.waitForTimeout(15);
+  }
   assert.ok((await ink()).color>40,'local hover must release colour');
   await page.mouse.move(20,20); await page.waitForTimeout(1450);
   assert.equal((await ink()).color,0,'colour settles back to ink');

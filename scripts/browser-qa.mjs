@@ -71,7 +71,8 @@ try {
   const seatedCopper=await film.evaluate(countCopper);
   await page.waitForFunction(t=>document.querySelector('.flight-film').currentTime>=t,timing.settled);
   const beforeHover=await lettering.evaluate(c=>c.toDataURL());
-  await page.mouse.move(box.x+box.width*.22,box.y+box.height*.47);
+  await page.mouse.move(box.x+box.width*.16,box.y+box.height*.47);
+  await page.mouse.move(box.x+box.width*.22,box.y+box.height*.47,{steps:8});
   await page.waitForFunction(()=>Math.abs(new DOMMatrix(getComputedStyle(document.querySelector('.flight-film')).transform).e)>3);
   assert.notEqual(beforeHover,await lettering.evaluate(c=>c.toDataURL()),'pointer should displace the lettering as well as the film');
   record('one shared stage: pointing at the artwork displaces the ink and the robot arm');

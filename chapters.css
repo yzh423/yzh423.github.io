@@ -3,7 +3,7 @@
 .chapter-mode:has(.chapter-sheet:first-child .is-current) .portfolio :is(.site-header,.chapter-rail) { background: var(--cover-paper, #fff); }
 [data-theme="dark"].chapter-mode { --cover-paper: #101010; }
 .portfolio .print-stage { --stage-paper: #fff; }
-.portfolio .print-stage .flight-film { scale: 1; }
+.portfolio .print-stage .flight-film { scale: 1; background:#fff; }
 [data-theme="dark"] .portfolio .hero { --stock: #101010; }
 [data-theme="dark"] .portfolio .print-stage { --stage-paper: #101010; }
 
@@ -90,7 +90,7 @@
 @media (max-width:850px) {
   .portfolio .print-stage { height:clamp(235px,min(69vw,43dvh),420px); }
   .portfolio .print-stage .flight-film {
-    height:auto; max-height:100%; aspect-ratio:1.72;
+    height:auto; max-height:100%; aspect-ratio:1.56;
     top:50%; bottom:auto; translate:0 -50%;
   }
 }

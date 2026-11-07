@@ -11,7 +11,7 @@ from PIL import Image, ImageDraw, ImageFilter
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
-W, H, FPS, SECONDS = 1440, 540, 60, 10
+W, H, FPS, SECONDS = 1440, 640, 60, 10
 CONTACT, ASSEMBLED, RELEASE, SETTLED = .95, 5.90, 6.20, 9.90
 ASSEMBLY_STAGES = {
     'base': (3.00, 3.72),
@@ -81,8 +81,9 @@ def projection(t):
     # Pull back ahead of the separation, hold a readable exploded drawing,
     # then quietly reframe the complete arm for its signature.
     wide = travel(.86, 2.10, t)*(1-travel(5.18, 6.30, t))
-    zoom = mix(mix(1.29, 1.59, settle), .76, wide)
-    center = mix(np.array([563., 270.]), np.array([600., 265.]), wide)
+    zoom = mix(mix(1.29, 1.80, settle), .76, wide)
+    close_center = mix(np.array([563., 270.]), np.array([590., 270.]),settle)
+    center = mix(close_center, np.array([600., 265.]), wide)
     return center, zoom
 
 
@@ -244,37 +245,34 @@ crosshatch = hatch_lines(XX*.88 - YY*.48, 9.2, .95)
 
 
 def optical_field(t, center, radius):
-    """Project a wireframe workspace behind the tool and register the pickup to it."""
+    """Let sparse engraved currents bend around the assembly and its tool."""
     plate = Image.new('RGB', (W, H), 'white')
     pen = ImageDraw.Draw(plate, 'RGBA')
     blue, teal, iris = (49,94,215), (0,155,174), (127,79,205)
-    u = np.linspace(0, 1, 144)
-    # A family of ruled trajectories. The space between rails twists around a
-    # common path, with moving knots revealing the direction of travel.
-    def rail(s, v):
-        phase = 5.8*s - .20*t
-        x = -100 + 1650*s
-        y = 352 - 159*np.sin(s*math.pi*.97) + 69*np.sin(2*math.pi*s+.36)
-        envelope = 18 + 58*np.sin(math.pi*s)**2
-        return x, y + envelope*v*np.cos(phase) + 25*v*v*np.sin(phase)
-    for i in range(21):
-        s = .18+i*.036
-        v = .38*math.sin(i*.71)
-        facet = [rail(s,v),rail(s+.035,v-.5),rail(s+.035,v+.48)]
-        pen.polygon(facet,fill=(*(teal if i<12 else iris), 17+i%3*5))
-    for k in range(15):
-        v = (k-7)/7
-        x, y = rail(u, v)
-        hue = teal if k < 6 else blue if k < 11 else iris
-        primary = k in (0,7,14)
-        pen.line(list(zip(x,y)),fill=(*hue, 156 if primary else 68),width=3 if primary else 1)
-        if k in (0,5,10,14):
-            pos = (.18*k + t*.045) % 1
-            px,py = rail(pos,v)
-            pen.ellipse((px-2,py-2,px+2,py+2),fill=(*hue,190))
-    for s in np.linspace(.08,.98,74):
-        line = [rail(s,v) for v in np.linspace(-1,1,14)]
-        pen.line(line,fill=(*blue,24),width=1)
+    def current(u,k,lower=False):
+        breath=math.sin(t*.39+k*.12)*12
+        if lower:
+            points=[(285+k*14,685),(390+k*12,350+breath),(1160-k*10,125+breath),(1510,295+k*13)]
+        else:
+            points=[(-90,443+k*13),(360,475+breath+k*8),(415,58+breath-k*10),(1200,78+k*13)]
+        a,b,c,d=np.asarray(points,dtype=float)
+        u=np.asarray(u)[:,None];v=1-u
+        return v**3*a+3*v*v*u*b+3*v*u*u*c+u**3*d
+    # Two open fans leave a generous quiet centre. Travelling highlights
+    # follow the cut, rather than drawing a grid or flashing isolated points.
+    for lower in (False,True):
+        for k in range(7):
+            hue=(teal,blue,iris)[(k//3+int(lower))%3]
+            u=np.linspace(.03+.012*k,.91-.014*k,110)
+            path=current(u,k,lower)
+            pen.line([tuple(p) for p in path],fill=(*hue,50 if k%3 else 91),width=1)
+            head=(t*.055+k*.087+int(lower)*.24)%1
+            for n in range(10):
+                start=head-.13+n*.013
+                if start<.04 or start+.013>.9: continue
+                segment=current(np.linspace(start,start+.013,4),k,lower)
+                strength=math.sin(math.pi*n/10)**2
+                pen.line([tuple(p) for p in segment],fill=(*hue,round(100*strength)),width=1)
     # Split arcs, calibration ticks and an acquisition pulse follow the real
     # bushing centre. They remain outside the machined surface.
     cx,cy = center
@@ -364,12 +362,12 @@ def frame(t):
     # The same media clock drives the strands which carry it into the name.
     front=radius+handoff*930
     retreat=travel(RELEASE,RELEASE+1.05,t)*(1-ramp(front-110,front+110,distance))
-    ink*=1-.85*retreat
+    ink*=1-.46*retreat
     light=np.exp(-((distance-front)/68)**2)*math.sin(math.pi*handoff)*.42
     light_colour=mix(np.array([0,137,149]),np.array([184,96,57]),handoff)
     angle=np.arcsin(np.abs(np.sin(np.arctan2(dy,dx))))
     edge_arc=(1-ramp(.035,.087,np.abs(distance/radius-.975)))*(1-ramp(.30,.44,angle))
-    accent=travel(CONTACT,CONTACT+.24,t)*(1-explosion(t,.02))*.86*edge_arc*(1-.85*retreat)
+    accent=travel(CONTACT,CONTACT+.24,t)*(1-explosion(t,.02))*.86*edge_arc*(1-.68*retreat)
     image=np.empty((H,W,3),dtype='uint8')
     for channel in range(3):
         paper=PAPER[channel]+(backdrop[:,:,channel].astype('f')-255)*background_weight
@@ -399,7 +397,7 @@ def write_ink_map():
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
-    data = dict(contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, flow='engraved', name_duration=2.80, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, flow='engraved', name_duration=2.80, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 

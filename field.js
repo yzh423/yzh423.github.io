@@ -79,11 +79,12 @@
       const index = clamp(time * inkMap.fps, 0, inkMap.poses.length - 1);
       const a = inkMap.poses[Math.floor(index)], b = inkMap.poses[Math.ceil(index)];
       const lerp = slot => a[slot] + (b[slot] - a[slot]) * (index % 1);
-      const scaleX = film.clientWidth/1440, scaleY = film.clientHeight/540;
+      const sourceWidth=inkMap.width??1440,sourceHeight=inkMap.height??540;
+      const scaleX = film.clientWidth/sourceWidth, scaleY = film.clientHeight/sourceHeight;
       const scale = filmFit==='contain' ? Math.min(scaleX,scaleY) : Math.max(scaleX,scaleY);
       return {
-        x: lerp(0)*scale + (w - 1440*scale)*filmAlignment,
-        y: lerp(1)*scale + (h - 540*scale)/2,
+        x: lerp(0)*scale + (w - sourceWidth*scale)*filmAlignment,
+        y: lerp(1)*scale + (h - sourceHeight*scale)/2,
         radius: lerp(2)*scale
       };
     }
@@ -137,7 +138,7 @@
         const bin=clamp(Math.round(17*((x/w-.10)/.80+(s-.5)*.14)),0,17);
         groups[bin].push({x,y,sx,sy,lane:clamp((y-top)/letterHeight,0,1),bend:sign*(8+17*rand())*depth,delay:.17*s+.14*x/w,
           mark:Math.floor(rand()*384), phase:rand(), pigment:clamp(Math.floor((x/w + .10*(s-.5))*5),0,3),
-          span:.89+.28*depth,size:grain*(.84+.28*rand()),depth,dx:0,dy:0,vx:0,vy:0});
+          span:.89+.28*depth,size:grain*(.84+.28*rand()),depth,dx:0,dy:0,vx:0,vy:0,driftX:0,driftY:0,hue:.12});
       }
       threads=groups.filter((g,i)=>g.length&&i%2===0).map((g,i)=>g[Math.floor(g.length*(.25+.25*(i%3)))]);
       ready=groups.some(g=>g.length);if(ready)stage.classList.add('has-lettering');
@@ -156,7 +157,7 @@
       const pose = transfer && inkMap && filmTime < settledAt ? projectionAt(filmTime) : null;
       const assembling = transfer && filmTime < settledAt;
       const r=stage.getBoundingClientRect(),px=pointer.cx-r.left,py=pointer.cy-r.top,act=pointer.active&&!still;
-      const kFollow=1-Math.exp(-dt*22),kTrail=1-Math.exp(-dt*9);
+      const kFollow=1-Math.exp(-dt*18),kTrail=1-Math.exp(-dt*6);
       if(act&&strength<.002){mx=px;my=py;}
       const moveX=act?(px-mx)*kFollow:0,moveY=act?(py-my)*kFollow:0;
       mx+=moveX;my+=moveY;
@@ -169,9 +170,11 @@
       if(still)fx=fy=strength=flowX=flowY=0;
       film.style.transform='translate('+fx.toFixed(2)+'px,'+fy.toFixed(2)+'px) rotate('+(fx*.049).toFixed(3)+'deg)';
       let movingInk=false;
-      const radius=clamp(w*.132,54,142), invRadius=1/radius;
-      const vx=flowX*.018,vy=flowY*.018,stroke2=moveX*moveX+moveY*moveY;
-      const attack=21,release=10,attackDecay=Math.exp(-dt*attack),releaseDecay=Math.exp(-dt*release);
+      const radius=clamp(w*.115,50,128), invRadius=1/radius;
+      const speed=Math.hypot(flowX,flowY),directionX=flowX/Math.max(speed,1),directionY=flowY/Math.max(speed,1);
+      const drive=radius*.29*(1-Math.exp(-speed/340)),stroke2=moveX*moveX+moveY*moveY;
+      const driftDecay=Math.exp(-dt*2.8),pickup=1-Math.exp(-dt*16);
+      const attack=15,release=6.3,attackDecay=Math.exp(-dt*attack),releaseDecay=Math.exp(-dt*release);
       const engraved=pose&&inkMap.flow==='engraved';
       if(engraved)drawThreads(pose,filmTime);
       for(let i=0;i<groups.length;i++){
@@ -182,13 +185,27 @@
           const tipX=p.x-mx,tipY=p.y-my;
           const along=stroke2>1?clamp(-(tipX*moveX+tipY*moveY)/stroke2,0,1):0;
           const ax=tipX+along*moveX,ay=tipY+along*moveY,d2=ax*ax+ay*ay;
-          let destX=0,destY=0;
+          p.driftX*=driftDecay;p.driftY*=driftDecay;
+          let destX=0,destY=0,carrying=false;
           if(act&&!assembling&&d2<radius*radius){
             const dist=Math.sqrt(d2),s=1-clamp(dist*invRadius,0,1);
-            const gain=strength*radius*.46*s*s*(.78+.22*p.depth)*(1-.24*along)/Math.sqrt(d2+25);
-            const tail=strength*.41*s*s;
-            destX=ax*gain+vx*tail;destY=ay*gain+vy*tail;
+            const influence=strength*s*s*(.78+.22*p.depth);
+            const gain=radius*.08*influence*(1-Math.exp(-speed/280))/Math.sqrt(d2+36);
+            destX=ax*gain;destY=ay*gain;
+            if(speed>12) {
+              const bend=(p.lane-.5)*drive*.22;
+              const targetX=(directionX*drive-directionY*bend)*influence;
+              const targetY=(directionY*drive+directionX*bend)*influence;
+              p.driftX+=(targetX-p.driftX)*pickup;
+              p.driftY+=(targetY-p.driftY)*pickup;
+              carrying=true;
+            }
           }
+          if(still)p.driftX=p.driftY=0;
+          destX+=p.driftX;destY+=p.driftY;
+          const hueTarget=carrying?.10+p.lane*.22:1;
+          if(carrying&&Math.hypot(p.dx,p.dy)<.2)p.hue=hueTarget;
+          p.hue+=(hueTarget-p.hue)*(1-Math.exp(-dt*(carrying?5:1.5)));
           // The return is slower than the outward movement. Critical damping
           // settles a grain onto its letter without a bounce.
           const advancing=destX*destX+destY*destY>p.dx*p.dx+p.dy*p.dy;
@@ -196,7 +213,8 @@
           const x=p.dx-destX,y=p.dy-destY,qx=(p.vx+stiffness*x)*dt,qy=(p.vy+stiffness*y)*dt;
           p.dx=still?0:destX+(x+qx)*decay;p.dy=still?0:destY+(y+qy)*decay;
           p.vx=still?0:(p.vx-stiffness*qx)*decay;p.vy=still?0:(p.vy-stiffness*qy)*decay;
-          if(Math.abs(p.dx-destX)+Math.abs(p.dy-destY)>.025||Math.abs(p.vx)+Math.abs(p.vy)>.45)movingInk=true;
+          if(Math.abs(p.dx-destX)+Math.abs(p.dy-destY)>.025||Math.abs(p.vx)+Math.abs(p.vy)>.45
+            ||Math.hypot(p.driftX,p.driftY)>.025||(Math.hypot(p.dx,p.dy)>.3&&Math.abs(p.hue-hueTarget)>.005))movingInk=true;
           else {p.dx=destX;p.dy=destY;p.vx=p.vy=0;}
           let cx=p.x+p.dx,cy=p.y+p.dy,alpha=1,grainScale=1;
           if (printStage) {
@@ -239,12 +257,23 @@
               typeMark = p.mark%11===0 ? bow : 0;
             }
             const displacement = Math.hypot(p.dx,p.dy);
-            const colorStep = Math.round(clamp(Math.max(exposure, displacement/(radius*.17)),0,1)*12);
+            const activity=clamp(displacement/(radius*.10),0,.90);
+            if(!assembling&&!still) {
+              flowColour=flowTint[Math.round(p.hue*63)];
+              if(p.mark%12===0&&activity>.035) {
+                flowTail=[cx-clamp(p.vx*.075,-15,15),cy-clamp(p.vy*.075,-15,15)];
+                flowStrength=activity*.75;
+              }
+            }
+            const colorStep = Math.round(clamp(Math.max(exposure,activity),0,1)*12);
             ctx.fillStyle = colorStep ? (flowColour ?? tint[p.pigment])[colorStep] : palette[i];
             if(flowTail) {
               ctx.strokeStyle=ctx.fillStyle;ctx.lineWidth=Math.max(.6,p.size*.48);
               ctx.globalAlpha=flowStrength*.32;
               ctx.beginPath();ctx.moveTo(flowTail[0],flowTail[1]);ctx.lineTo(cx,cy);ctx.stroke();
+              if(!assembling&&p.mark%36===0) {
+                ctx.globalAlpha=flowStrength*.035;ctx.lineWidth=p.size*3;ctx.stroke();
+              }
             }
             if(typeMark>.20) {
               ctx.globalAlpha=alpha*typeMark*.78;
