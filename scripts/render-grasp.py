@@ -11,18 +11,19 @@ from PIL import Image, ImageDraw, ImageFilter
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
-W, H, FPS, SECONDS = 1440, 640, 60, 10
-CONTACT, ASSEMBLED, RELEASE, SETTLED = .95, 5.90, 6.20, 9.90
-MOVEMENT_END = 9.72
+W, H, FPS, SECONDS = 1440, 640, 60, 8
+CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 3.56, 3.72, 7.35
+MOVEMENT_END, LIFT_END = 7.22, 6.55
+EXPLOSION_START, EXPLOSION_PEAK = .82, 1.60
 ASSEMBLY_STAGES = {
-    'base': (3.00, 3.72),
-    'shoulder': (3.38, 4.10),
-    'upper_arm': (3.74, 4.46),
-    'elbow': (4.08, 4.80),
-    'forearm': (4.39, 5.11),
-    'wrist': (4.67, 5.39),
-    'gripper': (5.04, 5.76),
-    'cables': (5.16, 5.76),
+    'base': (1.95, 2.62),
+    'shoulder': (2.08, 2.75),
+    'upper_arm': (2.22, 2.89),
+    'elbow': (2.36, 3.03),
+    'forearm': (2.50, 3.17),
+    'wrist': (2.64, 3.31),
+    'gripper': (2.81, 3.48),
+    'cables': (2.76, 3.43),
 }
 XX, YY = np.meshgrid(np.arange(W, dtype='f')+.5, np.arange(H, dtype='f')+.5)
 def ramp(a,b,x):
@@ -64,7 +65,7 @@ def pose(t):
     close = travel(1.36, 1.93, approach)
     # Lift and carry continue while the jaw engraving becomes the signature.
     # The completed arm and the letters come to rest together.
-    lift = travel(ASSEMBLED,8.95,t)
+    lift = travel(ASSEMBLED,LIFT_END,t)
     carry = travel(RELEASE,MOVEMENT_END,t)
 
     # A level approach ends directly above the V-block. Both fingers reach
@@ -75,15 +76,15 @@ def pose(t):
 
 
 def explosion(t, lag=0, stage=None):
-    start,end = ASSEMBLY_STAGES.get(stage,(3.00,5.84))
-    return travel(1.12+lag, 2.48+lag, t)*(1-travel(start+lag, end+lag, t))
+    start,end = ASSEMBLY_STAGES.get(stage,(1.95,3.48))
+    return travel(EXPLOSION_START+lag, EXPLOSION_PEAK+lag, t)*(1-travel(start+lag, end+lag, t))
 
 
 def projection(t):
-    settle = travel(5.50, 6.55, t)
+    settle = travel(2.80, 4.20, t)
     # Pull back ahead of the separation, hold a readable exploded drawing,
     # then quietly reframe the complete arm for its signature.
-    wide = travel(.86, 2.10, t)*(1-travel(5.18, 6.30, t))
+    wide = travel(.58, 1.45, t)*(1-travel(2.75, 4.05, t))
     zoom = mix(mix(1.29, 1.80, settle), .76, wide)
     close_center = mix(np.array([563., 270.]), np.array([590., 270.]),settle)
     center = mix(close_center, np.array([600., 265.]), wide)
@@ -101,7 +102,10 @@ def arm_plate(t, audit=None):
     distance = (length**2+a*a-b*b)/(2*length)
     elbow = shoulder + distance*u - math.sqrt(max(0,a*a-distance*distance))*normal
     center, zoom = projection(t)
-    img = Image.new('L',(W,H))
+    # Supersample rigid geometry so subpixel camera and joint motion do not
+    # make one-pixel outlines chatter between frames.
+    supersample=2
+    img = Image.new('L',(W*supersample,H*supersample))
     pen = ImageDraw.Draw(img)
     pivot, displacement, rotation = np.zeros(2), np.zeros(2), np.eye(2)
     piece_scale,tone = 1.,1.
@@ -133,12 +137,12 @@ def arm_plate(t, audit=None):
     def screen(p):
         transformed = ((np.asarray(p)-pivot)@rotation.T)*piece_scale + pivot + displacement
         return (transformed-center)*zoom + [W/2,H/2]
-    def pts(points): return [tuple(p) for p in screen(points)]
+    def pts(points): return [tuple(p) for p in screen(points)*supersample]
     def pigment(value): return round(min(255,value*tone))
     def polygon(points,value): pen.polygon(pts(points),fill=pigment(value))
-    def line(points,value,width): pen.line(pts(points),fill=pigment(value),width=max(1,round(width*zoom*piece_scale)),joint='curve')
+    def line(points,value,width): pen.line(pts(points),fill=pigment(value),width=max(1,round(width*zoom*piece_scale*supersample)),joint='curve')
     def circle(p,r,value):
-        pt=screen(p);rr=r*zoom*piece_scale
+        pt=screen(p)*supersample;rr=r*zoom*piece_scale*supersample
         pen.ellipse([tuple(pt-rr),tuple(pt+rr)],fill=pigment(value))
     def bar(p,q,r1,r2,value):
         delta=q-p; perpendicular=np.array([-delta[1],delta[0]])/np.linalg.norm(delta)
@@ -228,6 +232,7 @@ def arm_plate(t, audit=None):
         angle=(i+.5)*math.tau/6
         p=part+23.5*np.array([math.cos(angle),math.sin(angle)])
         circle(p,3.1,61);circle(p,2,0)
+    img=img.resize((W,H),Image.Resampling.LANCZOS)
     return np.asarray(img).astype('f')/255,screen(part),PART_RADIUS*zoom
 
 PAPER = np.array([255, 255, 255])
@@ -376,7 +381,7 @@ def write_ink_map():
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
-    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, live_currents=True, flow='engraved', name_duration=2.80, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], live_currents=True, flow='engraved', name_duration=2.80, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 

@@ -15,7 +15,8 @@ try {
   const snapshot=canvas=>canvas.evaluate(c=>c.toDataURL());
   const timing=await film.evaluate(async v=>fetch(v.dataset.inkMap).then(r=>r.json()));
   const at=t=>timing.poses[Math.round(t*timing.fps)];
-  assert.ok(Math.hypot(at(8.7)[0]-at(7.8)[0],at(8.7)[1]-at(7.8)[1])>40,'the wrist travels while the name is forming');
+  const early=at(timing.release+timing.name_duration*.40),late=at(timing.release+timing.name_duration*.85);
+  assert.ok(Math.hypot(late[0]-early[0],late[1]-early[1])>40,'the wrist travels while the name is forming');
   assert.ok(timing.movement_end>timing.release+timing.name_duration && timing.movement_end<timing.settled);
   await film.evaluate(async(v,t)=>{v.pause();await new Promise(r=>{v.addEventListener('seeked',r,{once:true});v.currentTime=t;});},timing.settled+.03);
   await page.waitForTimeout(150);

@@ -43,7 +43,7 @@ try {
     let ink=0;for(let i=0;i<pixels.length;i+=4)ink+=255-pixels[i+1];
     return ink;
   });
-  assert.ok(timing.release-timing.assembled>=.25,'the complete arm holds before releasing the name');
+  assert.ok(timing.release-timing.assembled>=.12,'the complete arm is readable before releasing the name');
   await freeze(timing.assembled+.10);
   assert.equal((await ink()).total,0,'the exploded assembly can finish before the name appears');
   const assembledInk=await engravingStrength();

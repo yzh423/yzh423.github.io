@@ -29,7 +29,7 @@
     let w=0,h=0,groups=[],threads=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
     let inkMap, filmUnavailable = false, tint = [], flowTint = [], filmAlignment = .5, filmFit = 'cover';
-    let currentCanvas,currentCtx,currentFrame=0,currentLast=0,currentTime=0,currentHeat=0;
+    let currentCanvas,currentCtx,currentFrame=0,currentLast=0,currentTime=0,currentHeat=0,currentTextures=[];
     // Use coordinates exported by the engraving renderer. Their origin is the
     // centre of the part, so they stay on the tool throughout the camera move.
     if (film.dataset.inkMap) {
@@ -60,10 +60,76 @@
       const view=filmProjection(),scale=view.scale;
       const ox=view.x+(still?0:fx*.18),oy=view.y+(still?0:fy*.18);
       const px=(mx-ox)/scale,py=(my-oy)/scale;
-      const opening=soften(clamp((time-1.22)/1.36,0,1))*(1-soften(clamp((time-3.1)/2.84,0,1)));
+      const phase=(from,to)=>soften(clamp((time-from)/(to-from),0,1));
+      const opening=phase(inkMap.explosion_start??1.22,inkMap.explosion_peak??2.58)*
+        (1-phase(inkMap.assembly_start??3.1,inkMap.assembled));
       const handoff=soften(clamp((time-inkMap.release)/(inkMap.settled-inkMap.release),0,1));
-      const density=(1-opening*.72)*(1-handoff*.48);
+      const assembly=phase(inkMap.assembly_start??3.1,inkMap.assembled);
+      const density=(1-opening*.28)*(1-handoff*.24);
       currentCtx.save();currentCtx.translate(ox,oy);currentCtx.scale(scale,scale);currentCtx.lineCap='round';
+      // Three printing plates share one flowing contour. Crossfading their
+      // engraving, halftone and small type marks changes the material rather
+      // than cutting between unrelated scenes. Tiles are cached at resize/theme.
+      const drift=still?0:Math.sin(time*.24)*13;
+      const material=[1-opening*.83-handoff*.35,opening*.86+.17*assembly*(1-handoff),handoff*.70];
+      for(let layer=0;layer<3;layer++) {
+        currentCtx.save();
+        const tilt=(layer-1)*.20+Math.sin(time*.19+layer)*.018;
+        currentCtx.translate(720+(still?0:fx*.30),320+(still?0:fy*.25));
+        currentCtx.rotate(tilt);currentCtx.translate(-720,-320);
+        const rise=(layer-1)*123+drift*(layer%2?-1:1)-opening*(layer-1)*38;
+        const breadth=23+opening*43+(1-handoff)*15+currentHeat*9;
+        const contour=new Path2D();
+        contour.moveTo(-100,500+rise);
+        contour.bezierCurveTo(330,570+rise,395,35+rise,920,135+rise);
+        contour.bezierCurveTo(1170,182+rise,1280,65+rise,1540,205+rise);
+        contour.lineTo(1540,205+rise+breadth);
+        contour.bezierCurveTo(1280,65+rise+breadth,1170,182+rise+breadth,920,135+rise+breadth);
+        contour.bezierCurveTo(395,35+rise+breadth,330,570+rise+breadth,-100,500+rise+breadth);
+        contour.closePath();
+        const colorIndex=Math.round(clamp(.14+layer*.26+opening*.27-handoff*.09+Math.sin(time*.12)*.06,0,1)*63);
+        currentCtx.fillStyle=flowTint[colorIndex][12];
+        currentCtx.globalAlpha=(.035+opening*.065+currentHeat*.025)*(1-handoff*.28);
+        currentCtx.fill(contour);
+        for(let texture=0;texture<3;texture++) {
+          if(!currentTextures[layer]?.[texture]||material[texture]<.001)continue;
+          currentCtx.fillStyle=currentTextures[layer][texture];
+          currentCtx.globalAlpha=material[texture]*(.38+opening*.10)*(1-handoff*.20);
+          currentCtx.fill(contour);
+        }
+        currentCtx.strokeStyle=flowTint[colorIndex][12];
+        currentCtx.globalAlpha=.13+opening*.12+currentHeat*.09;
+        currentCtx.lineWidth=.70;currentCtx.stroke(contour);
+        currentCtx.restore();
+      }
+      // A partial impression around the arm expands with its separated parts.
+      // The uneven spacing is that of a print plate, not a target or UI gauge.
+      currentCtx.save();
+      currentCtx.translate(941+(still?0:fx*.25),280+drift*.5);
+      currentCtx.rotate(-.37+Math.sin(time*.15)*.045-opening*.14);
+      const spread=1+opening*.22-handoff*.12;
+      currentCtx.scale(spread,spread);
+      for(let k=0;k<13;k++) {
+        const radius=201+k*7+(k%3)*3;
+        currentCtx.beginPath();
+        currentCtx.ellipse(0,0,radius*1.47,radius,0,Math.PI*1.08,Math.PI*2.18);
+        currentCtx.strokeStyle=flowTint[Math.round((.26+k*.035+currentHeat*.12)*63)][12];
+        currentCtx.globalAlpha=(k%4?.14:.27)*(1-handoff*.23);
+        currentCtx.lineWidth=k%4?.65:1.05;currentCtx.stroke();
+      }
+      currentCtx.restore();
+      // One broad light pass accompanies the final joints seating; it decays
+      // into the same narrow strands that carry the name from the gripper.
+      const sweep=phase((inkMap.assembly_start??3.1)-.12,inkMap.release+1.15);
+      if(sweep>0&&sweep<1) {
+        const x=-350+sweep*2050,envelope=Math.sin(Math.PI*sweep)**2;
+        currentCtx.save();currentCtx.transform(1,0,-.36,1,0,0);
+        const light=currentCtx.createLinearGradient(x-125,0,x+125,0);
+        light.addColorStop(0,'rgba(0,163,190,0)');light.addColorStop(.42,'rgba(0,163,190,.11)');
+        light.addColorStop(.54,'rgba(168,106,225,.14)');light.addColorStop(1,'rgba(207,127,66,0)');
+        currentCtx.fillStyle=light;currentCtx.globalAlpha=envelope;
+        currentCtx.fillRect(x-125,0,250,640);currentCtx.restore();
+      }
       const point=(u,k,lower)=>{
         const breath=Math.sin(time*.30+k*.12)*12;
         const a=lower?[285+k*14,685]:[-90,443+k*13];
@@ -91,7 +157,7 @@
         const hue=Math.round((phase*(1-currentHeat*.60)+.15*currentHeat*.60)*63);
         currentCtx.strokeStyle=flowTint[hue][10];
         path(.03+k*.012,.91-k*.014,k,lower,60);
-        currentCtx.globalAlpha=density*(k%3?.16:.24);currentCtx.lineWidth=.9;currentCtx.stroke();
+        currentCtx.globalAlpha=density*(k%3?.24:.38);currentCtx.lineWidth=.9;currentCtx.stroke();
         const head=(time*.033+k*.087+lower*.24)%1;
         for(let n=0;n<9;n++) {
           const from=head-.144+n*.016;if(from<.04||from+.016>.90)continue;
@@ -182,6 +248,22 @@
           'rgb('+a.map((v,i)=>Math.round(v+(colour[i]-v)*step/12)).join(',')+')');
       });
       palette=Array.from({length:18},(_,i)=>'rgb('+a.map((c,j)=>Math.round(c+(b[j]-c)*i/17)).join(',')+')');
+      if(currentCtx)currentTextures=Array.from({length:3},(_,layer)=>Array.from({length:3},(_,kind)=>{
+        const tile=document.createElement('canvas');tile.width=tile.height=48;
+        const pen=tile.getContext('2d');pen.strokeStyle=pen.fillStyle=flowTint[8+layer*22][12];
+        pen.lineWidth=.65;
+        if(kind===0) {
+          for(let x=-48;x<96;x+=6) {pen.beginPath();pen.moveTo(x,0);pen.lineTo(x+48,48);pen.stroke();}
+        } else if(kind===1) {
+          for(let y=4;y<48;y+=8)for(let x=4;x<48;x+=8) {
+            pen.beginPath();pen.arc(x+(y%16===4?0:2),y,.9,0,Math.PI*2);pen.fill();
+          }
+        } else {
+          pen.font='5px monospace';
+          for(let y=6;y<48;y+=8)for(let x=3;x<48;x+=8)pen.fillText('01/+·:'[(x+y)%6],x,y);
+        }
+        return currentCtx.createPattern(tile,'repeat');
+      }));
     }
     function measure(){
       if(!ctx||!sampler)return;
