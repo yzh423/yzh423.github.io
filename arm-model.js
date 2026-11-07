@@ -1,6 +1,6 @@
 /* The video remains a synchronized fallback and media clock. The live scene
  * supplies opaque, dimensional surfaces above the transparent numeric backdrop. */
-import {createArmFilm} from './scripts/arm-3d.js?v=metal-touch-1';
+import {createArmFilm} from './scripts/arm-3d.js?v=showcase-1';
 const stage=document.querySelector('.print-stage'),film=stage?.querySelector('video');
 if(stage&&film&&!navigator.connection?.saveData){
   let model,frame=0,lastRender=0,inView=false,disposed=false,drag=null,touchDrag=false;
@@ -25,7 +25,7 @@ if(stage&&film&&!navigator.connection?.saveData){
     const dt=lastRender?Math.min(.05,(now-lastRender)/1000):1/60;lastRender=now;
     const t=reduced.matches?model.timing.duration:
       film.currentTime||(document.documentElement.dataset.motion!=='running'?model.timing.duration:0);
-    const follow=reduced.matches?1:1-Math.exp(-dt*20);
+    const follow=reduced.matches||drag?.active?1:1-Math.exp(-dt*26);
     let moving=false;
     for(const key of ['yaw','pitch','engagement']){
       view[key]+=(target[key]-view[key])*follow;
@@ -35,7 +35,7 @@ if(stage&&film&&!navigator.connection?.saveData){
     if(!moving&&target.engagement===0)delete stage.dataset.modelOrbit;
     if((running()&&!film.paused&&!film.ended)||moving)frame=requestAnimationFrame(render);
   }
-  function wake(){lastRender=0;if(!frame&&!disposed)frame=requestAnimationFrame(render);}
+  function wake(){if(!frame&&!disposed){lastRender=0;frame=requestAnimationFrame(render);}}
   function measure(){
     if(!model)return;
     const css=getComputedStyle(film),w=film.clientWidth,h=film.clientHeight;
@@ -75,12 +75,14 @@ if(stage&&film&&!navigator.connection?.saveData){
     if(e.pointerId!==drag.id)return;
     const dx=e.clientX-drag.x,dy=e.clientY-drag.y;
     if(!drag.active){
-      if(Math.hypot(dx,dy)<5)return;
+      if(Math.hypot(dx,dy)<(drag.touch?5:2))return;
       if(drag.touch&&Math.abs(dy)>Math.abs(dx)){finishDrag();return;}
       drag.active=true;touchDrag=drag.touch;viewport.setPointerCapture(e.pointerId);stage.dataset.modelDragging='true';
     }
     e.preventDefault();
-    rotate(-(e.clientX-drag.lastX)*.007,(e.clientY-drag.lastY)*(drag.touch?0:.004));
+    const width=viewport.getBoundingClientRect().width;
+    const sensitivity=Math.min(.014,Math.PI/Math.max(240,width*.55));
+    rotate(-(e.clientX-drag.lastX)*sensitivity,(e.clientY-drag.lastY)*(drag.touch?0:sensitivity*.65));
     drag.lastX=e.clientX;drag.lastY=e.clientY;
   },{passive:false});
   for(const event of ['pointerup','pointercancel'])viewport.addEventListener(event,finishDrag);

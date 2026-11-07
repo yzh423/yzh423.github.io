@@ -40,8 +40,10 @@ try {
     const c=document.createElement('canvas');c.width=480;c.height=180;
     const ctx=c.getContext('2d');ctx.drawImage(v,0,0,480,180);
     const pixels=ctx.getImageData(0,0,480,180).data;
-    let ink=0;for(let i=0;i<pixels.length;i+=4)ink+=255-pixels[i+1];
-    return ink;
+    // Measure contrast per occupied pixel: camera reframing changes area,
+    // while a washed-out material would reduce this average.
+    let ink=0,occupied=0;for(let i=0;i<pixels.length;i+=4){const contrast=255-pixels[i+1];if(contrast>20){ink+=contrast;occupied++;}}
+    return ink/occupied;
   });
   assert.ok(timing.release-timing.assembled>=.12,'the complete arm is readable before releasing the name');
   await freeze(timing.assembled+.10);
@@ -55,7 +57,7 @@ try {
   await freeze(timing.settled+.03);
   const rest=await ink(); assert.ok(rest.total>3000 && rest.color===0);
   const finalInk=await engravingStrength()/assembledInk;
-  assert.ok(finalInk>.8,'the complete arm retains strong metal contrast behind the finished name');
+  assert.ok(finalInk>.8,'the complete arm retains strong metal contrast beside the finished name');
   assert.ok(Number(await page.locator('.flight-model-viewport canvas').evaluate(c=>c.style.opacity))>=.9,
     'the final live model retains at least 90% opacity');
   await page.screenshot({path:out+'/chapter-cover.png'});

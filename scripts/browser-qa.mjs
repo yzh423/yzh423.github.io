@@ -62,7 +62,8 @@ try {
   await page.locator('.motion-toggle').click();
   await page.waitForFunction(() => document.querySelector('[data-preview]').paused);
   assert.equal(await page.locator('html').getAttribute('data-motion'), 'paused');
-  assert.equal(await page.locator('.flight-film').evaluate(e => e.style.transform), 'translate(0px, 0px) rotate(0deg)');
+  const pausedPlacement=await film.evaluate(e=>e.style.transform);
+  await page.waitForTimeout(80);assert.equal(await film.evaluate(e=>e.style.transform),pausedPlacement,'pausing freezes the composition');
   await page.locator('.motion-toggle').click();
   await page.waitForFunction(() => !document.querySelector('[data-preview]').paused);
   const box=await stage.boundingBox();
@@ -71,13 +72,18 @@ try {
   const seatedCopper=await film.evaluate(countCopper);
   await page.waitForFunction(t=>document.querySelector('.flight-film').currentTime>=t,timing.settled);
   const beforeHover=await lettering.evaluate(c=>c.toDataURL());
+  const placedArm=await film.evaluate(v=>v.style.transform);
   await page.mouse.move(box.x+box.width*.16,box.y+box.height*.47);
   await page.mouse.move(box.x+box.width*.22,box.y+box.height*.47,{steps:8});
-  await page.waitForFunction(()=>Math.abs(new DOMMatrix(getComputedStyle(document.querySelector('.flight-film')).transform).e)>3);
-  assert.notEqual(beforeHover,await lettering.evaluate(c=>c.toDataURL()),'pointer should displace the lettering as well as the film');
-  record('one shared stage: pointing at the artwork displaces the ink and the robot arm');
+  await page.waitForTimeout(100);
+  assert.notEqual(beforeHover,await lettering.evaluate(c=>c.toDataURL()),'pointer should displace the lettering');
+  assert.equal(await film.evaluate(v=>v.style.transform),placedArm,'name hover leaves the final camera composition stable');
+  record('name particles respond to pointing while the composed model remains stable');
   await page.locator('#research').evaluate(e => e.scrollIntoView({ block: 'start' }));
   await page.waitForFunction(() => document.querySelector('[data-preview]').paused);
+  // A finished film is already paused. Let the visibility observer see the
+  // destination before returning, rather than collapsing both moves into one frame.
+  await page.evaluate(()=>new Promise(r=>requestAnimationFrame(()=>requestAnimationFrame(r))));
   await page.evaluate(()=>scrollTo(0,0));
   await page.waitForFunction(()=>{const v=document.querySelector('.flight-film');return !v.paused&&v.currentTime<1;});
   await film.evaluate(v=>{v.currentTime=v.duration-.28;});

@@ -172,7 +172,16 @@ export async function createArmFilm({live=false}={}){
   floor.rotation.x=-Math.PI/2;floor.position.y=.015;floor.receiveShadow=true;scene.add(floor);
   const sourceLight=new T.PointLight(0x57cbdc,0,1.5,2);scene.add(sourceLight);
   const cold=new T.Color(0x57cbdc),warm=new T.Color(0xdf9966),raycaster=new T.Raycaster();
-  const viewBox=new T.Box3(),meshBox=new T.Box3();let fitCorners;
+  // Derive inspection bounds once from the final pose, so seeking and replay
+  // produce the same camera as a continuous run of the fallback film.
+  const finalPose=motion(timing.duration),fitCorners=[];
+  for(const p of pieces)p.place(p.mesh,finalPose);
+  workpiece.position.copy(finalPose.part);collar.position.copy(finalPose.part).add(vec(0,0,.115));
+  scene.updateMatrixWorld(true);
+  for(const mesh of [...pieces.map(p=>p.mesh),...staticMeshes]){
+    mesh.geometry.computeBoundingBox();const b=mesh.geometry.boundingBox;
+    for(const x of [b.min.x,b.max.x])for(const y of [b.min.y,b.max.y])for(const z of [b.min.z,b.max.z])fitCorners.push(vec(x,y,z).applyMatrix4(mesh.matrixWorld));
+  }
 
   const tempQuat=new T.Quaternion();
   const output=document.createElement('canvas');output.width=width;output.height=height;
@@ -200,25 +209,24 @@ export async function createArmFilm({live=false}={}){
     const azimuth=.34+s.orbit+view.yaw;
     const elevation=Math.max(.10,Math.min(.65,.22+.045*Math.sin(Math.PI*turn)**2+view.pitch));
     const direction=vec(Math.sin(azimuth),Math.sin(elevation),Math.cos(azimuth));
-    if(view.engagement>0){
-      scene.updateMatrixWorld(true);
-      if(!fitCorners){
-        viewBox.makeEmpty();
-        for(const mesh of [...pieces.map(p=>p.mesh),...staticMeshes])viewBox.union(meshBox.setFromObject(mesh));
-        fitCorners=[];
-        for(const x of [viewBox.min.x,viewBox.max.x])for(const y of [viewBox.min.y,viewBox.max.y])for(const z of [viewBox.min.z,viewBox.max.z])fitCorners.push(vec(x,y,z));
-      }
+    const inspection=ease(timing.assembled,timing.settled-.2,t);
+    if(inspection>0){
       const forward=direction.clone().normalize(),right=Y.clone().cross(forward).normalize(),up=forward.clone().cross(right);
       const tangent=Math.tan(camera.fov*Math.PI/360);let required=radius*direction.length();
       for(const corner of fitCorners){
-        const p=corner.clone().sub(target),depth=p.dot(forward);
-        required=Math.max(required,Math.abs(p.dot(up))/tangent*1.08+depth,
-          Math.abs(p.dot(right))/(tangent*camera.aspect)*1.18+depth);
+        const x=corner.x-target.x,y=corner.y-target.y,z=corner.z-target.z;
+        const depth=x*forward.x+y*forward.y+z*forward.z;
+        required=Math.max(required,Math.abs(x*up.x+y*up.y+z*up.z)/tangent*1.08+depth,
+          Math.abs(x*right.x+y*right.y+z*right.z)/(tangent*camera.aspect*.40)*1.04+depth);
       }
-      radius+=(required/direction.length()-radius)*view.engagement;
+      radius+=(required/direction.length()-radius)*inspection;
     }
     camera.position.copy(target).addScaledVector(direction,radius);
-    camera.lookAt(target);camera.updateMatrixWorld();renderer.render(scene,camera);
+    camera.lookAt(target);camera.updateMatrixWorld();
+    // Fixed studio reflections describe the metal; a low camera-side fill
+    // preserves readable joints when the visitor turns to the shaded side.
+    fill.position.copy(camera.position).add(vec(1,2,0));
+    renderer.render(scene,camera);
     // Keep the name legible without flattening the dimensional model early.
     const retreat=ease(timing.release,timing.settled-.20,t)*.08;
     if(live)renderer.domElement.style.opacity=1-retreat;
@@ -248,8 +256,8 @@ export async function createArmFilm({live=false}={}){
   }
   function bounds(){
     let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
-    for(const {mesh} of pieces){
-      mesh.geometry.computeBoundingBox();const b=mesh.geometry.boundingBox;
+    for(const mesh of [...pieces.map(p=>p.mesh),...staticMeshes]){
+      if(!mesh.geometry.boundingBox)mesh.geometry.computeBoundingBox();const b=mesh.geometry.boundingBox;
       for(const x of [b.min.x,b.max.x])for(const y of [b.min.y,b.max.y])for(const z of [b.min.z,b.max.z]){
         const v=vec(x,y,z).applyMatrix4(mesh.matrixWorld).project(camera);
         left=Math.min(left,v.x);right=Math.max(right,v.x);top=Math.max(top,v.y);bottom=Math.min(bottom,v.y);

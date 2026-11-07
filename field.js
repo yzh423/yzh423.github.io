@@ -28,6 +28,7 @@
     const ctx=canvas.getContext('2d'), mask=document.createElement('canvas'), sampler=mask.getContext('2d',{willReadFrequently:true});
     const stillPoster=film.getAttribute('poster'), assemblyTime=1.52;
     const printStage=stage.classList.contains('print-stage');
+    const reduced=matchMedia('(prefers-reduced-motion: reduce)');
     // The film is the master clock for the arm, numerical field and name.
     // Keep all authored layers together at a brisker pace; research videos
     // retain their recorded speed.
@@ -35,7 +36,7 @@
     const shotChange=.64;
     const fieldWidth=112,fieldHeight=56;
     let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
-    let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
+    let ready=false,entry=0,needsEntry=true,mx=0,my=0,strength=0,flowX=0,flowY=0;
     let inkMap, filmUnavailable = false, tint = [], flowTint = [], filmAlignment = .5, filmFit = 'cover';
     let currentCanvas,currentCtx,currentFrame=0,currentLast=0,currentTime=0,currentPixels,currentBuffer,currentSurface,currentSurfaceCtx,fieldPalette=[];
     let fieldEdges,fieldColumns,fieldPulls,fieldCues=[],fieldQuiet,digitScreens=[],digitShots=[];
@@ -96,6 +97,11 @@
     }
     function buildDigits() {
       if(!currentCtx)return;
+      const stacked=innerWidth<=850;
+      for(let y=0;y<fieldHeight;y++)for(let x=0;x<fieldWidth;x++) {
+        const u=x/(fieldWidth-1),v=y/(fieldHeight-1);
+        fieldQuiet[y*fieldWidth+x]=Math.exp(-(((u-(stacked?.5:.30))/(stacked?.58:.35))**2)-((v-(stacked?.15:.47))/(stacked?.20:.26))**2);
+      }
       const cell=clamp(w/235,3.6,5.4),cols=Math.ceil(w/cell),rows=Math.ceil(h/(cell*1.35));
       const shapes=['75557','26227','71747','71717','55711','74717','74757','71111','75757','75717'];
       // Four cached numeric screens. Their strokes crossfade without a blank
@@ -145,11 +151,27 @@
       return {scale:1.05+breath*.035,spread:.08+breath*.025,angle:1.20+drift*.035,
         x:.68+breath*.018,y:.43+Math.sin(drift*.18)*.012,negative:0,clock:9.2+drift*.24};
     }
-    function filmProjection() {
+    function composition(time,finished=false) {
+      const progress=finished?1:soften(clamp((time-(inkMap?.release??7.43))/2.1,0,1));
+      const stacked=innerWidth<=850;
+      let fit=1,x=0,y=0;
+      if(stacked&&inkMap?.bounds){
+        const i=clamp(time*inkMap.fps,0,inkMap.bounds.length-1),a=inkMap.bounds[Math.floor(i)],b=inkMap.bounds[Math.ceil(i)];
+        const box=a.map((n,j)=>n+(b[j]-n)*(i%1)),scale=Math.max(film.clientWidth/inkMap.width,film.clientHeight/inkMap.height);
+        const sw=inkMap.width*scale,sh=inkMap.height*scale;
+        fit=Math.min(.96,(w-24)/((box[2]-box[0])*sw/2),(h-32)/((box[1]-box[3])*sh/2));
+        x=-(box[0]+box[2])*sw/4*fit;y=(box[1]+box[3])*sh/4*fit;
+      }
+      // Reserve the stacked signature above and the 64px action row below.
+      const endScale=stacked?clamp((h*.73-76)/(h*.93),.45,.72):.90;
+      return {scale:fit+(endScale-fit)*progress,x:x*(1-progress)+w*progress*(stacked?-.04:.22),y:y*(1-progress)+progress*(stacked?h*.135-26:-h*.055)};
+    }
+    function filmProjection(time) {
       const width=inkMap.width??1440,height=inkMap.height??540;
       const sx=film.clientWidth/width,sy=film.clientHeight/height;
       const scale=filmFit==='contain'?Math.min(sx,sy):Math.max(sx,sy);
-      return {scale,x:(w-width*scale)*filmAlignment,y:(h-height*scale)/2};
+      const c=composition(time),x=(w-width*scale)*filmAlignment,y=(h-height*scale)/2;
+      return {scale:scale*c.scale,x:w/2+(x-w/2)*c.scale+c.x,y:h/2+(y-h/2)*c.scale+c.y};
     }
     function fieldGrade(time) {
       if(time>=inkMap.settled) {
@@ -267,7 +289,7 @@
       const index = clamp(time * inkMap.fps, 0, inkMap.poses.length - 1);
       const a = inkMap.poses[Math.floor(index)], b = inkMap.poses[Math.ceil(index)];
       const lerp = slot => a[slot] + (b[slot] - a[slot]) * (index % 1);
-      const view=filmProjection(),scale=view.scale;
+      const view=filmProjection(time),scale=view.scale;
       return {
         x: lerp(0)*scale + view.x,
         y: lerp(1)*scale + view.y,
@@ -316,16 +338,20 @@
       mask.width=Math.ceil(w);mask.height=Math.ceil(h);
       const family='Newsreader, Georgia, serif',text='Zhenghao YU';
       sampler.textAlign='center';sampler.textBaseline='alphabetic';sampler.font='500 100px '+family;
-      const narrow=w<500;
-      const widthFraction=printStage ? (narrow?.82:.64) : (narrow?.88:.75);
-      const size=Math.min(w*widthFraction*100/sampler.measureText(text).width,h*.47);
+      const narrow=innerWidth<=850;
+      const widthFraction=printStage ? (narrow?.86:.50) : (narrow?.88:.75);
+      const size=Math.min(w*widthFraction*100/sampler.measureText(text).width,h*(narrow?.14:.47));
       sampler.font='500 '+size+'px '+family;
       const metric=sampler.measureText(text);
-      const anchorX=printStage ? (narrow?.46:.36) : .5;
-      const anchorY=printStage && narrow ? .60 : .49;
+      const anchorX=printStage ? (narrow?.50:.30) : .5;
+      const anchorY=printStage ? (narrow?.105:.43) : .49;
       const baseline=h*anchorY+(metric.actualBoundingBoxAscent-metric.actualBoundingBoxDescent)*.5;
-      const top=baseline-metric.actualBoundingBoxAscent,letterHeight=metric.actualBoundingBoxAscent+metric.actualBoundingBoxDescent;
+      const top=baseline-metric.actualBoundingBoxAscent;
       sampler.fillText(text,w*anchorX,baseline);
+      const secondBaseline=baseline+size*(narrow?.65:.85);
+      sampler.font='italic 400 '+size*.62+'px '+family;
+      sampler.fillText('Daniel',w*anchorX,secondBaseline);
+      const letterHeight=secondBaseline+sampler.measureText('Daniel').actualBoundingBoxDescent-top;
       const pixels=sampler.getImageData(0,0,mask.width,mask.height).data;
       const step=clamp(w/368,1.52,3.15);
       grain=step*(w<500?.87:.75);
@@ -351,7 +377,7 @@
       if(!intro&&!still)return false;
       // The media clock also freezes on a network stall. A blocked video or
       // data-saving visit gets the finished signature without a timed blank.
-      const transfer = printStage && !still && !filmUnavailable && !navigator.connection?.saveData;
+      const transfer = printStage && (!still || (film.currentTime>0&&!reduced.matches)) && !filmUnavailable && !navigator.connection?.saveData;
       const filmTime = film.currentTime;
       const releaseAt = inkMap?.release ?? inkMap?.contact ?? 1.93;
       const settledAt = inkMap?.settled ?? 4.9;
@@ -365,11 +391,11 @@
       flowX+=(clamp(moveX/Math.max(.001,dt),-1100,1100)-flowX)*kTrail;
       flowY+=(clamp(moveY/Math.max(.001,dt),-1100,1100)-flowY)*kTrail;
       strength+=((act?1:0)-strength)*(1-Math.exp(-dt*14));
-      const canTilt=act&&!assembling&&!stage.hasAttribute('data-model-orbit');
-      const tx=canTilt?clamp(px/w-.5,-.5,.5)*Math.min(w*.055,29):0,ty=canTilt?clamp(py/h-.5,-.5,.5)*15:0;
-      fx+=(tx-fx)*kTrail;fy+=(ty-fy)*kTrail;
-      if(still)fx=fy=strength=flowX=flowY=0;
-      film.style.transform='translate('+fx.toFixed(2)+'px,'+fy.toFixed(2)+'px) rotate('+(fx*.049).toFixed(3)+'deg)';
+      if(still)strength=flowX=flowY=0;
+      // The arm makes room as its light becomes the name. Pointer input then
+      // moves the real camera, never a second, competing CSS parallax layer.
+      const placement=composition(filmTime,!transfer);
+      film.style.transform=`translate(${placement.x.toFixed(2)}px,${placement.y.toFixed(2)}px) scale(${placement.scale.toFixed(5)})`;
       let movingInk=false;
       const radius=clamp(w*.14,60,160), invRadius=1/radius;
       const speed=Math.hypot(flowX,flowY),directionX=flowX/Math.max(speed,1),directionY=flowY/Math.max(speed,1);
@@ -498,7 +524,7 @@
         }
       }
       ctx.globalAlpha=1;
-      return !still&&((printStage ? assembling : entry<assemblyTime)||movingInk||Math.abs(tx-fx)+Math.abs(ty-fy)>.035
+      return !still&&((printStage ? assembling : entry<assemblyTime)||movingInk
         || Math.abs(flowX)+Math.abs(flowY)>1||Math.abs((act?1:0)-strength)>.001);
     }
     function tick(t){
@@ -537,6 +563,9 @@
       needsEntry=true;sync();
     });
     film.addEventListener('ended',()=>{replay.hidden=!(visible&&enabled()&&!navigator.connection?.saveData);});
+    film.addEventListener('seeked',()=>{
+      currentTime=film.currentTime;render(0,!enabled());drawCurrents(currentTime,!enabled());wake();
+    });
     new IntersectionObserver(([e])=>{
       const arrived=e.isIntersecting&&e.intersectionRatio>=.30;
       if(visible&&!arrived){needsEntry=true;pointer.active=false;}
