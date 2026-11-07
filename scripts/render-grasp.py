@@ -14,7 +14,8 @@ import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
 W, H, FPS, SECONDS = 1440, 640, 60, 8.70
-CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 6.00, 6.18, 8.62
+CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 6.00, 5.94, 8.62
+HANDOFF_START, MOTION_RAMP = 5.72, .06
 PICKUP_START, PICKUP_END = .85, 1.45
 MOVEMENT_END, LIFT_END = 8.54, 8.28
 EXPLOSION_START, EXPLOSION_PEAK = 1.70, 3.30
@@ -78,9 +79,10 @@ def pose(t):
     close = travel(1.36, 1.93, approach)
     # Clear the fixture with the complete gripper before any part separates.
     pickup = cruise(PICKUP_START,PICKUP_END,t)
-    # After reassembly, continue the lift as the engraving becomes the name.
-    lift = cruise(ASSEMBLED,LIFT_END,t)
-    carry = cruise(RELEASE,MOVEMENT_END,t)
+    # Continue carrying through the last assembly step, before ink leaves the
+    # gripper. The arm, camera and light never settle into a separate hold.
+    lift = cruise(HANDOFF_START,LIFT_END,t,edge=MOTION_RAMP)
+    carry = cruise(HANDOFF_START,MOVEMENT_END,t,edge=MOTION_RAMP)
 
     # A level approach ends directly above the V-block. Both fingers reach
     # the OD before the first lifting frame. Only then does the load follow.
@@ -101,9 +103,9 @@ def return_window(stage, lag=0, name=None):
 
 def explosion(t, lag=0, stage=None, name=None):
     start,end = return_window(stage,lag,name)
-    # Nearly uniform return speed, with only two frames of soft landing at
-    # either end. Adjacent assemblies overlap instead of stopping in sequence.
-    return cruise(EXPLOSION_START+lag, EXPLOSION_PEAK+lag, t)*(1-cruise(start, end, t,edge=.06))
+    # Separation and return share the same near-linear speed profile. Short
+    # endpoint ramps preserve continuity without repeated long acceleration.
+    return cruise(EXPLOSION_START+lag, EXPLOSION_PEAK+lag, t,edge=MOTION_RAMP)*(1-cruise(start, end, t,edge=MOTION_RAMP))
 
 
 def projection(t):
@@ -320,7 +322,7 @@ def frame(t, bounds=None):
     # and restrained ink tint change with its opening and reassembly.
     background_weight=1-np.clip(metal*4,0,1)
     scenery=np.full((H,W,3),255,dtype='uint8')
-    handoff=travel(RELEASE,SETTLED-.25,t)
+    handoff=cruise(HANDOFF_START,SETTLED-.25,t,edge=MOTION_RAMP)
     backdrop=assembly_effects(t,records,scenery)
     warmth=travel(.30,.84,t)*(1-travel(1.05,1.66,t))
     type_field=opened*glyph*.045
@@ -364,7 +366,8 @@ def write_ink_map(bounds):
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
     data = dict(width=W, height=H, contact=CONTACT, pickup_start=PICKUP_START, pickup_end=PICKUP_END, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], assembly_stages=ASSEMBLY_STAGES, live_currents=True, flow='engraved', motion_profile='cruise', name_duration=1.70, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
-    data.update(bounds=bounds, artwork='2d-engraving', duration=SECONDS, assembly_ramp=.06)
+    data.update(bounds=bounds, artwork='2d-engraving', duration=SECONDS,
+                handoff=HANDOFF_START, motion_ramp=MOTION_RAMP, assembly_ramp=MOTION_RAMP)
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 

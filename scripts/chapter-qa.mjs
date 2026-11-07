@@ -45,9 +45,15 @@ try {
     let ink=0,occupied=0;for(let i=0;i<pixels.length;i+=4){const contrast=255-pixels[i+1];if(contrast>20){ink+=contrast;occupied++;}}
     return ink/occupied;
   });
-  assert.ok(timing.release-timing.assembled>=.12,'the complete arm is readable before releasing the name');
-  await freeze(timing.assembled+.10);
-  assert.equal((await ink()).total,0,'the exploded assembly can finish before the name appears');
+  await freeze(timing.handoff-.02);
+  assert.equal((await ink()).total,0,'the name remains absent during the exploded view');
+  const placements=[];
+  for(const time of [timing.handoff+.06,timing.assembled-.06,timing.assembled+.06]){
+    await freeze(time);placements.push(await film.evaluate(v=>v.style.transform));
+  }
+  assert.equal(new Set(placements).size,3,'the arm keeps moving through the final assembly and ink release');
+  await freeze(timing.assembled+.05);
+  assert.ok((await ink()).total>30,'travelling ink is already visible as assembly finishes, without a separate hold');
   const assembledInk=await engravingStrength();
   assert.equal(await page.locator('#home').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)');
   await freeze(timing.release+timing.name_duration*.72);

@@ -71,10 +71,22 @@ try {
     return (rect.x-stage.x+(rect.width-width*scale)*(parseFloat(css.objectPosition)/100||.5)+tool[0]*scale)/stage.width;
   },{tool,width:timing.width,height:timing.height});
   assert.ok(Math.abs(gathered.cx-toolX)<.08,'the digital form converges at the actual projected gripper before the signature release');
-  const at=t=>timing.poses[Math.round(t*timing.fps)];
-  const early=at(timing.release+timing.name_duration*.40),late=at(timing.release+timing.name_duration*.85);
+  const projectedTool=async time=>{
+    await exposure(time);
+    const tool=timing.poses[Math.round(time*timing.fps)];
+    return film.evaluate((v,{tool,width,height})=>{
+      const r=v.getBoundingClientRect(),fit=getComputedStyle(v).objectFit;
+      const scale=fit==='contain'?Math.min(r.width/width,r.height/height):Math.max(r.width/width,r.height/height);
+      return [r.x+(r.width-width*scale)/2+tool[0]*scale,r.y+(r.height-height*scale)/2+tool[1]*scale,tool[2]*scale];
+    },{tool,width:timing.width,height:timing.height});
+  };
+  const bridge=[];
+  for(const time of [timing.handoff+.10,timing.release-.03,timing.assembled+.05,timing.release+.40])bridge.push(await projectedTool(time));
+  assert.ok(bridge.slice(1).every((p,i)=>Math.hypot(p[0]-bridge[i][0],p[1]-bridge[i][1])>2),
+    'the visible gripper keeps moving across the final assembly and first ink release');
+  const early=await projectedTool(timing.release+timing.name_duration*.40),late=await projectedTool(timing.release+timing.name_duration*.85);
   assert.ok(Math.hypot(late[0]-early[0],late[1]-early[1])>early[2],
-    'the wrist travels more than one projected tool radius while the name is forming');
+    'the visible wrist travels more than one tool radius while the name is forming');
   assert.ok(timing.movement_end>timing.release+timing.name_duration && timing.movement_end<timing.settled);
   await film.evaluate(async(v,t)=>{v.pause();await new Promise(r=>{v.addEventListener('seeked',r,{once:true});v.currentTime=t;});},timing.settled+.03);
   await page.waitForTimeout(150);

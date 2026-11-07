@@ -20,7 +20,7 @@ for i in range(COUNT):
 atlas.save(engraving.OUT / 'grasp-silhouettes.webp', 'WEBP', quality=88, method=6)
 path = engraving.OUT / 'grasp-ink.json'
 data = json.loads(path.read_text(encoding='utf-8'))
-data['atlas'] = dict(file='grasp-silhouettes.webp?v=linear-assembly-1', fps=FPS, columns=COLS,
+data['atlas'] = dict(file='grasp-silhouettes.webp?v=continuous-ink-1', fps=FPS, columns=COLS,
                      width=WIDTH, height=HEIGHT, frames=COUNT)
 path.write_text(json.dumps(data, separators=(',', ':')) + '\n', encoding='utf-8')
 print(f'Exported {COUNT} original silhouettes; {(engraving.OUT / "grasp-silhouettes.webp").stat().st_size:,} bytes')

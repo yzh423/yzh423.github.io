@@ -50,8 +50,8 @@
     const pointer=pointerFor(stage,wake);
     const smooth=n=>n*n*(3-2*n);
     const soften=n=>n*n*n*(10+n*(6*n-15));
-    const cruise=n=>{
-      const edge=.12,enter=x=>{const q=x/edge;return edge*(q*q*q-.5*q*q*q*q)/(1-edge);};
+    const cruise=(n,edge=.12)=>{
+      const enter=x=>{const q=x/edge;return edge*(q*q*q-.5*q*q*q*q)/(1-edge);};
       return n<edge?enter(n):n>1-edge?1-enter(1-n):(n-edge*.5)/(1-edge);
     };
     function setupCurrents() {
@@ -97,7 +97,7 @@
         [inkMap.assembly_start+shotChange,1,0,0,.5,.5,.88,6.1],
         [inkMap.assembly_start+1.1,1,0,0,.5,.5,.88,6.3],
         [inkMap.assembly_start+1.65,1,0,0,.5,.5,0,7],
-        [inkMap.assembled,1,0,0,.5,.5,0,7.8],
+        [inkMap.handoff??inkMap.assembled,1,0,0,.5,.5,0,7.8],
         [inkMap.release,1,0,0,.5,.5,0,8],
         [inkMap.settled,1,0,0,.5,.5,0,9.2]
       ];
@@ -177,7 +177,7 @@
       return pen.getImageData(0,0,fieldWidth,fieldHeight).data;
     }
     function composition(time,finished=false) {
-      const progress=finished?1:soften(clamp((time-(inkMap?.release??6.18))/2.1,0,1));
+      const progress=finished?1:cruise(clamp((time-(inkMap?.handoff??inkMap?.release??5.72))/2.1,0,1),inkMap?.motion_ramp??.06);
       const stacked=innerWidth<=850;
       if(!inkMap?.bounds)return {scale:1,x:0,y:0};
       const i=clamp((finished?inkMap.settled:time)*inkMap.fps,0,inkMap.bounds.length-1);
@@ -300,14 +300,16 @@
       } else if(!currentFrame)currentFrame=request(tickCurrents);
     }
     function flowProgress(p,time) {
-      const delay=.08+p.lane*.20+(1-p.x/w)*.35+p.phase*.06;
+      // Short adjacent releases continue the final mechanical movement;
+      // there is no fixed waiting period between assembly and travelling ink.
+      const delay=p.lane*.12+(1-p.x/w)*.08+p.phase*.025;
       return clamp((time-inkMap.release-delay)/inkMap.name_duration,0,1);
     }
     function flowPoint(p,pose,progress) {
       // Neighbouring cuts remain a family of flowing lines, rather than
       // spreading radially from a single cloud beside the jaws.
       const index=Math.min(inkMap.marks.length-1,Math.floor((p.lane*.88+p.phase*.12)*inkMap.marks.length));
-      const mark=inkMap.marks[index],u=inkMap.motion_profile==='cruise'?cruise(progress):soften(progress),v=1-u;
+      const mark=inkMap.marks[index],u=inkMap.motion_profile==='cruise'?cruise(progress,inkMap.motion_ramp??.12):soften(progress),v=1-u;
       const x=pose.x+mark[0]*pose.radius/1000,y=pose.y+mark[1]*pose.radius/1000;
       const reach=Math.max(w*.16,Math.abs(x-p.x));
       const c1x=x-reach*.22,c1y=y+(p.y-y)*.12-(p.lane-.5)*h*.035;
@@ -422,8 +424,8 @@
       flowY+=(clamp(moveY/Math.max(.001,dt),-1100,1100)-flowY)*kTrail;
       strength+=((act?1:0)-strength)*(1-Math.exp(-dt*14));
       if(still)strength=flowX=flowY=0;
-      // The arm makes room as its light becomes the name. Pointer input then
-      // moves the real camera, never a second, competing CSS parallax layer.
+      // The arm makes room while the final parts arrive. Its projected light
+      // and the departing ink stay attached throughout this shared movement.
       const placement=composition(filmTime,!transfer);
       film.style.transform=`translate(${placement.x.toFixed(2)}px,${placement.y.toFixed(2)}px) scale(${placement.scale.toFixed(5)})`;
       let movingInk=false;

@@ -34,7 +34,7 @@ try{
   });
   const timing=await film.evaluate(v=>fetch(v.dataset.inkMap).then(r=>r.json()));
   const times=[0,timing.contact,timing.pickup_end,timing.explosion_start,timing.explosion_peak,
-    ...Object.values(timing.assembly_stages).map(([a,b])=>(a+b)/2),timing.assembled,
+    ...Object.values(timing.assembly_stages).map(([a,b])=>(a+b)/2),timing.handoff,timing.assembled,
     timing.release+timing.name_duration*.5,timing.settled,timing.duration-.01].sort((a,b)=>a-b);
   for(const [width,height] of [[1440,920],[1440,600],[1024,768],[768,1024],[390,844],[320,740]]){
     await page.setViewportSize({width,height});await page.waitForTimeout(120);
@@ -52,5 +52,5 @@ try{
   assert.equal(await page.locator('.flight-model-viewport,.model-tools,script[type="importmap"]').count(),0,'no live 3D surface or rotation controls');
   assert.ok(requests.every(url=>!/(arm-model\.js|\/vendor\/three\/)/.test(url)),'no Three.js downloads');
   assert.deepEqual(errors,[]);await writeFile(out+'/audit.json',JSON.stringify(report,null,2));
-  console.log('PASS complete 2D engraving across 16 moments and six sizes, separate signature, clear controls and no live 3D runtime');
+  console.log(`PASS complete 2D engraving across ${times.length} moments and six sizes, separate signature, clear controls and no live 3D runtime`);
 }finally{await browser.close();}
