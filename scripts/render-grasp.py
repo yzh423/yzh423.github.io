@@ -7,12 +7,22 @@ import json
 import math
 import subprocess
 import numpy as np
-from PIL import Image, ImageDraw
+from PIL import Image, ImageDraw, ImageFilter
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
-W, H, FPS, SECONDS = 1440, 540, 60, 7
-CONTACT, RELEASE, SETTLED = .95, 4.18, 6.90
+W, H, FPS, SECONDS = 1440, 540, 60, 9
+CONTACT, ASSEMBLED, RELEASE, SETTLED = .95, 5.90, 6.20, 8.92
+ASSEMBLY_STAGES = {
+    'base': (3.00, 3.72),
+    'shoulder': (3.38, 4.10),
+    'upper_arm': (3.74, 4.46),
+    'elbow': (4.08, 4.80),
+    'forearm': (4.39, 5.11),
+    'wrist': (4.67, 5.39),
+    'gripper': (5.04, 5.76),
+    'cables': (5.16, 5.76),
+}
 XX, YY = np.meshgrid(np.arange(W, dtype='f')+.5, np.arange(H, dtype='f')+.5)
 def ramp(a,b,x):
     n=np.clip((x-a)/(b-a),0,1)
@@ -47,7 +57,7 @@ PART_SEAT = np.array([843., 337.])
 
 
 def pose(t):
-    t = min(1.93, t*1.93/CONTACT) + travel(4.15,5.65,t)*(4.85-1.93)
+    t = min(1.93, t*1.93/CONTACT) + travel(ASSEMBLED,7.15,t)*(4.85-1.93)
     align = travel(0, .93, t)
     descend = travel(.24, 1.35, t)
     close = travel(1.36, 1.93, t)
@@ -61,17 +71,18 @@ def pose(t):
     return wrist, PART_SEAT + offset, mix(57, PART_RADIUS, close)
 
 
-def explosion(t, lag=0):
-    return travel(1.12+lag, 2.34+lag, t)*(1-travel(2.67+lag, 4.00+lag, t))
+def explosion(t, lag=0, stage=None):
+    start,end = ASSEMBLY_STAGES.get(stage,(3.00,5.84))
+    return travel(1.12+lag, 2.48+lag, t)*(1-travel(start+lag, end+lag, t))
 
 
 def projection(t):
-    settle = travel(3.55, 5.04, t)
+    settle = travel(5.50, 6.55, t)
     # Pull back ahead of the separation, hold a readable exploded drawing,
     # then quietly reframe the complete arm for its signature.
-    wide = travel(.86, 2.02, t)*(1-travel(3.35, 4.52, t))
-    zoom = mix(mix(1.29, 1.59, settle), .85, wide)
-    center = mix(np.array([563., 270.]), np.array([605., 250.]), wide)
+    wide = travel(.86, 2.10, t)*(1-travel(5.18, 6.30, t))
+    zoom = mix(mix(1.29, 1.59, settle), .76, wide)
+    center = mix(np.array([563., 270.]), np.array([600., 265.]), wide)
     return center, zoom
 
 
@@ -89,30 +100,42 @@ def arm_plate(t, audit=None):
     img = Image.new('L',(W,H))
     pen = ImageDraw.Draw(img)
     pivot, displacement, rotation = np.zeros(2), np.zeros(2), np.eye(2)
+    piece_scale,tone = 1.,1.
 
-    def component(name, origin, offset=(0,0), degrees=0, lag=0):
-        nonlocal pivot, displacement, rotation
-        amount = explosion(t, lag)
+    def component(name, origin, offset=(0,0), degrees=0, lag=0, stage=None):
+        nonlocal pivot, displacement, rotation, piece_scale,tone
+        amount = explosion(t, lag, stage) if stage else 0.
         pivot = np.asarray(origin)
         # Each rigid part follows a shallow arc and lands with zero velocity
         # and acceleration. Lag gives the assembly a slight mechanical order.
-        offset = np.asarray(offset, dtype=float)
-        curve = np.array([-offset[1],offset[0]])*.055*math.sin(math.pi*amount)
+        offset = np.asarray(offset,dtype=float)*[1.55,1.25]
+        depth = -.75 if 'cable' in name else .7 if any(word in name for word in ['cover','cap','finger','pad']) else -.15
+        offset += np.array([16,-12])*depth
+        curve = np.array([-offset[1],offset[0]])*.075*math.sin(math.pi*amount)
         displacement = amount*offset + curve
-        angle = math.radians(degrees)*amount
+        angle = math.radians(degrees)*amount*1.18
+        piece_scale = 1+depth*.12*amount
+        tone = 1+depth*.18*amount
         rotation = np.array([[math.cos(angle),-math.sin(angle)],[math.sin(angle),math.cos(angle)]])
         if audit is not None:
-            audit.append(dict(name=name, amount=amount, offset=displacement.tolist(), angle=angle))
+            trail=[]
+            for back in [0.18,.12,.06,0]:
+                previous=explosion(max(0,t-back),lag,stage) if stage else 0.
+                shift=previous*offset+np.array([-offset[1],offset[0]])*.075*math.sin(math.pi*previous)
+                trail.append(((pivot+shift-center)*zoom+[W/2,H/2]).tolist())
+            audit.append(dict(name=name,stage=stage,amount=amount,offset=displacement.tolist(),
+                angle=angle,depth=depth,trail=trail,completed=ASSEMBLY_STAGES.get(stage,(0,0))[1]+lag))
 
     def screen(p):
-        transformed = (np.asarray(p)-pivot)@rotation.T + pivot + displacement
+        transformed = ((np.asarray(p)-pivot)@rotation.T)*piece_scale + pivot + displacement
         return (transformed-center)*zoom + [W/2,H/2]
     def pts(points): return [tuple(p) for p in screen(points)]
-    def polygon(points,value): pen.polygon(pts(points),fill=value)
-    def line(points,value,width): pen.line(pts(points),fill=value,width=max(1,round(width*zoom)),joint='curve')
+    def pigment(value): return round(min(255,value*tone))
+    def polygon(points,value): pen.polygon(pts(points),fill=pigment(value))
+    def line(points,value,width): pen.line(pts(points),fill=pigment(value),width=max(1,round(width*zoom*piece_scale)),joint='curve')
     def circle(p,r,value):
-        pt=screen(p);rr=r*zoom
-        pen.ellipse([tuple(pt-rr),tuple(pt+rr)],fill=value)
+        pt=screen(p);rr=r*zoom*piece_scale
+        pen.ellipse([tuple(pt-rr),tuple(pt+rr)],fill=pigment(value))
     def bar(p,q,r1,r2,value):
         delta=q-p; perpendicular=np.array([-delta[1],delta[0]])/np.linalg.norm(delta)
         polygon([p+r1*perpendicular,q+r2*perpendicular,q-r2*perpendicular,p-r1*perpendicular],value)
@@ -122,24 +145,24 @@ def arm_plate(t, audit=None):
         points=(1-samples)**3*start+3*(1-samples)**2*samples*bend1+3*(1-samples)*samples**2*bend2+samples**3*end
         line(points,178,5);line(points,72,1.7)
     def joint(name,p,r,offset,lag):
-        component(name+' housing',p,offset,-9,lag)
+        component(name+' housing',p,offset,-9,lag,stage=name)
         circle(p,r,230);circle(p,r*.88,142);circle(p,r*.71,65)
-        component(name+' bearing',p,np.asarray(offset)+[-34,-27],8,lag+.025)
+        component(name+' bearing',p,np.asarray(offset)+[-34,-27],8,lag+.025,stage=name)
         circle(p,r*.68,226);circle(p,r*.54,96)
         circle(p,r*.42,194);circle(p,r*.30,0)
-        component(name+' shaft cap',p,np.asarray(offset)+[-70,-48],-12,lag+.05)
+        component(name+' shaft cap',p,np.asarray(offset)+[-70,-48],-12,lag+.05,stage=name)
         circle(p,r*.42,221);circle(p,r*.29,147);circle(p,r*.16,55)
         for i in range(6):
             angle=i*math.tau/6
             radial=np.array([math.cos(angle),math.sin(angle)])
             bolt=p+.79*r*radial
-            component(name+' fastener '+str(i+1),bolt,np.asarray(offset)+[-70,-48]+radial*22,0,lag+.065+i*.006)
+            component(name+' fastener '+str(i+1),bolt,np.asarray(offset)+[-70,-48]+radial*22,0,lag+.065+i*.006,stage=name)
             circle(bolt,2.5,208);line([bolt-radial*1.3,bolt+radial*1.3],60,1)
     def casting(name,p,q,r1,r2,offset,degrees,lag):
         mid=(p+q)/2
-        component(name+' housing',mid,offset,degrees,lag)
+        component(name+' housing',mid,offset,degrees,lag,stage=name.replace(' ','_'))
         bar(p,q,r1,r2,215);bar(p+(q-p)*.05,q-(q-p)*.05,r1*.80,r2*.77,135)
-        component(name+' cover',mid,np.asarray(offset)+[-18,-48],degrees+5,lag+.06)
+        component(name+' cover',mid,np.asarray(offset)+[-18,-48],degrees+5,lag+.06,stage=name.replace(' ','_'))
         bar(p+(q-p)*.16,q-(q-p)*.17,r1*.41,r2*.39,74)
         line([p+(q-p)*.17,q-(q-p)*.18],185,2)
 
@@ -152,17 +175,17 @@ def arm_plate(t, audit=None):
     line(seat+[(-50,9),(50,9)],192,4)
     for x in (-31,31):circle(seat+[x,1],2.4,68)
 
-    component('pedestal',shoulder,(-85,36),-4,.03)
+    component('pedestal',shoulder,(-85,36),-4,.03,stage='base')
     polygon([(475,405),(482,368),(518,368),(527,405)],181)
-    component('base plate',[500,416],(-112,70),-4,.07)
+    component('base plate',[500,416],(-112,70),-4,.07,stage='base')
     polygon([(447,425),(457,410),(475,405),(527,405),(547,410),(555,425)],181)
     line([(448,426),(555,426)],230,4)
     for x in [464,538]:
-        component('base fastener '+str(x),[x,415],(-130+(x-500)*.35,100),0,.12)
+        component('base fastener '+str(x),[x,415],(-130+(x-500)*.35,100),0,.12,stage='base')
         circle([x,415],3.1,69)
-    component('shoulder cable',(shoulder+elbow)/2,(-185,5),-16,.02)
+    component('shoulder cable',(shoulder+elbow)/2,(-185,5),-16,.02,stage='cables')
     cable(shoulder+[-17,8],shoulder+[-55,-45],elbow+[-33,41],elbow+[-13,-8])
-    component('wrist cable',(elbow+wrist)/2,(20,-82),9,.07)
+    component('wrist cable',(elbow+wrist)/2,(20,-82),9,.07,stage='cables')
     cable(elbow+[-13,-8],elbow+[7,-54],wrist+[-67,-39],wrist+[-4,-6])
     casting('upper arm',shoulder,elbow,31,24,(-90,-28),-8,.07)
     casting('forearm',elbow,wrist,25,16,(75,-55),8,.12)
@@ -171,26 +194,26 @@ def arm_plate(t, audit=None):
     joint('wrist',wrist,18,(176,-47),.09)
 
     def rel(points): return np.asarray(points)+wrist
-    component('wrist coupling',wrist+[0,18],(140,7),4,.06)
+    component('wrist coupling',wrist+[0,18],(140,7),4,.06,stage='wrist')
     polygon(rel([(-12,11),(12,11),(12,25),(-12,25)]),170)
     line(rel([(-16,21),(16,21)]),230,3)
-    component('gripper housing',wrist+[0,38],(173,49),6,.03)
+    component('gripper housing',wrist+[0,38],(173,49),6,.03,stage='gripper')
     polygon(rel([(-66,24),(66,24),(71,30),(71,45),(64,51),(-64,51),(-71,45),(-71,30)]),223)
     polygon(rel([(-63,30),(63,30),(63,43),(-63,43)]),83)
-    component('guide rail',wrist+[0,35],(210,97),7,.02)
+    component('guide rail',wrist+[0,35],(210,97),7,.02,stage='gripper')
     line(rel([(-61,34),(61,34)]),175,2)
     for side in (-1,1):
         def jaw(points):return rel([(side*(gap+x),y) for x,y in points])
         anchor=jaw([(4,67)])[0]
         shift=np.array([-37,139]) if side<0 else np.array([160,166])
         name='left' if side<0 else 'right'
-        component(name+' carriage',anchor,shift+[0,-33],side*6,0)
+        component(name+' carriage',anchor,shift+[0,-33],side*6,0,stage='gripper')
         polygon(jaw([(-8,37),(11,37),(13,41),(13,53),(-8,53)]),190)
         circle(jaw([(2,44)])[0],2.6,61)
-        component(name+' finger',anchor,shift,side*11,.02)
+        component(name+' finger',anchor,shift,side*11,.02,stage='gripper')
         polygon(jaw([(3,50),(13,50),(13,87),(8,95),(0,95),(0,79),(4,76)]),226)
         line(jaw([(9,55),(9,84)]),98,2)
-        component(name+' gripping pad',anchor,shift+[side*23,31],side*11,.04)
+        component(name+' gripping pad',anchor,shift+[side*23,31],side*11,.04,stage='gripper')
         polygon(jaw([(0,80),(4,77),(5,91),(0,94)]),157)
         for height in (82,86,90):line(jaw([(0,height),(3,height-1)]),70,1.2)
 
@@ -275,8 +298,50 @@ def optical_field(t, center, radius):
     return np.asarray(plate)
 
 
+def assembly_effects(t, records, backdrop):
+    """Cast soft depth shadows, trace moving parts, and mark their seating."""
+    shadows=Image.new('RGBA',(W,H))
+    shadow_pen=ImageDraw.Draw(shadows)
+    engraving=Image.new('RGBA',(W,H))
+    etch=ImageDraw.Draw(engraving)
+    colours=[(0,137,149),(66,110,171),(173,91,55)]
+    for index,record in enumerate(records):
+        name=record['name']
+        major=any(word in name for word in ['housing','cover','plate','pedestal','finger','coupling'])
+        if not major or not record['stage']:
+            continue
+        points=[tuple(p) for p in record['trail']]
+        x,y=points[-1]
+        opening=record['amount']
+        hue=colours[list(ASSEMBLY_STAGES).index(record['stage'])%len(colours)]
+        radius=13+9*max(0,record['depth'])
+        shadow_pen.ellipse((x-radius+8,y-radius*.45+15,x+radius+8,y+radius*.45+15),
+            fill=(*hue,round(opening*(21+14*max(0,record['depth'])))))
+        motion=np.linalg.norm(np.asarray(points[-1])-points[0])
+        visibility=min(1,motion/28)
+        for segment in range(3):
+            etch.line(points[segment:segment+2],fill=(*hue,round(visibility*(25+segment*26))),width=1)
+        for dot in range(3):
+            angle=index*2.399+dot*2.1
+            px=points[0][0]+math.cos(angle)*(6+dot*4)
+            py=points[0][1]+math.sin(angle)*(6+dot*4)
+            etch.ellipse((px-.8,py-.8,px+.8,py+.8),fill=(*hue,round(visibility*75)))
+        # A single engraved ring acknowledges a seated group. Its stroke
+        # dissolves before the next group completes, keeping the focal order.
+        phase=(t-record['completed'])/.48
+        if 0<phase<1 and 'cover' not in name and 'finger' not in name:
+            strength=math.sin(math.pi*phase)**2
+            r=11+22*phase
+            etch.arc((x-r,y-r,x+r,y+r),-125,32,fill=(*hue,round(100*strength)),width=1)
+            etch.arc((x-r*1.18,y-r*1.18,x+r*1.18,y+r*1.18),48,184,fill=(*hue,round(62*strength)),width=1)
+    image=Image.fromarray(backdrop).convert('RGBA')
+    image=Image.alpha_composite(image,shadows.filter(ImageFilter.GaussianBlur(8)))
+    return np.asarray(Image.alpha_composite(image,engraving).convert('RGB'))
+
+
 def frame(t):
-    metal, center, radius = arm_plate(t)
+    records=[]
+    metal, center, radius = arm_plate(t,records)
     opened = explosion(t,.10)
     dx,dy = XX-center[0],YY-center[1]
     distance = np.hypot(dx,dy)
@@ -289,17 +354,19 @@ def frame(t):
     # The drawing stays an engraving throughout the exploded view. The paper
     # and restrained ink tint change with its opening and reassembly.
     background_weight=1-np.clip(metal*4,0,1)
-    backdrop=optical_field(t,center,radius)
+    scenery=optical_field(t,center,radius).astype('f')
+    scenery=np.clip(255+(scenery-255)*(1-opened*.78),0,255).astype('uint8')
+    backdrop=assembly_effects(t,records,scenery)
     warmth=travel(.30,.84,t)*(1-travel(1.05,1.66,t))
     type_field=opened*glyph*.045
-    transfer=travel(RELEASE,RELEASE+.65,t)*(1-travel(5.9,6.75,t))
+    transfer=travel(RELEASE,RELEASE+.65,t)*(1-travel(SETTLED-.65,SETTLED,t))
     ink*=1-.35*transfer*(1-ramp(radius*.8,radius*2.5,distance))
     angle=np.arcsin(np.abs(np.sin(np.arctan2(dy,dx))))
     edge_arc=(1-ramp(.035,.087,np.abs(distance/radius-.975)))*(1-ramp(.30,.44,angle))
     accent=travel(CONTACT,CONTACT+.24,t)*(1-explosion(t,.02))*.86*edge_arc
     image=np.empty((H,W,3),dtype='uint8')
     for channel in range(3):
-        paper=PAPER[channel]+(backdrop[:,:,channel].astype('f')-255)*background_weight*(1-opened*.78)
+        paper=PAPER[channel]+(backdrop[:,:,channel].astype('f')-255)*background_weight
         paper=mix(paper,(224,190,140)[channel],warmth*.15)
         paper=mix(paper,(80,128,118)[channel],type_field)
         engraving=mix(GRAPHITE[channel],(36,98,100)[channel],opened*.35)
@@ -324,7 +391,7 @@ def write_ink_map():
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
-    data = dict(contact=CONTACT, release=RELEASE, settled=SETTLED, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data = dict(contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, name_duration=2.05, name_stagger=.55, fade_in=.55, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 

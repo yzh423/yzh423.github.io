@@ -36,7 +36,8 @@ try {
   }
   const timing=await film.evaluate(async video=>
     fetch(video.dataset.inkMap).then(response=>response.json()));
-  await freeze(timing.release-.25);
+  assert.ok(timing.release-timing.assembled>=.25,'the complete arm holds before releasing the name');
+  await freeze(timing.assembled+.10);
   assert.equal((await ink()).total,0,'the exploded assembly can finish before the name appears');
   assert.equal(await page.locator('#home').evaluate(e=>getComputedStyle(e).backgroundColor),'rgb(255, 255, 255)');
   await freeze(timing.release+1.00);

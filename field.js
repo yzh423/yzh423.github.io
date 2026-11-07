@@ -28,7 +28,7 @@
     const printStage=stage.classList.contains('print-stage');
     let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
-    let inkMap, filmUnavailable = false, tint = [], filmAlignment = .5;
+    let inkMap, filmUnavailable = false, tint = [], filmAlignment = .5, filmFit = 'cover';
     // Use coordinates exported by the engraving renderer. Their origin is the
     // centre of the part, so they stay on the tool throughout the camera move.
     if (film.dataset.inkMap) {
@@ -43,7 +43,8 @@
       const index = clamp(time * inkMap.fps, 0, inkMap.poses.length - 1);
       const a = inkMap.poses[Math.floor(index)], b = inkMap.poses[Math.ceil(index)];
       const lerp = slot => a[slot] + (b[slot] - a[slot]) * (index % 1);
-      const scale = Math.max(film.clientWidth / 1440, film.clientHeight / 540);
+      const scaleX = film.clientWidth/1440, scaleY = film.clientHeight/540;
+      const scale = filmFit==='contain' ? Math.min(scaleX,scaleY) : Math.max(scaleX,scaleY);
       return {
         x: lerp(0)*scale + (w - 1440*scale)*filmAlignment,
         y: lerp(1)*scale + (h - 540*scale)/2,
@@ -63,6 +64,7 @@
       if(!ctx||!sampler)return;
       w=stage.clientWidth;h=stage.clientHeight;if(!w||!h)return;
       filmAlignment = parseFloat(getComputedStyle(film).objectPosition)/100;
+      filmFit = getComputedStyle(film).objectFit;
       if (!Number.isFinite(filmAlignment)) filmAlignment = .5;
       const dpr=Math.min(devicePixelRatio||1,2);
       canvas.width=Math.round(w*dpr);canvas.height=Math.round(h*dpr);ctx.setTransform(dpr,0,0,dpr,0,0);
@@ -157,8 +159,10 @@
               const mark = inkMap.marks[p.mark % inkMap.marks.length];
               // Adjacent cuts leave the tool in ribbons and settle together.
               const lane = clamp((mark[1]+1880)/2920,0,1);
-              const start = releaseAt + .05 + lane*.43 + p.phase*.26 + (1-p.x/w)*.32;
-              const progress = clamp((filmTime - start)/(1.05 + p.span*.42),0,1);
+              const stagger = (lane*.43 + p.phase*.26 + (1-p.x/w)*.32)*(inkMap.name_stagger ?? 1);
+              const start = releaseAt + .05 + stagger;
+              const duration = inkMap.name_duration ?? (1.05 + p.span*.42);
+              const progress = clamp((filmTime - start)/duration,0,1);
               if (!progress) continue;
               const ease = progress**3*(10+progress*(6*progress-15));
               const fromX = pose.x + mark[0]*pose.radius/1000;
@@ -167,7 +171,7 @@
               cx += (fromX-p.x)*(1-ease);
               cy += (fromY-p.y)*(1-ease) - bow*h*(.075+.14*lane)
                 + Math.sin(2*Math.PI*ease)*bow*(lane-.5)*h*.12;
-              alpha = smooth(clamp(progress/.32,0,1));
+              alpha = smooth(clamp(progress/(inkMap.fade_in ?? .32),0,1));
               exposure = bow * (.62 + .36*p.phase);
               typeMark = p.mark%11===0 ? bow : 0;
             }

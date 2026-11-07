@@ -73,6 +73,7 @@
   .portfolio .hero-positioning,.portfolio .hero-intro { grid-column:1/-1; }
 }
 @media screen and (min-width: 851px) {
+  .portfolio .print-stage .flight-film { object-fit:contain; }
   .chapter-mode .portfolio .hero { padding-block: clamp(14px,3.2vh,38px) clamp(16px,3vh,36px); }
   .chapter-mode .portfolio .print-stage {
     height: clamp(174px,min(41vw,calc(100dvh - 374px)),578px);
