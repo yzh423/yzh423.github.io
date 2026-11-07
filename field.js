@@ -31,7 +31,7 @@
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
     let inkMap, filmUnavailable = false, tint = [], flowTint = [], filmAlignment = .5, filmFit = 'cover';
     let currentCanvas,currentCtx,currentFrame=0,currentLast=0,currentTime=0,currentPixels,currentBuffer,currentSurface,currentSurfaceCtx,fieldPalette=[];
-    let fieldEdges,fieldColumns,fieldPulls,fieldCues=[];
+    let fieldEdges,fieldColumns,fieldPulls,fieldCues=[],fieldPolar,fieldQuiet,digitScreens=[];
     // Use coordinates exported by the engraving renderer. Their origin is the
     // centre of the part, so they stay on the tool throughout the camera move.
     if (film.dataset.inkMap) {
@@ -43,6 +43,10 @@
     const pointer=pointerFor(stage,wake);
     const smooth=n=>n*n*(3-2*n);
     const soften=n=>n*n*n*(10+n*(6*n-15));
+    const cruise=n=>{
+      const edge=.12,enter=x=>{const q=x/edge;return edge*(q*q*q-.5*q*q*q*q)/(1-edge);};
+      return n<edge?enter(n):n>1-edge?1-enter(1-n):(n-edge*.5)/(1-edge);
+    };
     function setupCurrents() {
       if(!printStage||!stage.hasAttribute('data-live-currents')||!inkMap.live_currents||currentCanvas)return;
       currentCanvas=document.createElement('canvas');currentCanvas.className='flight-currents';
@@ -52,19 +56,61 @@
       currentSurfaceCtx=currentSurface.getContext('2d');
       currentBuffer=currentSurfaceCtx.createImageData(fieldWidth,fieldHeight);currentPixels=currentBuffer.data;
       fieldEdges=new Float32Array(fieldWidth*fieldHeight);
+      fieldPolar=new Float32Array(fieldWidth*fieldHeight*5);
+      fieldQuiet=new Float32Array(fieldWidth*fieldHeight);
       fieldColumns=new Float32Array(fieldWidth);fieldPulls=new Float32Array(fieldWidth);
       for(let y=0;y<fieldHeight;y++)for(let x=0;x<fieldWidth;x++) {
         const u=x/(fieldWidth-1),v=y/(fieldHeight-1);
         fieldEdges[y*fieldWidth+x]=soften(clamp(Math.min(u,1-u,v,1-v)*9,0,1));
+        fieldQuiet[y*fieldWidth+x]=Math.exp(-(((u-.36)/.45)**2)-((v-.49)/.17)**2);
+        const dx=(u-.56)*1.95,dy=v-.5,angle=Math.atan2(dy,dx),i=(y*fieldWidth+x)*5;
+        fieldPolar.set([Math.hypot(dx,dy),Math.sin(angle*3),Math.cos(angle*3),Math.sin(angle*5),Math.cos(angle*5)],i);
       }
       fieldCues=[
         [0,0],[inkMap.contact,0],
         [inkMap.explosion_peak+.2,1],[inkMap.assembly_start+.18,1],
         [inkMap.assembled+.1,2],[inkMap.release+.55,2],
-        [inkMap.release+inkMap.name_duration*.70,3],[inkMap.settled-.65,3],
+        [inkMap.release+inkMap.name_duration*.55,3],[inkMap.settled-.65,3],
         [inkMap.settled,0]
       ];
       stage.insertBefore(currentCanvas,film);stage.classList.add('has-currents');
+    }
+    function buildDigits() {
+      if(!currentCtx)return;
+      const cell=clamp(w/140,5.5,9),cols=Math.ceil(w/cell),rows=Math.ceil(h/(cell*1.35));
+      const shapes=['75557','26227','71747','71717','55711','74717','74757','71111','75757','75717'];
+      // Four cached numeric screens. Their strokes crossfade without a blank
+      // frame; motion comes from the density field, not thousands of DOM nodes.
+      digitScreens=Array.from({length:4},(_,frame)=>{
+        const screen=document.createElement('canvas');screen.width=cols*5;screen.height=rows*7;
+        const pen=screen.getContext('2d'),buffer=pen.createImageData(screen.width,screen.height);
+        for(let row=0;row<rows;row++)for(let col=0;col<cols;col++) {
+          const seed=(Math.imul(col+31,73856093)^Math.imul(row+17,19349663))>>>0;
+          const code=shapes[(seed+(frame+1)*(1+seed%7))%10];
+          for(let y=0;y<5;y++)for(let x=0;x<3;x++)if(Number(code[y])&(4>>x)) {
+            const i=((row*7+y+1)*screen.width+col*5+x+1)*4;
+            buffer.data[i]=buffer.data[i+1]=buffer.data[i+2]=255;buffer.data[i+3]=255;
+          }
+        }
+        pen.putImageData(buffer,0,0);return screen;
+      });
+    }
+    function digitShot(time) {
+      const phase=(a,b,t)=>soften(clamp((t-a)/(b-a),0,1));
+      const gate=(a,b,c,d,t)=>phase(a,b,t)*(1-phase(c,d,t));
+      if(time<inkMap.settled) {
+        const peak=inkMap.explosion_peak,seat=inkMap.assembled,release=inkMap.release;
+        const close=gate(peak-.25,peak+.42,peak+.62,seat-.12,time);
+        const fold=gate(seat-.8,seat-.25,release+.2,release+.95,time);
+        const clock=time*.65+2*phase(peak-.25,peak+.42,time)+2*phase(seat-.8,seat-.25,time);
+        return {close,fold,clock,spin:time*.28};
+      }
+      const elapsed=time-inkMap.settled,cycle=Math.floor(elapsed/12),t=elapsed%12;
+      // Slow recognition, a short macro move, then a longer reforming shot.
+      const close=gate(1.9,2.55,3.15,4.65,t),fold=gate(6.3,6.9,7.5,9.1,t);
+      const clock=inkMap.settled*.65+4+elapsed*.65+cycle*4+
+        2*phase(1.9,2.55,t)+2*phase(6.3,6.9,t);
+      return {close,fold,clock,spin:time*.28+close*.7-fold*.45};
     }
     function filmProjection() {
       const width=inkMap.width??1440,height=inkMap.height??540;
@@ -92,8 +138,10 @@
       const pointerX=mx/w,pointerY=my/h,heat=still?0:strength;
       const grade=fieldGrade(time),a=fieldPalette[grade.from],b=fieldPalette[grade.to];
       const transition=grade.from===grade.to?0:Math.sin(Math.PI*grade.progress)**2;
-      // Colour changes travel through one continuous exposure. Slightly offset
-      // RGB transitions suggest optical separation without stripes or cuts.
+      const shot=digitShot(time),s3=Math.sin(shot.spin),c3=Math.cos(shot.spin);
+      const s5=Math.sin(-shot.spin*.6),c5=Math.cos(-shot.spin*.6);
+      // The shape is made from numeric density. A macro view opens the form;
+      // a displaced exposure folds it back into the same continuous screen.
       const timeX=time*.18,timeY=time*.13;
       for(let x=0;x<fieldWidth;x++) {
         const u=x/(fieldWidth-1);
@@ -116,11 +164,17 @@
           const red=soften(clamp(blend+separation,0,1));
           const green=soften(clamp(blend,0,1));
           const blue=soften(clamp(blend-separation,0,1));
-          // Feather into the same white paper at the edges. A continuous centre
-          // stays visible throughout the introduction and the resting name.
-          const edge=fieldEdges[y*fieldWidth+x];
-          const opacity=(.19+.15*fold+.045*opening+.05*transition+.045*influence)*(1-handoff*.12)*edge;
-          const index=(y*fieldWidth+x)*4;
+          const cell=y*fieldWidth+x,polar=cell*5;
+          const rim=.34+.075*(fieldPolar[polar+1]*c3+fieldPolar[polar+2]*s3)+
+            .035*(fieldPolar[polar+3]*c5+fieldPolar[polar+4]*s5);
+          const radius=fieldPolar[polar]/(1+shot.close*1.7)+refraction*.4+influence*.025;
+          const aperture=1-soften(clamp(Math.abs(radius-rim)/(.13+shot.close*.07),0,1));
+          const folded=soften(clamp((tide*.60+fold*.40-.28)/.48,0,1));
+          const mass=aperture*(1-shot.fold)+folded*shot.fold;
+          const shape=mass*(1-shot.close*.65)+(1-mass)*shot.close*.65;
+          const opacity=(.17+.43*shape+.065*transition+.04*influence)*
+            (1-handoff*.52*fieldQuiet[cell])*fieldEdges[cell];
+          const index=cell*4;
           currentPixels[index]=a[tone][0]+(b[tone][0]-a[tone][0])*red;
           currentPixels[index+1]=a[tone][1]+(b[tone][1]-a[tone][1])*green;
           currentPixels[index+2]=a[tone][2]+(b[tone][2]-a[tone][2])*blue;
@@ -129,7 +183,17 @@
       }
       currentSurfaceCtx.putImageData(currentBuffer,0,0);
       currentCtx.clearRect(0,0,w,h);currentCtx.imageSmoothingEnabled=true;
+      if(!digitScreens.length)return;
+      const frame=Math.floor(shot.clock)%4,blend=soften(shot.clock%1),zoom=1+shot.close*.32;
+      const x=(w-w*zoom)/2+shot.fold*w*.025*Math.sin(shot.spin),y=(h-h*zoom)/2;
+      currentCtx.save();currentCtx.globalAlpha=1-blend;
+      currentCtx.drawImage(digitScreens[frame],x,y,w*zoom,h*zoom);
+      currentCtx.globalCompositeOperation='lighter';currentCtx.globalAlpha=blend;
+      currentCtx.drawImage(digitScreens[(frame+1)%4],x,y,w*zoom,h*zoom);
+      currentCtx.globalCompositeOperation='source-in';currentCtx.globalAlpha=1;
       currentCtx.drawImage(currentSurface,0,0,w,h);
+      currentCtx.globalCompositeOperation='destination-over';currentCtx.globalAlpha=.17;
+      currentCtx.drawImage(currentSurface,0,0,w,h);currentCtx.restore();
     }
     function currentsAllowed() {
       return currentCtx&&visible&&intro&&enabled()&&!filmUnavailable&&!navigator.connection?.saveData;
@@ -158,7 +222,7 @@
       // Neighbouring cuts remain a family of flowing lines, rather than
       // spreading radially from a single cloud beside the jaws.
       const index=Math.min(inkMap.marks.length-1,Math.floor((p.lane*.88+p.phase*.12)*inkMap.marks.length));
-      const mark=inkMap.marks[index],u=soften(progress),v=1-u;
+      const mark=inkMap.marks[index],u=inkMap.motion_profile==='cruise'?cruise(progress):soften(progress),v=1-u;
       const x=pose.x+mark[0]*pose.radius/1000,y=pose.y+mark[1]*pose.radius/1000;
       const reach=Math.max(w*.16,Math.abs(x-p.x));
       const c1x=x-reach*.30,c1y=y-h*(.10+.10*p.lane);
@@ -214,6 +278,7 @@
       if(currentCtx) {
         currentCanvas.width=canvas.width;currentCanvas.height=canvas.height;
         currentCtx.setTransform(dpr,0,0,dpr,0,0);
+        buildDigits();
       }
       mask.width=Math.ceil(w);mask.height=Math.ceil(h);
       const family='Newsreader, Georgia, serif',text='Zhenghao YU';
@@ -334,7 +399,7 @@
               const envelope=Math.sin(Math.PI*progress)**2;
               // Keep travelling ink filament-thin. It gains weight only as
               // each cut reaches its letter, avoiding a dense cloud at source.
-              const arrival=soften(clamp((progress-.25)/.70,0,1));
+              const arrival=soften(clamp((progress-.10)/.80,0,1));
               alpha=.10+.90*arrival;
               grainScale=.44+.56*arrival;
               exposure=envelope*(.66+.30*p.phase);

@@ -42,13 +42,21 @@ try {
   await page.waitForTimeout(150);
   const coverage=await currents.evaluate(c=>{
     const data=c.getContext('2d').getImageData(0,0,c.width,c.height).data;
-    let filled=0,total=0;
+    let textured=0,total=0;
     for(let y=.15;y<.86;y+=.05)for(let x=.15;x<.86;x+=.05) {
-      total++;if(data[(Math.floor(y*c.height)*c.width+Math.floor(x*c.width))*4+3]>10)filled++;
+      let low=255,high=0;
+      const left=Math.floor(x*c.width),top=Math.floor(y*c.height);
+      // Test a glyph-sized patch: a digital surface has transparent spaces
+      // between strokes, unlike the former solid colour wash.
+      for(let dy=0;dy<16;dy++)for(let dx=0;dx<16;dx++) {
+        const alpha=data[((top+dy)*c.width+left+dx)*4+3];
+        low=Math.min(low,alpha);high=Math.max(high,alpha);
+      }
+      total++;if(high>12 && high-low>8)textured++;
     }
-    return filled/total;
+    return textured/total;
   });
-  assert.ok(coverage>.95,'the backdrop forms one continuous surface across the banner');
+  assert.ok(coverage>.95,'visible digital texture fills the banner, with spaces between the glyph strokes');
   const idle=await snapshot(currents),rect=await currents.boundingBox();
   await page.mouse.move(rect.x+rect.width*.23,rect.y+rect.height*.57);
   await page.mouse.move(rect.x+rect.width*.42,rect.y+rect.height*.40,{steps:14});
@@ -84,5 +92,5 @@ try {
   assert.equal(await reduced.locator('.flight-currents').evaluate(c=>c.toDataURL()),still);
   assert.ok(await reduced.locator('.flight-film').evaluate(v=>v.paused));
   assert.deepEqual(errors,[]);
-  console.log('PASS four distinct colour exposures and ambient colour cycle; continuous background; linked pointer; pause, resume, offscreen and reduced motion');
+  console.log('PASS four distinct colour exposures and ambient colour cycle; full digital surface; linked pointer; pause, resume, offscreen and reduced motion');
 } finally {await browser.close();}

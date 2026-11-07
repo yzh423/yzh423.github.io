@@ -12,18 +12,18 @@ import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
 W, H, FPS, SECONDS = 1440, 640, 60, 8
-CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 3.56, 3.72, 7.35
-MOVEMENT_END, LIFT_END = 7.22, 6.55
-EXPLOSION_START, EXPLOSION_PEAK = .82, 1.60
+CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 4.68, 4.86, 7.30
+MOVEMENT_END, LIFT_END = 7.22, 6.95
+EXPLOSION_START, EXPLOSION_PEAK = .85, 2.45
 ASSEMBLY_STAGES = {
-    'base': (1.95, 2.62),
-    'shoulder': (2.08, 2.75),
-    'upper_arm': (2.22, 2.89),
-    'elbow': (2.36, 3.03),
-    'forearm': (2.50, 3.17),
-    'wrist': (2.64, 3.31),
-    'gripper': (2.81, 3.48),
-    'cables': (2.76, 3.43),
+    'base': (2.65, 4.25),
+    'shoulder': (2.69, 4.29),
+    'upper_arm': (2.73, 4.33),
+    'elbow': (2.77, 4.37),
+    'forearm': (2.81, 4.41),
+    'wrist': (2.85, 4.45),
+    'gripper': (2.99, 4.59),
+    'cables': (2.91, 4.51),
 }
 XX, YY = np.meshgrid(np.arange(W, dtype='f')+.5, np.arange(H, dtype='f')+.5)
 def ramp(a,b,x):
@@ -54,6 +54,18 @@ def travel(start, end, time):
     return fraction**3 * (10 + fraction * (-15 + 6*fraction))
 
 
+def cruise(start, end, time):
+    """Constant middle speed, with short C2-continuous endpoint ramps."""
+    n=float(np.clip((time-start)/(end-start),0,1))
+    edge=.12
+    def entering(x):
+        q=x/edge
+        return edge*(q**3-.5*q**4)/(1-edge)
+    if n<edge:return entering(n)
+    if n>1-edge:return 1-entering(1-n)
+    return (n-edge*.5)/(1-edge)
+
+
 PART_RADIUS = 32.
 PART_SEAT = np.array([843., 337.])
 
@@ -65,8 +77,8 @@ def pose(t):
     close = travel(1.36, 1.93, approach)
     # Lift and carry continue while the jaw engraving becomes the signature.
     # The completed arm and the letters come to rest together.
-    lift = travel(ASSEMBLED,LIFT_END,t)
-    carry = travel(RELEASE,MOVEMENT_END,t)
+    lift = cruise(ASSEMBLED,LIFT_END,t)
+    carry = cruise(RELEASE,MOVEMENT_END,t)
 
     # A level approach ends directly above the V-block. Both fingers reach
     # the OD before the first lifting frame. Only then does the load follow.
@@ -76,15 +88,15 @@ def pose(t):
 
 
 def explosion(t, lag=0, stage=None):
-    start,end = ASSEMBLY_STAGES.get(stage,(1.95,3.48))
-    return travel(EXPLOSION_START+lag, EXPLOSION_PEAK+lag, t)*(1-travel(start+lag, end+lag, t))
+    start,end = ASSEMBLY_STAGES.get(stage,(2.65,4.59))
+    return cruise(EXPLOSION_START+lag, EXPLOSION_PEAK+lag, t)*(1-cruise(start+lag, end+lag, t))
 
 
 def projection(t):
-    settle = travel(2.80, 4.20, t)
+    settle = cruise(3.00, 4.95, t)
     # Pull back ahead of the separation, hold a readable exploded drawing,
     # then quietly reframe the complete arm for its signature.
-    wide = travel(.58, 1.45, t)*(1-travel(2.75, 4.05, t))
+    wide = cruise(.65, 2.15, t)*(1-cruise(2.90, 4.90, t))
     zoom = mix(mix(1.29, 1.80, settle), .76, wide)
     close_center = mix(np.array([563., 270.]), np.array([590., 270.]),settle)
     center = mix(close_center, np.array([600., 265.]), wide)
@@ -333,7 +345,7 @@ def write_ink_map():
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
-    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], live_currents=True, flow='engraved', name_duration=2.80, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], live_currents=True, flow='engraved', motion_profile='cruise', name_duration=1.70, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 
