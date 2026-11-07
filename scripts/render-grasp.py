@@ -11,19 +11,18 @@ from PIL import Image, ImageDraw, ImageFilter
 import imageio_ffmpeg
 
 OUT = Path(__file__).resolve().parents[1] / 'assets' / 'motion'
-W, H, FPS, SECONDS = 1440, 640, 60, 8
-CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 4.68, 4.86, 7.30
-MOVEMENT_END, LIFT_END = 7.22, 6.95
+W, H, FPS, SECONDS = 1440, 640, 60, 10
+CONTACT, ASSEMBLED, RELEASE, SETTLED = .70, 7.22, 7.40, 9.85
+MOVEMENT_END, LIFT_END = 9.76, 9.50
 EXPLOSION_START, EXPLOSION_PEAK = .85, 2.45
 ASSEMBLY_STAGES = {
-    'base': (2.65, 4.25),
-    'shoulder': (2.69, 4.29),
-    'upper_arm': (2.73, 4.33),
-    'elbow': (2.77, 4.37),
-    'forearm': (2.81, 4.41),
-    'wrist': (2.85, 4.45),
-    'gripper': (2.99, 4.59),
-    'cables': (2.91, 4.51),
+    'base': (2.65, 3.25),
+    'shoulder': (3.30, 3.90),
+    'upper_arm': (3.95, 4.55),
+    'elbow': (4.60, 5.20),
+    'forearm': (5.25, 5.85),
+    'wrist': (5.90, 6.50),
+    'gripper': (6.55, 7.20),
 }
 XX, YY = np.meshgrid(np.arange(W, dtype='f')+.5, np.arange(H, dtype='f')+.5)
 def ramp(a,b,x):
@@ -87,16 +86,26 @@ def pose(t):
     return wrist, PART_SEAT + offset, mix(57, PART_RADIUS, close)
 
 
-def explosion(t, lag=0, stage=None):
-    start,end = ASSEMBLY_STAGES.get(stage,(2.65,4.59))
-    return cruise(EXPLOSION_START+lag, EXPLOSION_PEAK+lag, t)*(1-cruise(start+lag, end+lag, t))
+def return_window(stage, lag=0, name=None):
+    start,end = ASSEMBLY_STAGES.get(stage,(2.65,7.20))
+    if stage == 'base':
+        if name == 'base plate': end = start+.38
+        elif name == 'pedestal': start += .25
+        else: start,end = start+.18,end-.08
+    else: start += min(.05,lag*.25)
+    return start,end
+
+
+def explosion(t, lag=0, stage=None, name=None):
+    start,end = return_window(stage,lag,name)
+    return cruise(EXPLOSION_START+lag, EXPLOSION_PEAK+lag, t)*(1-cruise(start, end, t))
 
 
 def projection(t):
-    settle = cruise(3.00, 4.95, t)
+    settle = cruise(6.55, 7.40, t)
     # Pull back ahead of the separation, hold a readable exploded drawing,
     # then quietly reframe the complete arm for its signature.
-    wide = cruise(.65, 2.15, t)*(1-cruise(2.90, 4.90, t))
+    wide = cruise(.65, 2.15, t)*(1-cruise(6.55, 7.35, t))
     zoom = mix(mix(1.29, 1.80, settle), .76, wide)
     close_center = mix(np.array([563., 270.]), np.array([590., 270.]),settle)
     center = mix(close_center, np.array([600., 265.]), wide)
@@ -124,7 +133,7 @@ def arm_plate(t, audit=None):
 
     def component(name, origin, offset=(0,0), degrees=0, lag=0, stage=None):
         nonlocal pivot, displacement, rotation, piece_scale,tone
-        amount = explosion(t, lag, stage) if stage else 0.
+        amount = explosion(t, lag, stage, name) if stage else 0.
         pivot = np.asarray(origin)
         # Each rigid part follows a shallow arc and lands with zero velocity
         # and acceleration. Lag gives the assembly a slight mechanical order.
@@ -140,11 +149,11 @@ def arm_plate(t, audit=None):
         if audit is not None:
             trail=[]
             for back in [0.18,.12,.06,0]:
-                previous=explosion(max(0,t-back),lag,stage) if stage else 0.
+                previous=explosion(max(0,t-back),lag,stage,name) if stage else 0.
                 shift=previous*offset+np.array([-offset[1],offset[0]])*.075*math.sin(math.pi*previous)
                 trail.append(((pivot+shift-center)*zoom+[W/2,H/2]).tolist())
             audit.append(dict(name=name,stage=stage,amount=amount,offset=displacement.tolist(),
-                angle=angle,depth=depth,trail=trail,completed=ASSEMBLY_STAGES.get(stage,(0,0))[1]+lag))
+                angle=angle,depth=depth,trail=trail,completed=return_window(stage,lag,name)[1] if stage else 0))
 
     def screen(p):
         transformed = ((np.asarray(p)-pivot)@rotation.T)*piece_scale + pivot + displacement
@@ -203,9 +212,9 @@ def arm_plate(t, audit=None):
     for x in [464,538]:
         component('base fastener '+str(x),[x,415],(-130+(x-500)*.35,100),0,.12,stage='base')
         circle([x,415],3.1,69)
-    component('shoulder cable',(shoulder+elbow)/2,(-185,5),-16,.02,stage='cables')
+    component('shoulder cable',(shoulder+elbow)/2,(-185,5),-16,.02,stage='upper_arm')
     cable(shoulder+[-17,8],shoulder+[-55,-45],elbow+[-33,41],elbow+[-13,-8])
-    component('wrist cable',(elbow+wrist)/2,(20,-82),9,.07,stage='cables')
+    component('wrist cable',(elbow+wrist)/2,(20,-82),9,.07,stage='forearm')
     cable(elbow+[-13,-8],elbow+[7,-54],wrist+[-67,-39],wrist+[-4,-6])
     casting('upper arm',shoulder,elbow,31,24,(-90,-28),-8,.07)
     casting('forearm',elbow,wrist,25,16,(75,-55),8,.12)
@@ -345,7 +354,7 @@ def write_ink_map():
         view, zoom = projection(t)
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
-    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], live_currents=True, flow='engraved', motion_profile='cruise', name_duration=1.70, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data = dict(width=W, height=H, contact=CONTACT, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], assembly_stages=ASSEMBLY_STAGES, live_currents=True, flow='engraved', motion_profile='cruise', name_duration=1.70, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 

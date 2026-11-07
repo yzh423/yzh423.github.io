@@ -75,7 +75,8 @@ try {
   await page.mouse.move(rect.x+rect.width*.42,rect.y+rect.height*.40,{steps:14});
   await page.waitForTimeout(250);
   assert.notEqual(await snapshot(currents),idle,'currents respond to the same pointer even at a fixed media time');
-  assert.equal(await film.evaluate(v=>v.currentTime),timing.settled+.03);
+  assert.ok(Math.abs(await film.evaluate(v=>v.currentTime)-(timing.settled+.03))<.0001,
+    'pointer interaction does not advance the paused media clock (allowing seek quantization)');
   await page.mouse.move(20,20);await page.waitForTimeout(3000);
   await film.evaluate(v=>v.play());await page.waitForFunction(()=>document.querySelector('.flight-film').ended);
   const name=await snapshot(letters),a=await snapshot(currents);
