@@ -9,7 +9,8 @@
   function pointerFor(el, wake) {
     const p = { active: false, cx: 0, cy: 0 };
     const sample = e => {
-      if (e.target.closest('.flight-action, .motion-toggle, .flight-replay')) { clear(); return; }
+      if(el.hasAttribute('data-model-dragging')){clear();return;}
+      if (e.target.closest('.flight-action, .motion-toggle, .flight-replay, .model-tools')) { clear(); return; }
       p.active = true; p.cx = e.clientX; p.cy = e.clientY; wake();
     };
     const clear = () => { p.active = false; wake(); };
@@ -17,6 +18,7 @@
     el.addEventListener('pointerdown', sample, {passive: true});
     el.addEventListener('pointerleave', clear);
     el.addEventListener('pointercancel', clear);
+    el.addEventListener('model:drag',clear);
     el.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') clear(); });
     return p;
   }
@@ -256,8 +258,8 @@
       const mark=inkMap.marks[index],u=inkMap.motion_profile==='cruise'?cruise(progress):soften(progress),v=1-u;
       const x=pose.x+mark[0]*pose.radius/1000,y=pose.y+mark[1]*pose.radius/1000;
       const reach=Math.max(w*.16,Math.abs(x-p.x));
-      const c1x=x-reach*.30,c1y=y-h*(.10+.10*p.lane);
-      const c2x=p.x+reach*.21,c2y=p.y-h*(.06+.07*p.lane);
+      const c1x=x-reach*.22,c1y=y+(p.y-y)*.12-(p.lane-.5)*h*.035;
+      const c2x=p.x+reach*.30,c2y=p.y-(p.y-y)*.10+(p.lane-.5)*h*.02;
       return [v*v*v*x+3*v*v*u*c1x+3*v*u*u*c2x+u*u*u*p.x,
         v*v*v*y+3*v*v*u*c1y+3*v*u*u*c2y+u*u*u*p.y];
     }
@@ -363,7 +365,7 @@
       flowX+=(clamp(moveX/Math.max(.001,dt),-1100,1100)-flowX)*kTrail;
       flowY+=(clamp(moveY/Math.max(.001,dt),-1100,1100)-flowY)*kTrail;
       strength+=((act?1:0)-strength)*(1-Math.exp(-dt*14));
-      const canTilt=act&&!assembling;
+      const canTilt=act&&!assembling&&!stage.hasAttribute('data-model-orbit');
       const tx=canTilt?clamp(px/w-.5,-.5,.5)*Math.min(w*.055,29):0,ty=canTilt?clamp(py/h-.5,-.5,.5)*15:0;
       fx+=(tx-fx)*kTrail;fy+=(ty-fy)*kTrail;
       if(still)fx=fy=strength=flowX=flowY=0;
@@ -431,7 +433,7 @@
               // Keep travelling ink filament-thin. It gains weight only as
               // each cut reaches its letter, avoiding a dense cloud at source.
               const arrival=soften(clamp((progress-.10)/.80,0,1));
-              alpha=.10+.90*arrival;
+              alpha=.25+.75*arrival;
               grainScale=.44+.56*arrival;
               exposure=envelope*(.66+.30*p.phase);
               flowColour=flowTint[Math.round(progress*63)];

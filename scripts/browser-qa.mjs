@@ -83,8 +83,8 @@ try {
   await film.evaluate(v=>{v.currentTime=v.duration-.28;});
   await page.waitForFunction(()=>document.querySelector('.flight-film').ended);
   await page.waitForTimeout(230); assert.equal(await film.evaluate(v=>v.ended),true);
-  assert.ok(openingCopper>9 && seatedCopper>9 && await film.evaluate(countCopper)<seatedCopper*.4,
-    'the 3D copper material remains visible through assembly, then recedes behind the signature');
+  assert.ok(openingCopper>9 && seatedCopper>9 && await film.evaluate(countCopper)>seatedCopper*.65,
+    'the 3D copper material stays visible after the signature has formed');
   await page.locator('.flight-replay').focus(); await page.keyboard.press('Enter');
   await page.waitForFunction(()=>{const v=document.querySelector('.flight-film');return !v.paused&&v.currentTime>.05&&v.currentTime<1;});
   assert.equal(await page.locator('.motion-toggle').evaluate(e=>document.activeElement===e),true);

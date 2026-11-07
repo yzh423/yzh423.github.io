@@ -1,6 +1,5 @@
 /* Original decorative 3D model, not a research simulation or a hardware CAD model. */
 import * as T from 'three';
-import {RoomEnvironment} from './vendor/three/examples/jsm/environments/RoomEnvironment.js';
 import {RoundedBoxGeometry} from './vendor/three/examples/jsm/geometries/RoundedBoxGeometry.js';
 
 export const timing={width:1440,height:640,fps:60,duration:10,contact:.70,pickup_start:.85,pickup_end:1.45,
@@ -39,11 +38,22 @@ export async function createArmFilm({live=false}={}){
   const scene=new T.Scene();scene.background=live?null:new T.Color('white');
   const camera=new T.PerspectiveCamera(30,width/height,.1,80);
   camera.setViewOffset(width,height,-100,0,width,height);
-  const room=new RoomEnvironment(),pmrem=new T.PMREMGenerator(renderer);
-  scene.environment=pmrem.fromScene(room,.05).texture;scene.environmentIntensity=.75;
-  room.dispose();pmrem.dispose();
+  // Reflected softboxes give metal a bright edge and a darker body, while
+  // the actual page background stays white and uncluttered.
+  const studio=new T.Scene(),pmrem=new T.PMREMGenerator(renderer);
+  studio.background=new T.Color(0x41494e);
+  for(const [w,h,x,y,z,color,power] of [
+    [3,7,-4,3.5,4,0xfff4e7,4],[2,6,4,3,-3,0xd9efff,3],
+    [1.4,5,4,2,4,0xffffff,2],[6,3,0,7,0,0xffffff,2],
+    [7,7,0,-3,0,0xd4dad9,.6]
+  ]){
+    const card=new T.Mesh(new T.PlaneGeometry(w,h),new T.MeshBasicMaterial({color:new T.Color(color).multiplyScalar(power),side:T.DoubleSide}));
+    card.position.set(x,y,z);card.lookAt(0,1.3,0);studio.add(card);
+  }
+  scene.environment=pmrem.fromScene(studio,.04).texture;scene.environmentIntensity=1;
+  studio.traverse(o=>{o.geometry?.dispose();o.material?.dispose();});pmrem.dispose();
   scene.add(new T.HemisphereLight(0xeaf5ff,0xc6bba8,1.0));
-  const key=new T.DirectionalLight(0xfff4e9,3.2);key.position.set(-3,9,5);key.castShadow=true;
+  const key=new T.DirectionalLight(0xfff4e9,2.2);key.position.set(-3,9,5);key.castShadow=true;
   key.shadow.mapSize.set(live?1024:2048,live?1024:2048);Object.assign(key.shadow.camera,{left:-6,right:6,top:6,bottom:-6,near:.1,far:20});
   key.shadow.bias=-.0005;key.shadow.normalBias=.025;key.shadow.radius=3;scene.add(key);
   const rim=new T.DirectionalLight(0xc4e9f2,2.8);rim.position.set(4,4,-4);scene.add(rim);
@@ -53,19 +63,21 @@ export async function createArmFilm({live=false}={}){
   let seed=423;
   for(let y=0;y<128;y++)for(let x=0;x<128;x++){
     seed=(Math.imul(seed,1664525)+1013904223)>>>0;
-    const value=Math.round(205+20*Math.sin(x*2.7)+((seed>>>24)/255-.5)*12),i=(y*128+x)*4;
+    const strand=((Math.imul(x+17,73856093)>>>8)%101)/100;
+    const value=Math.round(180+strand*38+((seed>>>24)/255-.5)*7),i=(y*128+x)*4;
     grainBytes[i]=grainBytes[i+1]=grainBytes[i+2]=value;grainBytes[i+3]=255;
   }
   const brushed=new T.DataTexture(grainBytes,128,128);brushed.wrapS=brushed.wrapT=T.RepeatWrapping;
   brushed.generateMipmaps=true;brushed.minFilter=T.LinearMipmapLinearFilter;brushed.magFilter=T.LinearFilter;
   brushed.repeat.set(3,1);brushed.needsUpdate=true;
   const materials={
-    shell:new T.MeshPhysicalMaterial({color:0x8c9f98,metalness:.82,roughness:.32,clearcoat:.20,clearcoatRoughness:.25}),
-    panel:new T.MeshPhysicalMaterial({color:0xb8c8be,metalness:.72,roughness:.28,clearcoat:.30,clearcoatRoughness:.22}),
+    shell:new T.MeshPhysicalMaterial({color:0x97aaa2,metalness:.95,roughness:.34,roughnessMap:brushed,anisotropy:.35}),
+    panel:new T.MeshPhysicalMaterial({color:0xc5cdc4,metalness:.92,roughness:.38,roughnessMap:brushed,anisotropy:.45}),
     core:new T.MeshStandardMaterial({color:0x203333,metalness:.78,roughness:.38,roughnessMap:brushed}),
     rubber:new T.MeshStandardMaterial({color:0x162325,metalness:.05,roughness:.7}),
-    steel:new T.MeshPhysicalMaterial({color:0xaebdc3,metalness:.95,roughness:.34,roughnessMap:brushed,bumpMap:brushed,bumpScale:.002,anisotropy:.55}),
-    copper:new T.MeshPhysicalMaterial({color:0xae7248,metalness:.88,roughness:.30,roughnessMap:brushed,clearcoat:.18}),
+    steel:new T.MeshPhysicalMaterial({color:0xb8c3c8,metalness:1,roughness:.30,roughnessMap:brushed,bumpMap:brushed,bumpScale:.0007,anisotropy:.65}),
+    copper:new T.MeshPhysicalMaterial({color:0xb7784d,metalness:1,roughness:.30,roughnessMap:brushed}),
+    contact:new T.MeshStandardMaterial({color:0x162325,metalness:.2,roughness:.5,emissive:0x57cbdc,emissiveIntensity:0}),
   };
   const pieces=[],staticMeshes=[];
   const box=(x,y,z,r=.03)=>new RoundedBoxGeometry(x,y,z,3,r);
@@ -148,7 +160,7 @@ export async function createArmFilm({live=false}={}){
     const jaw=(x,y,z=0)=>(m,s)=>{m.position.copy(s.wrist).add(vec(side*(s.gap+x),y,z));m.rotation.set(0,0,0);};
     part('jaw carriage '+side,box(.18,.12,.29),'shell',jaw(.04,-.45),[side*.70+.65,-.55,side*.20]);
     part('jaw finger '+side,box(.105,.36,.21,.016),'steel',jaw(.05,-.63),[side*.85+.65,-.85,side*.30]);
-    part('gripping pad '+side,box(.035,.15,.15,.009),'rubber',jaw(-.015,-.72),[side*.98+.65,-.85,side*.45]);
+    part('gripping pad '+side,box(.035,.15,.15,.009),'contact',jaw(-.015,-.72),[side*.98+.65,-.85,side*.45]);
   }
   const workpiece=fixed('bushing',ring(.25,.115,.20),'copper',vec(1.5,1.39));
   const collar=fixed('bushing rim',ring(.255,.12,.025),'steel',vec(1.5,1.39,.11));
@@ -158,11 +170,14 @@ export async function createArmFilm({live=false}={}){
   for(const side of [-1,1])fixed('fixture face',box(.30,.21,.42),'steel',vec(1.5+side*.14,1.06),[0,0,side*Math.PI/6]);
   const floor=new T.Mesh(new T.PlaneGeometry(200,200),new T.ShadowMaterial({opacity:.055}));
   floor.rotation.x=-Math.PI/2;floor.position.y=.015;floor.receiveShadow=true;scene.add(floor);
+  const sourceLight=new T.PointLight(0x57cbdc,0,1.5,2);scene.add(sourceLight);
+  const cold=new T.Color(0x57cbdc),warm=new T.Color(0xdf9966),raycaster=new T.Raycaster();
+  const viewBox=new T.Box3(),meshBox=new T.Box3();let fitCorners;
 
   const tempQuat=new T.Quaternion();
   const output=document.createElement('canvas');output.width=width;output.height=height;
   const pen=output.getContext('2d');
-  function render(t,encode=false){
+  function render(t,encode=false,view={yaw:0,pitch:0,engagement:0}){
     const s=motion(t);
     for(const p of pieces){
       p.place(p.mesh,s);p.mesh.position.addScaledVector(p.offset,s.opened);
@@ -170,18 +185,42 @@ export async function createArmFilm({live=false}={}){
       p.mesh.quaternion.multiply(tempQuat);
     }
     workpiece.position.copy(s.part);collar.position.copy(s.part).add(vec(0,0,.115));
+    const releasePhase=ease(timing.release-.15,timing.release+1.65,t);
+    const energy=Math.sin(Math.PI*releasePhase)**2;
+    sourceLight.position.copy(s.part).add(vec(0,.10,.18));
+    sourceLight.color.copy(cold).lerp(warm,releasePhase);sourceLight.intensity=energy*2.6;
+    materials.contact.emissive.copy(sourceLight.color);materials.contact.emissiveIntensity=energy*1.5;
     const wide=ease(1.45,2.70,t)*(1-ease(timing.assembly_start-.20,timing.release+.10,t));
     const closing=ease(6.90,9.80,t);
     const turn=cruise(timing.orbit_start,timing.orbit_end,t,.22);
     // Follow the nearer base as the viewpoint changes, keeping the larger
     // model fully framed instead of cropping its feet during the handoff.
     const target=vec(.05+.22*closing,1.68+.12*closing-.60*turn);
-    const radius=7.5+3.4*wide+.25*closing+.32*turn,azimuth=.34+s.orbit;
-    const elevation=.22+.045*Math.sin(Math.PI*turn)**2;
-    camera.position.copy(target).add(vec(Math.sin(azimuth)*radius,Math.sin(elevation)*radius,Math.cos(azimuth)*radius));
+    let radius=7.5+3.4*wide+.25*closing+.32*turn;
+    const azimuth=.34+s.orbit+view.yaw;
+    const elevation=Math.max(.10,Math.min(.65,.22+.045*Math.sin(Math.PI*turn)**2+view.pitch));
+    const direction=vec(Math.sin(azimuth),Math.sin(elevation),Math.cos(azimuth));
+    if(view.engagement>0){
+      scene.updateMatrixWorld(true);
+      if(!fitCorners){
+        viewBox.makeEmpty();
+        for(const mesh of [...pieces.map(p=>p.mesh),...staticMeshes])viewBox.union(meshBox.setFromObject(mesh));
+        fitCorners=[];
+        for(const x of [viewBox.min.x,viewBox.max.x])for(const y of [viewBox.min.y,viewBox.max.y])for(const z of [viewBox.min.z,viewBox.max.z])fitCorners.push(vec(x,y,z));
+      }
+      const forward=direction.clone().normalize(),right=Y.clone().cross(forward).normalize(),up=forward.clone().cross(right);
+      const tangent=Math.tan(camera.fov*Math.PI/360);let required=radius*direction.length();
+      for(const corner of fitCorners){
+        const p=corner.clone().sub(target),depth=p.dot(forward);
+        required=Math.max(required,Math.abs(p.dot(up))/tangent*1.08+depth,
+          Math.abs(p.dot(right))/(tangent*camera.aspect)*1.18+depth);
+      }
+      radius+=(required/direction.length()-radius)*view.engagement;
+    }
+    camera.position.copy(target).addScaledVector(direction,radius);
     camera.lookAt(target);camera.updateMatrixWorld();renderer.render(scene,camera);
     // Keep the name legible without flattening the dimensional model early.
-    const retreat=ease(timing.release,timing.settled-.20,t)*.48;
+    const retreat=ease(timing.release,timing.settled-.20,t)*.08;
     if(live)renderer.domElement.style.opacity=1-retreat;
     else{
       pen.fillStyle='#fff';pen.fillRect(0,0,width,height);pen.drawImage(renderer.domElement,0,0);
@@ -197,13 +236,15 @@ export async function createArmFilm({live=false}={}){
   await renderer.compileAsync(scene,camera);
   render(0);
   function inkMarks(){
-    const {pose:[x,y,r]}=render(timing.release),data=pen.getImageData(0,0,width,height).data,cuts=[];
-    for(let py=Math.max(0,Math.floor(y-r*1.89));py<Math.min(height,y+r*1.04);py+=2)
-      for(let px=Math.max(0,Math.floor(x-r*1.4));px<Math.min(width,x+r*1.4);px+=2){
-        if(data[(py*width+px)*4+1]<215)cuts.push([Math.round((px-x)/r*1000),Math.round((py-y)/r*1000)]);
+    const {pose:[x,y,r]}=render(timing.release),cuts=[];
+    for(const side of [-1,1]){
+      const pad=pieces.find(p=>p.name==='gripping pad '+side).mesh;
+      for(let row=0;row<16;row++)for(let col=0;col<12;col++){
+        const p=vec(-side*.0175,(row/15-.5)*.14,(col/11-.5)*.14).applyMatrix4(pad.matrixWorld).project(camera);
+        cuts.push([Math.round(((p.x+1)*width/2-x)/r*1000),Math.round(((1-p.y)*height/2-y)/r*1000)]);
       }
-    if(cuts.length<384)throw Error('Not enough tool-surface samples for the signature');
-    return Array.from({length:384},(_,i)=>cuts[Math.floor(i*cuts.length/384)]);
+    }
+    return cuts.sort((a,b)=>a[1]-b[1]);
   }
   function bounds(){
     let left=Infinity,right=-Infinity,top=-Infinity,bottom=Infinity;
@@ -218,7 +259,8 @@ export async function createArmFilm({live=false}={}){
   }
   function theme(dark){
     // The model keeps its materials in dark mode; only the studio light changes.
-    scene.environmentIntensity=dark?.65:.75;key.intensity=dark?2.6:3.2;fill.intensity=dark?.5:.75;
+    scene.environmentIntensity=dark?.85:1;key.intensity=dark?1.8:2.2;fill.intensity=dark?.5:.75;
   }
-  return {render,timing,inkMarks,bounds,theme,canvas:output,renderer,scene,camera,pieces};
+  function hit(x,y){raycaster.setFromCamera(new T.Vector2(x,y),camera);return raycaster.intersectObjects(pieces.map(p=>p.mesh),false).length>0;}
+  return {render,timing,inkMarks,bounds,theme,hit,canvas:output,renderer,scene,camera,pieces};
 }

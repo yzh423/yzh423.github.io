@@ -8,6 +8,19 @@
 .has-currents .flight-film { mix-blend-mode:multiply; }
 .flight-model-viewport { position:absolute; overflow:hidden; pointer-events:none; transform-origin:center; }
 .has-3d-model .flight-film { visibility:hidden; }
+.flight-model-viewport.is-interactive { pointer-events:auto; touch-action:pan-y pinch-zoom; }
+.flight-model-viewport.over-model { cursor:grab; }
+[data-model-dragging] .flight-model-viewport { cursor:grabbing; }
+.flight-model-viewport:focus-visible { outline:2px solid var(--accent); outline-offset:-3px; }
+.model-tools { position:absolute; top:5px; right:8px; z-index:2; display:flex; align-items:center; gap:8px; color:var(--muted); font:500 11px/1.4 var(--sans); }
+.model-tools[hidden] { display:none; }
+.model-reset { display:grid; place-items:center; width:36px; height:36px; padding:8px; background:var(--stock); color:var(--ink); border:1px solid var(--line); border-radius:50%; cursor:pointer; }
+.model-reset svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.5; }
+.model-reset:hover { color:var(--accent); }
+.model-reset:active { transform:scale(.95); }
+#flight-lettering { filter:drop-shadow(0 0 1px var(--stage-paper)) drop-shadow(0 0 1px var(--stage-paper)); transition:opacity 180ms ease-out; }
+[data-model-dragging] #flight-lettering { opacity:.2; }
+@media(prefers-reduced-motion:reduce) { #flight-lettering { transition:none; } }
 [data-theme="dark"] .has-currents .flight-film { mix-blend-mode:screen; filter:invert(1) hue-rotate(174deg) saturate(.72); }
 [data-theme="dark"] .portfolio .hero { --stock: #101010; }
 [data-theme="dark"] .portfolio .print-stage { --stage-paper: #101010; }

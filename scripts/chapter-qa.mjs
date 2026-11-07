@@ -55,7 +55,9 @@ try {
   await freeze(timing.settled+.03);
   const rest=await ink(); assert.ok(rest.total>3000 && rest.color===0);
   const finalInk=await engravingStrength()/assembledInk;
-  assert.ok(finalInk>.45&&finalInk<.9,'the closer arm retains a readable engraving behind the finished name');
+  assert.ok(finalInk>.8,'the complete arm retains strong metal contrast behind the finished name');
+  assert.ok(Number(await page.locator('.flight-model-viewport canvas').evaluate(c=>c.style.opacity))>=.9,
+    'the final live model retains at least 90% opacity');
   await page.screenshot({path:out+'/chapter-cover.png'});
   const rect=await canvas.boundingBox();
   await page.mouse.move(rect.x+rect.width*.13,rect.y+rect.height*.48);
