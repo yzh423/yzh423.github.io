@@ -204,7 +204,7 @@
           const light=clamp(.68+planeX*.24-planeY*.15,.4,.9);
           const shape=edge*(light*(1-shot.negative)+(.95-light*.35)*shot.negative);
           const opacity=(.024+.75*shape+.018*influence)*
-            (1-handoff*.67)*(1-handoff*.90*fieldQuiet[cell])*fieldEdges[cell];
+            (1-handoff*.67)*(1-handoff*.90*fieldQuiet[cell])*fieldEdges[cell]*(inkMap.background_strength??1);
           const index=cell*4;
           currentPixels[index]=a[tone][0]+(b[tone][0]-a[tone][0])*red;
           currentPixels[index+1]=a[tone][1]+(b[tone][1]-a[tone][1])*green;

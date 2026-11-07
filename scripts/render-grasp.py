@@ -1,4 +1,5 @@
-"""Render an original ink study of a robot picking up a machined bushing.
+"""Legacy 2D engraving renderer; the current homepage uses render-arm-3d.mjs.
+Render an original ink study of a robot picking up a machined bushing.
 Run: python scripts/render-grasp.py (NumPy, Pillow, imageio-ffmpeg).
 This is artwork, not a measurement or experiment recording.
 """
