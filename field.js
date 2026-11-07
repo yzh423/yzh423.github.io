@@ -27,8 +27,9 @@
     const stillPoster=film.getAttribute('poster'), assemblyTime=1.52;
     const printStage=stage.classList.contains('print-stage');
     // The film is the master clock for the arm, numerical field and name.
-    // Slow the authored cover together; experimental recordings keep their rate.
-    if(printStage)film.defaultPlaybackRate=film.playbackRate=.9;
+    // Keep all authored layers together at a brisker pace; research videos
+    // retain their recorded speed.
+    if(printStage)film.defaultPlaybackRate=film.playbackRate=1.05;
     const shotChange=.64;
     const fieldWidth=112,fieldHeight=56;
     let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
@@ -120,7 +121,7 @@
         const shot={scale:at(1),spread:at(2),angle:at(3),x:at(4),y:at(5),negative:at(6),clock:at(7)};
         const macro=soften(clamp((time-inkMap.explosion_start-.65)/.75,0,1))*
           (1-soften(clamp((time-inkMap.assembly_start)/shotChange,0,1)));
-        // Follow the centre of the fluid form into the macro shot.
+        // Keep the simple disc centred during the closer view.
         if(macro>0) {
           shot.x+=(.46-shot.x)*macro;
           shot.y+=(.52-shot.y)*macro;
@@ -169,10 +170,9 @@
       const grade=fieldGrade(time),a=fieldPalette[grade.from],b=fieldPalette[grade.to];
       const transition=grade.from===grade.to?0:Math.sin(Math.PI*grade.progress)**2;
       const shot=digitShot(time),aspect=w/h;
-      // An evolving cross-section of a gyroid makes one connected numerical
-      // fluid: curved cavities open, curl and merge without separate panels.
-      const turn=shot.angle*.32-.2,turnC=Math.cos(turn),turnS=Math.sin(turn);
-      const depth=shot.clock*.22,depthSin=Math.sin(depth),depthCos=Math.cos(depth);
+      // One softly edged numerical disc. Its scale and colour follow the
+      // arm, leaving the background legible as a single, quiet shape.
+      const turn=shot.angle*.26-.18,turnC=Math.cos(turn),turnS=Math.sin(turn);
       const timeX=shot.clock*.18,timeY=shot.clock*.13;
       for(let x=0;x<fieldWidth;x++) {
         const u=x/(fieldWidth-1);
@@ -199,15 +199,10 @@
           const localX=((u-shot.x)*aspect+refraction*.35+influence*.025)/shot.scale;
           const localY=(v-shot.y)/shot.scale;
           const planeX=localX*turnC+localY*turnS,planeY=-localX*turnS+localY*turnC;
-          const radius=planeX*planeX+planeY*planeY;
-          const curl=shot.spread*.7/(1+radius*3)+depthSin*.18;
-          const curlC=Math.cos(curl),curlS=Math.sin(curl);
-          const fluidX=(planeX*curlC-planeY*curlS)*5.4+depth*.35;
-          const fluidY=(planeX*curlS+planeY*curlC)*5.4;
-          const volume=Math.sin(fluidX)*Math.cos(fluidY)+Math.sin(fluidY)*depthCos+depthSin*Math.cos(fluidX);
-          let shape=soften(clamp((volume+.24)/1.05,0,1))*
-            (1-soften(clamp((radius-.45)/.75,0,1)));
-          shape=shape*(1-shot.negative)+(1-shape)*.56*shot.negative;
+          const radius=Math.hypot(planeX/.64,planeY/.40);
+          const edge=1-soften(clamp((radius-.76)/.24,0,1));
+          const light=clamp(.68+planeX*.24-planeY*.15,.4,.9);
+          const shape=edge*(light*(1-shot.negative)+(.95-light*.35)*shot.negative);
           const opacity=(.024+.75*shape+.018*influence)*
             (1-handoff*.67)*(1-handoff*.90*fieldQuiet[cell])*fieldEdges[cell];
           const index=cell*4;
