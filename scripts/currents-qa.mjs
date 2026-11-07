@@ -62,9 +62,10 @@ try {
   await exposure(timing.assembled+.10);const gathered=await composition();
   const tool=timing.poses[Math.round((timing.assembled+.10)*timing.fps)];
   const toolX=await film.evaluate((v,{tool,width,height})=>{
-    const css=getComputedStyle(v),sx=v.clientWidth/width,sy=v.clientHeight/height;
+    const css=getComputedStyle(v),rect=v.getBoundingClientRect(),stage=v.parentElement.getBoundingClientRect();
+    const sx=rect.width/width,sy=rect.height/height;
     const scale=css.objectFit==='contain'?Math.min(sx,sy):Math.max(sx,sy);
-    return ((v.clientWidth-width*scale)*(parseFloat(css.objectPosition)/100||.5)+tool[0]*scale)/v.clientWidth;
+    return (rect.x-stage.x+(rect.width-width*scale)*(parseFloat(css.objectPosition)/100||.5)+tool[0]*scale)/stage.width;
   },{tool,width:timing.width,height:timing.height});
   assert.ok(Math.abs(gathered.cx-toolX)<.08,'the digital form converges at the actual projected gripper before the signature release');
   const at=t=>timing.poses[Math.round(t*timing.fps)];

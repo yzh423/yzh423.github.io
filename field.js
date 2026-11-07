@@ -9,8 +9,7 @@
   function pointerFor(el, wake) {
     const p = { active: false, cx: 0, cy: 0 };
     const sample = e => {
-      if(el.hasAttribute('data-model-dragging')){clear();return;}
-      if (e.target.closest('.flight-action, .motion-toggle, .flight-replay, .model-tools')) { clear(); return; }
+      if (e.target.closest('.flight-action, .motion-toggle, .flight-replay')) { clear(); return; }
       p.active = true; p.cx = e.clientX; p.cy = e.clientY; wake();
     };
     const clear = () => { p.active = false; wake(); };
@@ -18,7 +17,6 @@
     el.addEventListener('pointerdown', sample, {passive: true});
     el.addEventListener('pointerleave', clear);
     el.addEventListener('pointercancel', clear);
-    el.addEventListener('model:drag',clear);
     el.addEventListener('pointerup', e => { if (e.pointerType !== 'mouse') clear(); });
     return p;
   }
@@ -152,19 +150,23 @@
         x:.68+breath*.018,y:.43+Math.sin(drift*.18)*.012,negative:0,clock:9.2+drift*.24};
     }
     function composition(time,finished=false) {
-      const progress=finished?1:soften(clamp((time-(inkMap?.release??7.43))/2.1,0,1));
+      const progress=finished?1:soften(clamp((time-(inkMap?.release??7.48))/2.1,0,1));
       const stacked=innerWidth<=850;
-      let fit=1,x=0,y=0;
-      if(stacked&&inkMap?.bounds){
-        const i=clamp(time*inkMap.fps,0,inkMap.bounds.length-1),a=inkMap.bounds[Math.floor(i)],b=inkMap.bounds[Math.ceil(i)];
-        const box=a.map((n,j)=>n+(b[j]-n)*(i%1)),scale=Math.max(film.clientWidth/inkMap.width,film.clientHeight/inkMap.height);
-        const sw=inkMap.width*scale,sh=inkMap.height*scale;
-        fit=Math.min(.96,(w-24)/((box[2]-box[0])*sw/2),(h-32)/((box[1]-box[3])*sh/2));
-        x=-(box[0]+box[2])*sw/4*fit;y=(box[1]+box[3])*sh/4*fit;
-      }
-      // Reserve the stacked signature above and the 64px action row below.
-      const endScale=stacked?clamp((h*.73-76)/(h*.93),.45,.72):.90;
-      return {scale:fit+(endScale-fit)*progress,x:x*(1-progress)+w*progress*(stacked?-.04:.22),y:y*(1-progress)+progress*(stacked?h*.135-26:-h*.055)};
+      if(!inkMap?.bounds)return {scale:1,x:0,y:0};
+      const i=clamp((finished?inkMap.settled:time)*inkMap.fps,0,inkMap.bounds.length-1);
+      const a=inkMap.bounds[Math.floor(i)],b=inkMap.bounds[Math.ceil(i)],box=a.map((n,j)=>n+(b[j]-n)*(i%1));
+      const sx=film.clientWidth/inkMap.width,sy=film.clientHeight/inkMap.height;
+      const scale=filmFit==='contain'?Math.min(sx,sy):Math.max(sx,sy),sw=inkMap.width*scale,sh=inkMap.height*scale;
+      const bw=(box[2]-box[0])*sw/2,bh=(box[1]-box[3])*sh/2;
+      const cx=(box[0]+box[2])*sw/4,cy=-(box[1]+box[3])*sh/4;
+      // Frame the complete drawing first, then reserve a separate area for
+      // the signature. The same transform also projects the travelling ink.
+      const fit=Math.min(stacked?2.5:1,(w-24)/bw,(h-56)/bh);
+      const endTop=stacked?h*.35:h*.055,endBottom=h-(stacked?66:48);
+      const endWidth=stacked?w-28:w*.38,endScale=Math.min(endWidth/bw,(endBottom-endTop)/bh);
+      const size=fit+(endScale-fit)*progress;
+      const targetX=stacked?w/2:w*.79,targetY=(endTop+endBottom)/2;
+      return {scale:size,x:-cx*size+(targetX-w/2)*progress,y:-cy*size-12*(1-progress)+(targetY-h/2)*progress};
     }
     function filmProjection(time) {
       const width=inkMap.width??1440,height=inkMap.height??540;

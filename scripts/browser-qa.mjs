@@ -44,7 +44,7 @@ try {
   assert.equal(await page.locator('[data-preview]').evaluate(v => v.muted), true);
   const film=page.locator('.flight-film'), stage=page.locator('.flight-stage'), lettering=page.locator('#flight-lettering');
   assert.equal(new URL(await film.evaluate(video => video.poster)).pathname, '/assets/motion/grasp-study-opening.webp');
-  function countCopper(video) {
+  function countInk(video) {
     const canvas=document.createElement('canvas');
     canvas.width=480; canvas.height=180;
     const ctx=canvas.getContext('2d');
@@ -52,11 +52,11 @@ try {
     const pixels=ctx.getImageData(0,0,480,180).data;
     let count=0;
     for(let i=0;i<pixels.length;i+=4) {
-      if(pixels[i]-pixels[i+1]>34 && pixels[i+1]-pixels[i+2]>9) count++;
+      if(255-pixels[i+1]>30) count++;
     }
     return count;
   }
-  const openingCopper=await film.evaluate(countCopper);
+  const openingInk=await film.evaluate(countInk);
   assert.deepEqual(await stage.boundingBox(),await lettering.boundingBox());
   assert.equal(await stage.locator('video[controls]').count(),0);
   await page.locator('.motion-toggle').click();
@@ -69,7 +69,7 @@ try {
   const box=await stage.boundingBox();
   const timing=await film.evaluate(async v=>fetch(v.dataset.inkMap).then(r=>r.json()));
   await page.waitForFunction(t=>document.querySelector('.flight-film').currentTime>=t,timing.assembled+.04);
-  const seatedCopper=await film.evaluate(countCopper);
+  const seatedInk=await film.evaluate(countInk);
   await page.waitForFunction(t=>document.querySelector('.flight-film').currentTime>=t,timing.settled);
   const beforeHover=await lettering.evaluate(c=>c.toDataURL());
   const placedArm=await film.evaluate(v=>v.style.transform);
@@ -89,8 +89,8 @@ try {
   await film.evaluate(v=>{v.currentTime=v.duration-.28;});
   await page.waitForFunction(()=>document.querySelector('.flight-film').ended);
   await page.waitForTimeout(230); assert.equal(await film.evaluate(v=>v.ended),true);
-  assert.ok(openingCopper>9 && seatedCopper>9 && await film.evaluate(countCopper)>seatedCopper*.65,
-    'the 3D copper material stays visible after the signature has formed');
+  assert.ok(openingInk>500 && seatedInk>500 && await film.evaluate(countInk)>seatedInk*.65,
+    'the engraved drawing stays visible after the signature has formed');
   await page.locator('.flight-replay').focus(); await page.keyboard.press('Enter');
   await page.waitForFunction(()=>{const v=document.querySelector('.flight-film');return !v.paused&&v.currentTime>.05&&v.currentTime<1;});
   assert.equal(await page.locator('.motion-toggle').evaluate(e=>document.activeElement===e),true);

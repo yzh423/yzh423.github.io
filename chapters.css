@@ -3,21 +3,9 @@
 .chapter-mode:has(.chapter-sheet:first-child .is-current) .portfolio :is(.site-header,.chapter-rail) { background: var(--cover-paper, #fff); }
 [data-theme="dark"].chapter-mode { --cover-paper: #101010; }
 .portfolio .print-stage { --stage-paper: #fff; }
-.portfolio .print-stage .flight-film { scale: 1; background:#fff; }
+.portfolio .print-stage .flight-film { scale: 1; background:#fff; object-fit:contain; }
 .flight-currents { position:absolute; inset:0; width:100%; height:100%; pointer-events:none; }
 .has-currents .flight-film { mix-blend-mode:multiply; }
-.flight-model-viewport { position:absolute; overflow:hidden; pointer-events:none; transform-origin:center; }
-.has-3d-model .flight-film { visibility:hidden; }
-.flight-model-viewport.is-interactive { pointer-events:auto; touch-action:pan-y pinch-zoom; }
-.flight-model-viewport.over-model { cursor:grab; }
-[data-model-dragging] .flight-model-viewport { cursor:grabbing; }
-.flight-model-viewport:focus-visible { outline:2px solid var(--accent); outline-offset:-3px; }
-.model-tools { position:absolute; top:5px; right:0; z-index:2; display:flex; align-items:center; gap:8px; color:var(--muted); font:500 11px/1.4 var(--sans); }
-.model-tools[hidden] { display:none; }
-.model-reset { display:grid; place-items:center; width:36px; height:36px; padding:8px; background:var(--stock); color:var(--ink); border:1px solid var(--line); border-radius:50%; cursor:pointer; }
-.model-reset svg { width:18px; height:18px; fill:none; stroke:currentColor; stroke-width:1.5; }
-.model-reset:hover { color:var(--accent); }
-.model-reset:active { transform:scale(.95); }
 [data-theme="dark"] .has-currents .flight-film { mix-blend-mode:screen; filter:invert(1) hue-rotate(174deg) saturate(.72); }
 [data-theme="dark"] .portfolio .hero { --stock: #101010; }
 [data-theme="dark"] .portfolio .print-stage { --stage-paper: #101010; }
@@ -104,8 +92,6 @@
 
 @media (max-width:850px) {
   .portfolio .print-stage { height:clamp(320px,min(92vw,48dvh),420px); }
-  .model-tools { top:auto; bottom:48px; right:6px; }
-  .model-tools span { position:absolute; width:1px; height:1px; overflow:hidden; clip-path:inset(50%); }
   .portfolio .print-stage .flight-film {
     height:100%; max-height:none; aspect-ratio:auto; object-position:50% center;
     top:0; bottom:auto; translate:none;

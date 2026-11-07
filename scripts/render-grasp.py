@@ -1,4 +1,4 @@
-"""Legacy 2D engraving renderer; the current homepage uses render-arm-3d.mjs.
+"""Render the homepage's two-dimensional mechanical engraving.
 Render an original ink study of a robot picking up a machined bushing.
 Run: python scripts/render-grasp.py (NumPy, Pillow, imageio-ffmpeg).
 This is artwork, not a measurement or experiment recording.
@@ -298,9 +298,13 @@ def assembly_effects(t, records, backdrop):
     return np.asarray(image.convert('RGB'))
 
 
-def frame(t):
+def frame(t, bounds=None):
     records=[]
     metal, center, radius = arm_plate(t,records)
+    if bounds is not None:
+        ys, xs = np.nonzero(metal > .02)
+        bounds.append([round(xs.min()/W*2-1,6), round(1-ys.min()/H*2,6),
+                       round(xs.max()/W*2-1,6), round(1-ys.max()/H*2,6)])
     opened = explosion(t,.10)
     dx,dy = XX-center[0],YY-center[1]
     distance = np.hypot(dx,dy)
@@ -322,7 +326,7 @@ def frame(t):
     # The same media clock drives the strands which carry it into the name.
     front=radius+handoff*930
     retreat=travel(RELEASE,RELEASE+1.05,t)*(1-ramp(front-110,front+110,distance))
-    ink*=1-.46*retreat
+    ink*=1-.18*retreat
     light=np.exp(-((distance-front)/68)**2)*math.sin(math.pi*handoff)*.42
     light_colour=mix(np.array([0,137,149]),np.array([184,96,57]),handoff)
     angle=np.arcsin(np.abs(np.sin(np.arctan2(dy,dx))))
@@ -339,7 +343,7 @@ def frame(t):
         image[:,:,channel]=np.clip(mix(layer,COPPER[channel],accent),0,255)
     return Image.fromarray(image)
 
-def write_ink_map():
+def write_ink_map(bounds):
     # Origins are actual engraved pixels, in units of the bushing radius.
     _, center, radius = arm_plate(RELEASE)
     ink = np.asarray(frame(RELEASE))[:,:,1]
@@ -358,18 +362,21 @@ def write_ink_map():
         x,y = (part-view)*zoom + [W/2,H/2]
         poses.append([round(x,2),round(y,2),round(PART_RADIUS*zoom,2)])
     data = dict(width=W, height=H, contact=CONTACT, pickup_start=PICKUP_START, pickup_end=PICKUP_END, assembled=ASSEMBLED, release=RELEASE, settled=SETTLED, movement_end=MOVEMENT_END, explosion_start=EXPLOSION_START, explosion_peak=EXPLOSION_PEAK, assembly_start=ASSEMBLY_STAGES['base'][0], assembly_stages=ASSEMBLY_STAGES, live_currents=True, flow='engraved', motion_profile='cruise', name_duration=1.70, fps=rate, poses=poses, marks=np.round(origins*1000).astype(int).tolist())
+    data.update(bounds=bounds, artwork='2d-engraving')
     (OUT/'grasp-ink.json').write_text(json.dumps(data,separators=(',',':'))+'\n',encoding='utf-8')
 
 
 if __name__=='__main__':
     OUT.mkdir(exist_ok=True)
-    write_ink_map()
     frame(SECONDS-1/FPS).save(OUT/'grasp-study.webp','WEBP',quality=92,method=6)
     frame(0).save(OUT/'grasp-study-opening.webp','WEBP',quality=90,method=6)
     cmd=[imageio_ffmpeg.get_ffmpeg_exe(),'-hide_banner','-loglevel','error','-y','-f','rawvideo',
          '-pix_fmt','rgb24','-s',f'{W}x{H}','-r',str(FPS),'-i','-','-an','-c:v','libx264',
          '-preset','slow','-crf','22','-pix_fmt','yuv420p','-movflags','+faststart',str(OUT/'grasp-study.mp4')]
+    bounds=[]
     with subprocess.Popen(cmd,stdin=subprocess.PIPE) as encoder:
-        for i in range(FPS*SECONDS): encoder.stdin.write(frame(i/FPS).tobytes())
+        for i in range(FPS*SECONDS): encoder.stdin.write(frame(i/FPS,bounds).tobytes())
         encoder.stdin.close()
         if encoder.wait(): raise RuntimeError('Encoding failed')
+    bounds.append(bounds[-1])
+    write_ink_map(bounds)
