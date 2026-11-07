@@ -52,7 +52,7 @@ try {
   assert.ok(green[1]>green[0]+30&&green[1]>green[2]+30,'name transfer passes through green');
   await exposure(timing.explosion_start+.65);const spread=await composition();
   await exposure(timing.explosion_peak-.1);const macro=await composition();
-  await exposure(timing.assembly_start+.47);const reverse=await composition();
+  await exposure(timing.assembly_start+.64);const reverse=await composition();
   const shapeChange=(a,b)=>{
     const peakA=Math.max(...a.density),peakB=Math.max(...b.density);
     return a.density.reduce((sum,value,i)=>sum+Math.abs(value/peakA-b.density[i]/peakB),0)/a.density.length;

@@ -26,6 +26,10 @@
     const ctx=canvas.getContext('2d'), mask=document.createElement('canvas'), sampler=mask.getContext('2d',{willReadFrequently:true});
     const stillPoster=film.getAttribute('poster'), assemblyTime=1.52;
     const printStage=stage.classList.contains('print-stage');
+    // The film is the master clock for the arm, numerical field and name.
+    // Slow the authored cover together; experimental recordings keep their rate.
+    if(printStage)film.defaultPlaybackRate=film.playbackRate=.9;
+    const shotChange=.64;
     const fieldWidth=112,fieldHeight=56;
     let w=0,h=0,groups=[],palette=[],grain=1,frame=0,last=0,visible=false,intro=false,played=false;
     let ready=false,entry=0,needsEntry=true,fx=0,fy=0,mx=0,my=0,strength=0,flowX=0,flowY=0;
@@ -79,7 +83,7 @@
         [inkMap.explosion_start+.65,1.4,.62,.12,.52,.50,0,.7],
         [inkMap.explosion_peak-.2,3.6,1,.42,.36,.51,0,3.7],
         [inkMap.assembly_start,3.6,1,.42,.36,.51,0,3.9],
-        [inkMap.assembly_start+.47,1.12,.92,1.42,.64,.46,1,6.9],
+        [inkMap.assembly_start+shotChange,1.12,.92,1.42,.64,.46,1,6.9],
         [inkMap.assembled-.65,1.15,.35,1.20,.61,.44,.7,7.8],
         [inkMap.assembled,.68,0,1.06,.69,.48,0,8],
         [inkMap.release,.68,0,1.06,.69,.48,0,8.1],
@@ -115,7 +119,7 @@
         const at=i=>a[i]+(b[i]-a[i])*blend;
         const shot={scale:at(1),spread:at(2),angle:at(3),x:at(4),y:at(5),negative:at(6),clock:at(7)};
         const macro=soften(clamp((time-inkMap.explosion_start-.65)/.75,0,1))*
-          (1-soften(clamp((time-inkMap.assembly_start)/.47,0,1)));
+          (1-soften(clamp((time-inkMap.assembly_start)/shotChange,0,1)));
         // The macro shot tracks one of the same blades as it separates,
         // rather than pushing every form out of frame and leaving a blank.
         if(macro>0) {
@@ -133,11 +137,12 @@
         }
         return shot;
       }
-      const elapsed=time-inkMap.settled,breath=Math.sin(elapsed*.24);
+      const elapsed=time-inkMap.settled;
+      const drift=elapsed-.45*(1-Math.exp(-elapsed/.45)),breath=Math.sin(drift*.24);
       // No more macro cuts once the visitor is reading the name. The final
       // exposure becomes a low-amplitude, slow peripheral movement.
-      return {scale:1.05+breath*.035,spread:.08+breath*.025,angle:1.20+elapsed*.035,
-        x:.68+breath*.018,y:.43+Math.sin(elapsed*.18)*.012,negative:0,clock:9.2+elapsed*.24};
+      return {scale:1.05+breath*.035,spread:.08+breath*.025,angle:1.20+drift*.035,
+        x:.68+breath*.018,y:.43+Math.sin(drift*.18)*.012,negative:0,clock:9.2+drift*.24};
     }
     function filmProjection() {
       const width=inkMap.width??1440,height=inkMap.height??540;
@@ -244,7 +249,7 @@
       const dt=currentLast?Math.min(.05,(now-currentLast)/1000):1/60;currentLast=now;
       // Follow the film until its last frame, then continue the very same
       // phase. The lettering canvas can sleep while the pigment field flows.
-      currentTime=film.ended?Math.max(currentTime,film.currentTime)+dt:film.currentTime;
+      currentTime=film.ended?Math.max(currentTime,film.currentTime)+dt*film.playbackRate:film.currentTime;
       drawCurrents(currentTime);currentFrame=request(tickCurrents);
     }
     function syncCurrents() {
